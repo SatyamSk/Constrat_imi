@@ -122,8 +122,8 @@ function Cases() {
               <span className="pill">Apr 2025</span>
             </div>
             <div className="mt-6 flex gap-3 flex-wrap">
-              <button className="btn-primary">Download Deck →</button>
-              <button className="btn-secondary">Preview</button>
+              <button className="btn-primary" onClick={() => alert("This deck will be available for download once uploaded by admin. Check back soon!")}>Download Deck →</button>
+              <button className="btn-secondary" onClick={() => alert("Preview coming soon. The admin is uploading case decks.")}>Preview</button>
             </div>
             <p className="mt-4 text-[12px] text-text-muted">Downloaded 847 times</p>
           </div>
@@ -151,7 +151,7 @@ function Cases() {
                 <p className="mt-4 text-[12px] text-text-muted">Added {d.date}</p>
                 <div className="mt-3 pt-3 border-t border-border flex items-center justify-between">
                   <span className="text-[12px] text-text-muted">{d.dl} downloads</span>
-                  <button className="btn-ghost text-[13px]">Download →</button>
+                  <button className="btn-ghost text-[13px]" onClick={() => alert(`Download for "${d.name}" will be available once uploaded by admin via the Admin Panel.`)}>Download →</button>
                 </div>
               </article>
             ))}
