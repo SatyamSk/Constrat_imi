@@ -1,0 +1,47 @@
+# Dependencies
+node_modules
+.output
+.vinxi
+.tanstack/**
+.nitro
+
+# Build
+dist
+dist-ssr
+
+# Environment
+.env
+.env.local
+.env.production
+*.local
+
+# Wrangler / Cloudflare (legacy)
+.wrangler/
+.dev.vars
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# OS
+Thumbs.db
+
+# Vercel
+.vercel
+
+# Python
+__pycache__
+*.pyc
+.venv

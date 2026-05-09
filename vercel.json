@@ -1,0 +1,9 @@
+{
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
+  "crons": [
+    { "path": "/api/timetable_sync", "schedule": "0 */2 * * *" },
+    { "path": "/api/news_aggregator", "schedule": "0 */4 * * *" },
+    { "path": "/api/email_scanner", "schedule": "0 */6 * * *" },
+    { "path": "/api/daily_question", "schedule": "0 1 * * *" }
+  ]
+}
