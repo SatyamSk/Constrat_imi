@@ -62,17 +62,19 @@ export function Footer() {
           <p className="text-[11px] uppercase tracking-[0.1em] font-semibold text-white/40 mb-4">Connect</p>
           <div className="flex flex-col gap-3">
             <a
-              href="#"
+              href="https://www.instagram.com/constrat_imi/"
+              target="_blank"
+              rel="noopener noreferrer"
               className="inline-flex items-center gap-2 h-9 px-4 rounded-lg text-[13px] font-medium w-fit"
               style={{ background: "#FFF0EB", color: "#C03A08" }}
             >
-              Join Telegram &rarr;
+              Follow on Instagram &rarr;
             </a>
             <div className="flex gap-2">
-              <a href="#" className="w-9 h-9 rounded-lg border border-white/15 flex items-center justify-center text-white/60 hover:text-orange hover:border-orange transition-colors text-[12px]">
+              <a href="https://www.instagram.com/constrat_imi/" target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-lg border border-white/15 flex items-center justify-center text-white/60 hover:text-orange hover:border-orange transition-colors text-[12px]">
                 IG
               </a>
-              <a href="#" className="w-9 h-9 rounded-lg border border-white/15 flex items-center justify-center text-white/60 hover:text-orange hover:border-orange transition-colors text-[12px]">
+              <a href="https://www.linkedin.com/company/constrat-imi/" target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-lg border border-white/15 flex items-center justify-center text-white/60 hover:text-orange hover:border-orange transition-colors text-[12px]">
                 Li
               </a>
             </div>

@@ -47,9 +47,10 @@ def fetch_via_apps_script():
 
 
 def fetch_via_csv():
-    """Fallback: fetch via direct CSV export (only works for public sheets)."""
+    """Fetch from public mirror sheet with IMI timetable format."""
     import csv
     import io
+    import re
     
     url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv&gid={GID}"
     req = Request(url, headers={"User-Agent": "Mozilla/5.0"})
@@ -58,28 +59,84 @@ def fetch_via_csv():
     
     reader = csv.reader(io.StringIO(csv_text))
     rows = list(reader)
-    if len(rows) < 2:
+    if len(rows) < 5:
         return []
     
-    headers = [h.strip().lower() for h in rows[0]]
-    entries = []
-    for row in rows[1:]:
-        if len(row) < 3:
-            continue
-        entry = {}
-        for i, header in enumerate(headers):
-            if i < len(row):
-                entry[header] = row[i].strip()
-        entries.append({
-            "section": entry.get("section", entry.get("sec", "")),
-            "day": entry.get("day", entry.get("date", "")),
-            "slot": entry.get("slot", entry.get("time", entry.get("period", ""))),
-            "course": entry.get("course", entry.get("subject", entry.get("name", ""))),
-            "faculty": entry.get("faculty", entry.get("professor", entry.get("prof", ""))),
-            "room": entry.get("room", entry.get("venue", entry.get("location", ""))),
-        })
+    # Find the header row (contains "Date" or "Sec")
+    header_idx = 0
+    for i, row in enumerate(rows):
+        joined = ",".join(row).lower()
+        if "date" in joined and ("sec" in joined or "session" in joined):
+            header_idx = i
+            break
     
-    return [e for e in entries if e["course"]]
+    headers = [h.strip().lower() for h in rows[header_idx]]
+    
+    # Find column indexes
+    date_col = next((i for i, h in enumerate(headers) if "date" in h), 0)
+    day_col = next((i for i, h in enumerate(headers) if "day" in h), 1)
+    sec_col = next((i for i, h in enumerate(headers) if "sec" in h), 2)
+    venue_col = next((i for i, h in enumerate(headers) if "venue" in h), 3)
+    
+    # Session columns (contain "session")
+    session_cols = [(i, h) for i, h in enumerate(headers) if "session" in h]
+    if not session_cols:
+        # fallback: columns 4+ are sessions
+        session_cols = [(i, f"session {i-3}") for i in range(4, min(len(headers), 10))]
+    
+    # Time slots from the row after headers
+    time_row = rows[header_idx + 1] if header_idx + 1 < len(rows) else []
+    
+    entries = []
+    current_date = ""
+    current_day = ""
+    
+    for row in rows[header_idx + 2:]:
+        if len(row) < 4:
+            continue
+        
+        # Date/day may be empty (merged cells) - carry forward
+        if row[date_col].strip():
+            current_date = row[date_col].strip()
+        if row[day_col].strip():
+            current_day = row[day_col].strip()
+        
+        section = row[sec_col].strip() if sec_col < len(row) else ""
+        venue = row[venue_col].strip() if venue_col < len(row) else ""
+        
+        if not section:
+            continue
+        
+        for col_idx, col_name in session_cols:
+            if col_idx >= len(row):
+                continue
+            cell = row[col_idx].strip()
+            if not cell or cell.lower() in ("", "lunch break", "-", "—"):
+                continue
+            
+            # Extract course and professor from cell
+            # Format: "Course Name\n(Prof. Name)" or just "Course Name"
+            lines = [l.strip() for l in cell.replace("\r", "").split("\n") if l.strip()]
+            course = lines[0] if lines else cell
+            faculty = ""
+            for line in lines[1:]:
+                if "prof" in line.lower() or "dr" in line.lower():
+                    faculty = re.sub(r"[()]", "", line).strip()
+                    break
+            
+            # Get time slot
+            slot = time_row[col_idx].strip() if col_idx < len(time_row) else col_name
+            
+            entries.append({
+                "section": section,
+                "day": f"{current_date} {current_day}".strip(),
+                "slot": slot,
+                "course": course,
+                "faculty": faculty,
+                "room": venue,
+            })
+    
+    return entries
 
 
 def upsert_to_supabase(entries):

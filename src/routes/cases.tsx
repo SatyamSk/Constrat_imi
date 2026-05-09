@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { PageShell, PageHeader } from "@/components/PageShell";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 
@@ -9,14 +9,13 @@ export const Route = createFileRoute("/cases")({
     meta: [
       { title: "Case Repository — Constrat" },
       { name: "description", content: "120+ case decks. Search, filter, download." },
-      { property: "og:title", content: "Case Repository — Constrat" },
-      { property: "og:description", content: "120+ curated case decks for IMI students." },
     ],
   }),
 });
 
 const CATS = ["All", "Consulting Frameworks", "Competition Decks", "Industry Primers", "McKinsey", "BCG", "Bain", "Deloitte", "Student Decks", "Excel Models", "PPT Templates"];
 const TYPES = ["PDF", "PPTX", "XLSX"];
+const PER_PAGE = 9;
 
 const DECKS = [
   { name: "MECE & Issue Trees — A Pragmatic Guide", desc: "Structured frameworks for cracking ambiguous business problems.", cat: "Consulting Frameworks", src: "Constrat Internal", type: "PDF", date: "Mar 2025", dl: 412 },
@@ -36,6 +35,8 @@ function Cases() {
   const [cat, setCat] = useState("All");
   const [type, setType] = useState<string | null>(null);
   const [q, setQ] = useState("");
+  const [sort, setSort] = useState("downloads");
+  const [page, setPage] = useState(1);
   const [dbDecks, setDbDecks] = useState<Deck[]>([]);
 
   useEffect(() => {
@@ -55,119 +56,74 @@ function Cases() {
 
   const allDecks = [...dbDecks, ...(dbDecks.length > 0 ? [] : DECKS)];
 
-  const filtered = allDecks.filter((d) => {
-    if (cat !== "All" && d.cat !== cat && d.src && !d.src.includes(cat)) return false;
-    if (type && d.type !== type) return false;
-    if (q && !(d.name + d.desc).toLowerCase().includes(q.toLowerCase())) return false;
-    return true;
-  });
+  const filtered = useMemo(() => {
+    let result = allDecks.filter((d) => {
+      if (cat !== "All" && d.cat !== cat && d.src && !d.src.includes(cat)) return false;
+      if (type && d.type !== type) return false;
+      if (q && !(d.name + d.desc).toLowerCase().includes(q.toLowerCase())) return false;
+      return true;
+    });
+    if (sort === "downloads") result.sort((a, b) => b.dl - a.dl);
+    else if (sort === "newest") result.sort((a, b) => b.date.localeCompare(a.date));
+    else if (sort === "az") result.sort((a, b) => a.name.localeCompare(b.name));
+    return result;
+  }, [allDecks, cat, type, q, sort]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
+  const paged = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+
+  // Reset page when filters change
+  useEffect(() => { setPage(1); }, [cat, type, q, sort]);
 
   return (
     <PageShell>
-      <PageHeader
-        eyebrow="Case Repository"
-        title="120+ case decks. Search. Download. Win."
-        subtitle="McKinsey, BCG, Bain, Deloitte, student competition decks — all in one place."
-        alt
-      >
+      <PageHeader eyebrow="Case Repository" title="120+ case decks. Search. Download. Win." subtitle="McKinsey, BCG, Bain, Deloitte, student competition decks — all in one place." alt>
         <div className="flex flex-wrap gap-x-6 gap-y-2 text-[13px] text-text-secondary">
-          <span><b className="text-text-primary">120</b> Decks</span>
-          <span><b className="text-text-primary">8</b> Categories</span>
+          <span><b className="text-text-primary">{allDecks.length}</b> Decks</span>
+          <span><b className="text-text-primary">{CATS.length - 1}</b> Categories</span>
           <span>Updated by Constrat team</span>
         </div>
       </PageHeader>
 
-      {/* Search bar */}
       <div className="sticky top-16 z-30 bg-surface border-b border-border">
         <div className="mx-auto max-w-[1180px] px-6 py-4 flex flex-wrap items-center gap-4">
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Search case decks, companies, topics…"
-            className="input-base w-full md:w-[360px]"
-          />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search case decks, companies, topics…" className="input-base w-full md:w-[360px]" />
           <div className="flex gap-1.5 flex-wrap">
             {TYPES.map((t) => (
-              <button
-                key={t}
-                onClick={() => setType(type === t ? null : t)}
+              <button key={t} onClick={() => setType(type === t ? null : t)}
                 className="px-3 h-7 rounded-full text-[11px] border font-semibold tracking-wide"
-                style={
-                  type === t
-                    ? { background: "#E8490F", color: "#fff", borderColor: "#E8490F" }
-                    : { background: "#fff", borderColor: "#E8E4DE", color: "#5C5C5A" }
-                }
-              >
-                {t}
-              </button>
+                style={type === t ? { background: "#E8490F", color: "#fff", borderColor: "#E8490F" } : { background: "#fff", borderColor: "#E8E4DE", color: "#5C5C5A" }}
+              >{t}</button>
             ))}
           </div>
-          <select className="input-base ml-auto w-[180px]">
-            <option>Most Downloaded</option>
-            <option>Newest</option>
-            <option>A–Z</option>
+          <select value={sort} onChange={e => setSort(e.target.value)} className="input-base ml-auto w-[180px]">
+            <option value="downloads">Most Downloaded</option>
+            <option value="newest">Newest</option>
+            <option value="az">A–Z</option>
           </select>
         </div>
         <div className="mx-auto max-w-[1180px] px-6 pb-4 flex gap-1.5 flex-wrap">
           {CATS.map((c) => (
-            <button
-              key={c}
-              onClick={() => setCat(c)}
+            <button key={c} onClick={() => setCat(c)}
               className="px-3 h-7 rounded-full text-[12px] border transition-colors"
-              style={
-                cat === c
-                  ? { background: "#E8490F", color: "#fff", borderColor: "#E8490F" }
-                  : { background: "#fff", color: "#5C5C5A", borderColor: "#E8E4DE" }
-              }
-            >
-              {c}
-            </button>
+              style={cat === c ? { background: "#E8490F", color: "#fff", borderColor: "#E8490F" } : { background: "#fff", color: "#5C5C5A", borderColor: "#E8E4DE" }}
+            >{c}</button>
           ))}
         </div>
       </div>
 
       <section className="bg-background">
         <div className="mx-auto max-w-[1180px] px-6 py-12">
-          {/* Featured */}
-          <div className="p-8 rounded-[16px]" style={{ background: "#FFF0EB", border: "1px solid #E8C4B0" }}>
-            <span className="label-orange">Editor's Pick</span>
-            <h2 className="mt-3 font-serif text-[28px] leading-[1.2]">
-              The Constrat Casebook — 30 Cases, Indian Context
-            </h2>
-            <p className="mt-3 text-[15px] text-text-secondary max-w-[640px]">
-              Cracked, scored, and annotated. Built specifically around Indian consumer, BFSI, and digital cases asked in 2023–2024 placements.
-            </p>
-            <div className="mt-4 flex gap-2 flex-wrap">
-              <span className="pill">Consulting Frameworks</span>
-              <span className="pill pill-red">PDF</span>
-              <span className="pill">Apr 2025</span>
-            </div>
-            <div className="mt-6 flex gap-3 flex-wrap">
-              <button className="btn-primary" onClick={() => alert("This deck will be available for download once uploaded by admin. Check back soon!")}>Download Deck →</button>
-              <button className="btn-secondary" onClick={() => alert("Preview coming soon. The admin is uploading case decks.")}>Preview</button>
-            </div>
-            <p className="mt-4 text-[12px] text-text-muted">Downloaded 847 times</p>
-          </div>
-
-          {/* Grid */}
-          <div className="mt-12 grid md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {filtered.map((d, i) => (
+          <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {paged.map((d, i) => (
               <article key={i} className="card-base p-6 relative">
-                <span
-                  className="absolute top-5 right-5 pill"
-                  style={
-                    d.type === "PDF" ? { background: "#FFF0F0", color: "#B91C1C" } :
-                    d.type === "PPTX" ? { background: "#FFF3E8", color: "#C2570A" } :
-                    { background: "#EDFAF3", color: "#1E6640" }
-                  }
-                >
-                  {d.type}
-                </span>
+                <span className="absolute top-5 right-5 pill"
+                  style={d.type === "PDF" ? { background: "#FFF0F0", color: "#B91C1C" } : d.type === "PPTX" ? { background: "#FFF3E8", color: "#C2570A" } : { background: "#EDFAF3", color: "#1E6640" }}
+                >{d.type}</span>
                 <h3 className="text-[17px] font-semibold leading-[1.35] pr-12">{d.name}</h3>
                 <p className="mt-2 text-[13px] text-text-secondary leading-[1.55] line-clamp-2">{d.desc}</p>
                 <div className="mt-4 flex gap-2 flex-wrap">
-                  <span className="pill">{d.cat}</span>
-                  <span className="pill">{d.src}</span>
+                  <span className="pill">{d.cat}</span><span className="pill">{d.src}</span>
                 </div>
                 <p className="mt-4 text-[12px] text-text-muted">Added {d.date}</p>
                 <div className="mt-3 pt-3 border-t border-border flex items-center justify-between">
@@ -181,6 +137,23 @@ function Cases() {
               </article>
             ))}
           </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="mt-12 flex items-center justify-between">
+              <p className="text-[13px] text-text-muted">Showing {(page-1)*PER_PAGE+1}–{Math.min(page*PER_PAGE, filtered.length)} of {filtered.length}</p>
+              <div className="flex gap-1">
+                {page > 1 && <button onClick={() => setPage(page-1)} className="w-9 h-9 rounded-md border border-border text-[13px]">←</button>}
+                {Array.from({length: totalPages}, (_, i) => i+1).map(n => (
+                  <button key={n} onClick={() => setPage(n)}
+                    className="w-9 h-9 rounded-md border border-border text-[13px]"
+                    style={n === page ? { background: "#E8490F", color: "#fff", borderColor: "#E8490F" } : {}}
+                  >{n}</button>
+                ))}
+                {page < totalPages && <button onClick={() => setPage(page+1)} className="w-9 h-9 rounded-md border border-border text-[13px]">→</button>}
+              </div>
+            </div>
+          )}
         </div>
       </section>
     </PageShell>

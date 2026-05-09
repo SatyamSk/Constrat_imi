@@ -10,10 +10,12 @@ function Home() {
   return (
     <PageShell>
       <Hero />
-      <SocialProof />
+      <StreakBar />
       <TryNow />
+      <ToolkitGrid />
       <CompanyTracks />
       <FrameworkOfWeek />
+      <CaseShowcase />
       <CompetitionsTeaser />
       <NewsTeaser />
       <LeaderboardTeaser />
@@ -22,12 +24,14 @@ function Home() {
   );
 }
 
+/* ═══ HERO ═══ */
 function Hero() {
   const [c, setC] = useState(0);
   useEffect(() => { const t = setInterval(() => setC(p => (p < 47 ? p + 1 : p)), 60); return () => clearInterval(t); }, []);
   return (
     <section className="gradient-hero relative overflow-hidden">
       <div className="absolute top-[-200px] right-[-100px] w-[500px] h-[500px] rounded-full bg-orange/5 blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[-150px] left-[-80px] w-[400px] h-[400px] rounded-full bg-orange/3 blur-[100px] pointer-events-none" />
       <div className="mx-auto max-w-[1180px] px-5 md:px-6 pt-28 md:pt-[140px] pb-16 md:pb-24 relative z-10">
         <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-10 lg:gap-14 items-center">
           <div className="slide-up">
@@ -38,7 +42,7 @@ function Hero() {
               Your unfair<br />advantage for<br /><span className="text-gradient">placements.</span>
             </h1>
             <p className="mt-5 text-[16px] md:text-[17px] text-text-secondary max-w-[460px] leading-[1.65]">
-              Case practice, company-specific prep, 120+ decks, daily questions, live timetable, alumni intel - everything an IMI student needs.
+              Case practice, company-specific prep, 120+ decks, daily questions, live timetable, alumni intel — everything an IMI student needs.
             </p>
             <div className="mt-7 flex flex-wrap items-center gap-3">
               <Link to="/join" className="btn-primary">Get Started Free</Link>
@@ -73,9 +77,7 @@ function QuickAttempt() {
           How many cups of chai are sold daily across all railway stations in India?
         </p>
         <div className="mt-4 flex gap-2 flex-wrap">
-          <span className="pill">Operations</span>
-          <span className="pill">Medium</span>
-          <span className="pill">MBB Reported</span>
+          <span className="pill">Operations</span><span className="pill">Medium</span><span className="pill">MBB Reported</span>
         </div>
         {!show ? (
           <button onClick={() => setShow(true)} className="btn-primary mt-5 w-full">Attempt Now</button>
@@ -94,28 +96,35 @@ function QuickAttempt() {
   );
 }
 
-function SocialProof() {
-  const stats = [
-    { n: "120+", l: "Case Decks", sub: "McKinsey, BCG, Bain, Deloitte" },
-    { n: "500+", l: "Questions", sub: "Guestimates, Cases, GDs, HR" },
-    { n: "14", l: "Core Members", sub: "Batch 2024 + 2025" },
-    { n: "7,000+", l: "Attempts", sub: "And counting this semester" },
+/* ═══ STREAK BAR ═══ */
+function StreakBar() {
+  const items = [
+    { icon: "🔥", n: "7", l: "Day Streak", sub: "Don't break it!" },
+    { icon: "👥", n: "47", l: "Active Today", sub: "Join them" },
+    { icon: "📂", n: "120+", l: "Case Decks", sub: "Free downloads" },
+    { icon: "🎯", n: "500+", l: "Questions", sub: "All categories" },
+    { icon: "🏆", n: "14", l: "Core Members", sub: "Batch 24 + 25" },
+    { icon: "⚡", n: "7,000+", l: "Attempts", sub: "This semester" },
   ];
   return (
-    <section className="bg-dark text-white">
-      <div className="mx-auto max-w-[1180px] px-5 md:px-6 py-8 md:py-10 grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
-        {stats.map(s => (
-          <div key={s.l} className="text-center md:text-left">
-            <p className="font-serif text-[32px] md:text-[36px] font-bold text-orange leading-none">{s.n}</p>
-            <p className="mt-1 text-[14px] font-semibold text-white/90">{s.l}</p>
-            <p className="mt-0.5 text-[11px] text-white/40">{s.sub}</p>
-          </div>
-        ))}
+    <section className="bg-dark text-white overflow-hidden">
+      <div className="mx-auto max-w-[1180px] px-5 md:px-6 py-6 md:py-8">
+        <div className="grid grid-cols-3 md:grid-cols-6 gap-4 md:gap-6">
+          {items.map(s => (
+            <div key={s.l} className="text-center group cursor-default">
+              <span className="text-[20px]">{s.icon}</span>
+              <p className="font-serif text-[26px] md:text-[30px] font-bold text-orange leading-none mt-1 group-hover:scale-110 transition-transform">{s.n}</p>
+              <p className="mt-1 text-[12px] font-semibold text-white/90">{s.l}</p>
+              <p className="text-[10px] text-white/40">{s.sub}</p>
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   );
 }
 
+/* ═══ TRY NOW ═══ */
 function TryNow() {
   const qs = [
     { type: "GUESTIMATE", q: "Estimate the annual revenue of Zomato's delivery fleet in Mumbai.", d: "Medium", fn: "Operations" },
@@ -131,7 +140,7 @@ function TryNow() {
         <AnimatedSection>
           <span className="label-orange">Daily Practice</span>
           <h2 className="mt-4 font-serif text-[34px] md:text-[40px] font-semibold leading-[1.05] tracking-[-0.025em]">New questions every day. No excuses.</h2>
-          <p className="mt-3 text-[15px] text-text-secondary max-w-[540px]">Guestimates, case crackers, GD topics, HR questions - filtered by function and difficulty. Build your streak.</p>
+          <p className="mt-3 text-[15px] text-text-secondary max-w-[540px]">Guestimates, case crackers, GD topics, HR questions — filtered by function and difficulty.</p>
         </AnimatedSection>
         <div className="mt-10 grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {qs.map((x, i) => (
@@ -153,6 +162,43 @@ function TryNow() {
   );
 }
 
+/* ═══ TOOLKIT GRID — NEW MBA Toolkit ═══ */
+function ToolkitGrid() {
+  const tools = [
+    { icon: "📚", title: "Case Repository", desc: "120+ curated decks from MBB, Big 4, competitions", link: "/cases", cta: "Browse Decks" },
+    { icon: "📰", title: "Business News", desc: "Daily headlines from ET, Reuters, Bloomberg — curated for GDs", link: "/news", cta: "Read Today's News" },
+    { icon: "📅", title: "Live Timetable", desc: "Section-wise class schedule, synced from college sheet", link: "/timetable", cta: "Check Schedule" },
+    { icon: "⏰", title: "Critical Deadlines", desc: "Placement, internship, and academic deadlines — never miss one", link: "/deadlines", cta: "View Deadlines" },
+    { icon: "🎪", title: "Events & Workshops", desc: "Case comps, speaker sessions, GD marathons by Constrat", link: "/events", cta: "See Events" },
+    { icon: "🎓", title: "Alumni Network", desc: "Connect with placed seniors — real advice, real referrals", link: "/alumni", cta: "Explore Alumni" },
+  ];
+  return (
+    <section className="bg-section-alt">
+      <div className="mx-auto max-w-[1180px] px-5 md:px-6 py-16 md:py-[90px]">
+        <AnimatedSection>
+          <span className="label-orange">MBA Toolkit</span>
+          <h2 className="mt-4 font-serif text-[34px] md:text-[40px] font-semibold leading-[1.05] tracking-[-0.025em]">Everything in one place. No more 12 WhatsApp groups.</h2>
+        </AnimatedSection>
+        <div className="mt-10 grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {tools.map((t, i) => (
+            <AnimatedSection key={t.title} delay={i * 60}>
+              <Link to={t.link} className="block">
+                <GlowCard className="p-6 h-full"><div className="relative z-10 flex flex-col h-full">
+                  <span className="text-[28px]">{t.icon}</span>
+                  <h3 className="mt-3 text-[17px] font-semibold text-text-primary">{t.title}</h3>
+                  <p className="mt-2 text-[13px] text-text-secondary leading-[1.55] flex-1">{t.desc}</p>
+                  <span className="btn-ghost text-[13px] mt-4 inline-block">{t.cta} &rarr;</span>
+                </div></GlowCard>
+              </Link>
+            </AnimatedSection>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ═══ COMPANY TRACKS ═══ */
 function CompanyTracks() {
   const cos = [
     { name: "McKinsey", focus: "Problem-solving, PEI stories, exhibit reading", tip: "Structure > speed. They want MECE at every level." },
@@ -163,7 +209,7 @@ function CompanyTracks() {
     { name: "Goldman Sachs", focus: "Valuation, market sizing, financial modeling", tip: "DCF cold. Know LBO basics. Read deal news daily." },
   ];
   return (
-    <section className="bg-section-alt">
+    <section className="bg-surface">
       <div className="mx-auto max-w-[1180px] px-5 md:px-6 py-16 md:py-[90px]">
         <AnimatedSection>
           <span className="label-orange">Company-Specific Prep</span>
@@ -187,9 +233,10 @@ function CompanyTracks() {
   );
 }
 
+/* ═══ FRAMEWORK OF THE WEEK ═══ */
 function FrameworkOfWeek() {
   return (
-    <section className="bg-surface">
+    <section className="bg-section-alt">
       <div className="mx-auto max-w-[1180px] px-5 md:px-6 py-16 md:py-[90px] grid lg:grid-cols-2 gap-10 items-center">
         <AnimatedSection>
           <span className="label-orange">Framework of the Week</span>
@@ -216,25 +263,62 @@ function FrameworkOfWeek() {
   );
 }
 
+/* ═══ CASE SHOWCASE ═══ */
+function CaseShowcase() {
+  const decks = [
+    { name: "MECE & Issue Trees Guide", cat: "Consulting Frameworks", type: "PDF", dl: 412 },
+    { name: "BCG Growth-Share Matrix", cat: "BCG", type: "PPTX", dl: 287 },
+    { name: "IIM-A Confluence 2024 Winner", cat: "Competition Decks", type: "PPTX", dl: 612 },
+    { name: "McKinsey Profitability Pack", cat: "McKinsey", type: "PDF", dl: 533 },
+  ];
+  return (
+    <section className="bg-surface">
+      <div className="mx-auto max-w-[1180px] px-5 md:px-6 py-16 md:py-[90px]">
+        <AnimatedSection>
+          <span className="label-orange">Popular Decks</span>
+          <h2 className="mt-4 font-serif text-[34px] md:text-[40px] font-semibold leading-[1.05]">Top downloaded this month.</h2>
+        </AnimatedSection>
+        <div className="mt-8 grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {decks.map((d, i) => (
+            <AnimatedSection key={d.name} delay={i * 60}>
+              <div className="card-base p-5 h-full flex flex-col">
+                <span className={`pill self-start ${d.type === "PDF" ? "pill-red" : "pill-orange"}`}>{d.type}</span>
+                <h3 className="mt-3 text-[15px] font-semibold leading-[1.35] flex-1">{d.name}</h3>
+                <p className="mt-2 text-[12px] text-text-muted">{d.cat} · {d.dl} downloads</p>
+                <Link to="/cases" className="btn-ghost text-[12px] mt-3">Download &rarr;</Link>
+              </div>
+            </AnimatedSection>
+          ))}
+        </div>
+        <div className="mt-8 text-center"><Link to="/cases" className="btn-primary">Browse All 120+ Decks &rarr;</Link></div>
+      </div>
+    </section>
+  );
+}
+
+/* ═══ COMPETITIONS ═══ */
 function CompetitionsTeaser() {
   const comps = [
-    { name: "Unstop Case Challenge 2026", org: "Unstop", deadline: "May 25, 2026", prize: "Rs 3,00,000", tag: "Live" },
-    { name: "Deloitte Maverick S9", org: "Grad Partners", deadline: "Jun 1, 2026", prize: "PPO + Rs 5L", tag: "Opening Soon" },
-    { name: "Flipkart GRiD 7.0", org: "Unstop", deadline: "May 30, 2026", prize: "Rs 4,00,000", tag: "Live" },
+    { name: "Unstop Case Challenge 2026", org: "Unstop", deadline: "May 25, 2026", prize: "₹3,00,000", tag: "Live", url: "https://unstop.com" },
+    { name: "Deloitte Maverick S9", org: "Grad Partners", deadline: "Jun 1, 2026", prize: "PPO + ₹5L", tag: "Opening Soon", url: "https://unstop.com" },
+    { name: "Flipkart GRiD 7.0", org: "Unstop", deadline: "May 30, 2026", prize: "₹4,00,000", tag: "Live", url: "https://unstop.com" },
   ];
   return (
     <section className="bg-section-alt">
       <div className="mx-auto max-w-[1180px] px-5 md:px-6 py-16 md:py-[90px]">
         <AnimatedSection>
           <span className="label-orange">Competitions</span>
-          <h2 className="mt-4 font-serif text-[34px] md:text-[40px] font-semibold leading-[1.05] tracking-[-0.025em]">Don&apos;t miss what&apos;s out there.</h2>
+          <h2 className="mt-4 font-serif text-[34px] md:text-[40px] font-semibold leading-[1.05]">Don&apos;t miss what&apos;s out there.</h2>
         </AnimatedSection>
         <div className="mt-8 grid md:grid-cols-3 gap-4">
           {comps.map((c, i) => (
             <AnimatedSection key={c.name} delay={i * 80}><GlowCard className="p-5 h-full"><div className="relative z-10 flex flex-col h-full">
               <div className="flex items-center justify-between"><span className="text-[11px] uppercase tracking-[0.08em] text-text-muted">{c.org}</span><span className={`pill ${c.tag === "Live" ? "pill-red" : "pill-orange"}`}>{c.tag}</span></div>
               <h3 className="mt-3 text-[16px] font-semibold leading-[1.35]">{c.name}</h3>
-              <div className="mt-auto pt-4 flex items-center justify-between"><div><p className="text-[12px] text-text-muted">Deadline: {c.deadline}</p><p className="text-[13px] font-semibold text-orange mt-0.5">{c.prize}</p></div></div>
+              <div className="mt-auto pt-4 flex items-center justify-between">
+                <div><p className="text-[12px] text-text-muted">Deadline: {c.deadline}</p><p className="text-[13px] font-semibold text-orange mt-0.5">{c.prize}</p></div>
+                <a href={c.url} target="_blank" rel="noopener noreferrer" className="btn-ghost text-[12px]">Apply &rarr;</a>
+              </div>
             </div></GlowCard></AnimatedSection>
           ))}
         </div>
@@ -243,16 +327,17 @@ function CompetitionsTeaser() {
   );
 }
 
+/* ═══ NEWS ═══ */
 function NewsTeaser() {
   const items = [
     { src: "Economic Times", title: "RBI holds repo rate at 6.5%, signals cautious stance.", url: "https://economictimes.indiatimes.com" },
-    { src: "Reuters", title: "TCS posts Rs 61,000Cr Q4 revenue, deal pipeline at 5-year high.", url: "https://www.reuters.com/world/india/" },
+    { src: "Reuters", title: "TCS posts ₹61,000Cr Q4 revenue, deal pipeline at 5-year high.", url: "https://www.reuters.com/world/india/" },
     { src: "Bloomberg", title: "Zepto closes $665M round, valuation crosses $5B.", url: "https://www.bloomberg.com/asia" },
   ];
   return (
     <section className="bg-surface">
       <div className="mx-auto max-w-[1180px] px-5 md:px-6 py-16 md:py-[90px]">
-        <AnimatedSection><span className="label-orange">Business News</span><h2 className="mt-4 font-serif text-[34px] md:text-[40px] font-semibold leading-[1.05] tracking-[-0.025em]">Read what your interviewer reads.</h2></AnimatedSection>
+        <AnimatedSection><span className="label-orange">Business News</span><h2 className="mt-4 font-serif text-[34px] md:text-[40px] font-semibold leading-[1.05]">Read what your interviewer reads.</h2></AnimatedSection>
         <div className="mt-8 grid md:grid-cols-3 gap-4">
           {items.map((n, i) => (
             <AnimatedSection key={i} delay={i * 80}><div className="card-base p-5"><p className="text-[11px] uppercase tracking-[0.08em] text-text-muted">{n.src}</p><h3 className="mt-2 text-[15px] font-semibold leading-[1.4]">{n.title}</h3><a href={n.url} target="_blank" rel="noopener noreferrer" className="btn-ghost text-[12px] mt-3 inline-block">Read &rarr;</a></div></AnimatedSection>
@@ -264,6 +349,7 @@ function NewsTeaser() {
   );
 }
 
+/* ═══ LEADERBOARD ═══ */
 function LeaderboardTeaser() {
   const rows = [
     { rank: 1, name: "Jainishha Sethia", pts: 100 },
@@ -275,7 +361,7 @@ function LeaderboardTeaser() {
   return (
     <section className="bg-section-alt">
       <div className="mx-auto max-w-[1180px] px-5 md:px-6 py-16 md:py-[90px]">
-        <AnimatedSection><span className="label-orange">Leaderboard</span><h2 className="mt-4 font-serif text-[34px] md:text-[40px] font-semibold leading-[1.05] tracking-[-0.025em]">Who&apos;s putting in the work.</h2></AnimatedSection>
+        <AnimatedSection><span className="label-orange">Leaderboard</span><h2 className="mt-4 font-serif text-[34px] md:text-[40px] font-semibold leading-[1.05]">Who&apos;s putting in the work.</h2></AnimatedSection>
         <AnimatedSection delay={100}>
           <div className="mt-8 card-base divide-y divide-border">
             {rows.map(r => (
@@ -294,6 +380,7 @@ function LeaderboardTeaser() {
   );
 }
 
+/* ═══ JOIN CTA ═══ */
 function JoinCTA() {
   return (
     <section className="gradient-cta relative overflow-hidden">
