@@ -46,8 +46,9 @@
   --color-urgent: var(--urgent);
   --color-urgent-bg: var(--urgent-bg);
 
-  --font-serif: "Fraunces", Georgia, serif;
-  --font-sans: "Inter", system-ui, sans-serif;
+  --font-serif: "DM Serif Display", Georgia, serif;
+  --font-sans: "Syne", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
 }
 
 :root {
