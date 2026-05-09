@@ -1,177 +1,204 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PageShell, PageHeader } from "@/components/PageShell";
+import { GlowCard } from "@/components/GlowCard";
+import { AnimatedSection } from "@/components/AnimatedSection";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 
-export const Route = createFileRoute("/timetable")({
-  component: Timetable,
-  head: () => ({
-    meta: [
-      { title: "Timetable — Constrat" },
-      { name: "description", content: "Class timetable for IMI Delhi students. Section filters and alerts." },
-      { property: "og:title", content: "Timetable — Constrat" },
-      { property: "og:description", content: "Always know what's next." },
-    ],
-  }),
-});
+export const Route = createFileRoute("/timetable")({ component: Timetable });
 
-const SECTIONS = ["A", "B", "C", "D"];
-const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const SLOTS = ["08:30", "10:00", "11:30", "14:00", "15:30"];
-
-const SCHEDULE: Record<string, { course: string; faculty: string; room: string; tag?: string }> = {
-  "Mon-08:30": { course: "Strategic Management", faculty: "Prof. Banerjee", room: "Room 204" },
-  "Mon-10:00": { course: "Operations Mgmt", faculty: "Prof. Khurana", room: "Room 311" },
-  "Mon-14:00": { course: "Marketing Research", faculty: "Prof. Iyer", room: "Seminar Hall", tag: "Moved" },
-  "Tue-10:00": { course: "Financial Reporting", faculty: "Prof. Joshi", room: "Room 204" },
-  "Tue-11:30": { course: "HR Analytics", faculty: "Prof. Rao", room: "Room 110" },
-  "Wed-08:30": { course: "Strategic Management", faculty: "Prof. Banerjee", room: "Room 204" },
-  "Wed-15:30": { course: "Consulting Lab", faculty: "Prof. Mehta", room: "C-Lab" },
-  "Thu-10:00": { course: "Operations Mgmt", faculty: "Prof. Khurana", room: "Room 311" },
-  "Thu-14:00": { course: "Marketing Research", faculty: "Prof. Iyer", room: "Seminar Hall" },
-  "Fri-08:30": { course: "Financial Reporting", faculty: "Prof. Joshi", room: "Room 204" },
-  "Fri-11:30": { course: "Business Ethics", faculty: "Prof. Sundaram", room: "Room 110", tag: "Guest" },
-  "Sat-10:00": { course: "Make-up · Strategy", faculty: "Prof. Banerjee", room: "Room 204", tag: "Make-up" },
-};
-
-const ALERTS = [
-  { when: "Today 12:18 PM", title: "Slot 3 venue changed", body: "Marketing Research moved Room 204 → Seminar Hall.", type: "venue" },
-  { when: "Today 9:42 AM", title: "Faculty substitution", body: "Business Ethics — Prof. Sundaram replaces Prof. Pillai for Fri 11:30.", type: "faculty" },
-  { when: "Yesterday 6:10 PM", title: "Make-up class added", body: "Saturday 10:00, Strategic Management, Room 204.", type: "added" },
-  { when: "Yesterday 11:05 AM", title: "Class cancelled", body: "Wed 11:30 HR Analytics cancelled by faculty.", type: "cancelled" },
-];
+interface Entry {
+  id?: string;
+  section: string;
+  day: string;
+  slot: string;
+  course: string;
+  faculty: string;
+  room: string;
+}
 
 function Timetable() {
-  const [sec, setSec] = useState("B");
+  const [sec, setSec] = useState("A");
+  const [entries, setEntries] = useState<Entry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState<"grid"|"list">("grid");
+  const [searchQ, setSearchQ] = useState("");
+
+  useEffect(() => {
+    async function load() {
+      setLoading(true);
+      if (isSupabaseConfigured && supabase) {
+        const { data } = await supabase.from("timetable").select("*").order("day").order("slot");
+        if (data && data.length > 0) {
+          setEntries(data as Entry[]);
+          setLoading(false);
+          return;
+        }
+      }
+      // Fallback: try API
+      try {
+        const r = await fetch("/api/timetable_sync");
+        const j = await r.json();
+        if (j.success) {
+          // Refetch from supabase
+          if (isSupabaseConfigured && supabase) {
+            const { data } = await supabase.from("timetable").select("*").order("day").order("slot");
+            if (data) setEntries(data as Entry[]);
+          }
+        }
+      } catch {}
+      setLoading(false);
+    }
+    load();
+  }, []);
+
+  const sections = [...new Set(entries.map(e => e.section))].sort();
+  const filtered = entries
+    .filter(e => e.section === sec)
+    .filter(e => !searchQ || e.course.toLowerCase().includes(searchQ.toLowerCase()) || e.faculty.toLowerCase().includes(searchQ.toLowerCase()));
+
+  // Group by day
+  const byDay = filtered.reduce<Record<string, Entry[]>>((acc, e) => {
+    const key = e.day;
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(e);
+    return acc;
+  }, {});
+  const days = Object.keys(byDay);
+
+  // Unique slots for grid
+  const allSlots = [...new Set(filtered.map(e => e.slot))].sort();
+
+  // Today's classes
+  const now = new Date();
+  const todayStr = now.toLocaleDateString("en-US", { weekday: "long" });
+  const todayClasses = filtered.filter(e => e.day.toLowerCase().includes(todayStr.toLowerCase().slice(0, 3)));
 
   return (
     <PageShell>
-      <PageHeader
-        eyebrow="Live Timetable"
-        title="Always know what's next."
-        subtitle="Class timetable for IMI Delhi. Filter by section. Get alerts on changes."
-        alt
-      >
-        <div className="flex flex-wrap items-center gap-3">
-          <span className="inline-flex items-center gap-2 text-[13px] text-success">
-            <span className="pulse-dot" />
-            Live
-          </span>
-          <span className="text-[13px] text-text-secondary">·</span>
-          <span className="text-[13px] text-text-secondary">For IMI students</span>
-        </div>
-      </PageHeader>
+      <PageHeader eyebrow="IMI Delhi" title="Live Timetable" subtitle="Synced from college academic calendar. Updated daily." />
+      <div className="mx-auto max-w-[1180px] px-5 md:px-6 -mt-4 pb-20">
+        {/* Today's classes highlight */}
+        {todayClasses.length > 0 && (
+          <GlowCard className="p-5 md:p-6 mb-8" style={{ borderColor: "rgba(232,73,15,0.3)" }}>
+            <div className="relative z-10">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="pulse-dot" /> 
+                <span className="text-[13px] font-semibold" style={{ color: "#E8490F" }}>Today — {todayStr}</span>
+              </div>
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {todayClasses.map((c, i) => (
+                  <div key={i} className="p-3 rounded-lg bg-orange-tint/50 border border-orange/10">
+                    <p className="text-[11px] font-mono font-semibold text-orange" style={{ fontFamily: "var(--font-mono)" }}>{c.slot}</p>
+                    <p className="text-[14px] font-semibold mt-1">{c.course}</p>
+                    <p className="text-[12px] text-text-muted">{c.faculty} · {c.room}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </GlowCard>
+        )}
 
-      {/* Section selector */}
-      <div className="sticky top-16 z-30 bg-surface border-b border-border">
-        <div className="mx-auto max-w-[1180px] px-6 py-4 flex flex-wrap items-center gap-3">
-          <span className="label-eyebrow">Section</span>
-          <div className="flex gap-1.5">
-            {SECTIONS.map((s) => (
-              <button
-                key={s}
-                onClick={() => setSec(s)}
-                className="w-9 h-9 rounded-md text-[13px] font-semibold border"
-                style={
-                  sec === s
-                    ? { background: "#E8490F", color: "#fff", borderColor: "#E8490F" }
-                    : { background: "#fff", color: "#5C5C5A", borderColor: "#E8E4DE" }
-                }
-              >
-                {s}
+        {/* Controls */}
+        <div className="flex flex-wrap items-center gap-3 mb-6">
+          {/* Section pills */}
+          <div className="flex gap-1 p-1 rounded-lg bg-muted/60">
+            {(sections.length > 0 ? sections : ["A", "B", "C", "D"]).map(s => (
+              <button key={s} onClick={() => setSec(s)} className={`px-4 py-1.5 rounded-md text-[13px] font-semibold transition-all ${sec === s ? "bg-white text-orange shadow-sm" : "text-text-muted hover:text-text-primary"}`}>
+                Sec {s}
               </button>
             ))}
           </div>
-          <span className="ml-auto text-[12px] text-text-muted">Week of May 5–10, 2026</span>
-          <button className="btn-secondary h-9 px-4 text-[13px]">Subscribe to Telegram alerts</button>
+          <input value={searchQ} onChange={e => setSearchQ(e.target.value)} placeholder="Search course or faculty..." className="input-base h-9 text-[12px] flex-1 min-w-[180px]" />
+          <div className="flex gap-1">
+            {(["grid", "list"] as const).map(m => (
+              <button key={m} onClick={() => setViewMode(m)} className={`px-3 py-1.5 rounded-md text-[12px] font-medium transition-all ${viewMode === m ? "bg-orange text-white" : "text-text-muted"}`}>
+                {m === "grid" ? "Grid" : "List"}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
 
-      {/* Grid */}
-      <section className="bg-background">
-        <div className="mx-auto max-w-[1180px] px-6 py-12 grid lg:grid-cols-[1fr_320px] gap-10">
-          <div className="card-base overflow-hidden">
-            <div className="grid" style={{ gridTemplateColumns: `90px repeat(${DAYS.length}, 1fr)` }}>
-              <div className="bg-muted/40 border-b border-r border-border" />
-              {DAYS.map((d) => (
-                <div key={d} className="bg-muted/40 border-b border-r border-border last:border-r-0 px-3 py-3 text-[12px] uppercase tracking-[0.08em] font-semibold text-text-secondary">
-                  {d}
+        {loading ? (
+          <div className="grid md:grid-cols-3 gap-4">
+            {[1,2,3,4,5,6].map(i => (
+              <div key={i} className="card-base p-5 h-28 shimmer rounded-xl" />
+            ))}
+          </div>
+        ) : entries.length === 0 ? (
+          <div className="card-base p-12 text-center">
+            <p className="text-[15px] font-semibold mb-2">No timetable data yet</p>
+            <p className="text-[13px] text-text-muted">The timetable syncs from Google Sheets daily. Check back soon.</p>
+          </div>
+        ) : viewMode === "grid" ? (
+          /* Grid view — grouped by day */
+          <div className="space-y-6">
+            {days.map(day => (
+              <AnimatedSection key={day}>
+                <div>
+                  <h3 className="text-[14px] font-semibold text-text-muted uppercase tracking-[0.06em] mb-3 pl-1">{day}</h3>
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                    {byDay[day].map((e, i) => (
+                      <GlowCard key={i} className="p-4">
+                        <div className="relative z-10">
+                          <p className="text-[11px] font-semibold" style={{ fontFamily: "var(--font-mono)", color: "#E8490F" }}>{e.slot}</p>
+                          <p className="text-[15px] font-semibold mt-1.5 leading-[1.3]">{e.course}</p>
+                          <div className="mt-2 flex items-center gap-2 text-[11px] text-text-muted">
+                            <span>{e.faculty}</span>
+                            {e.room && <><span>·</span><span>{e.room}</span></>}
+                          </div>
+                        </div>
+                      </GlowCard>
+                    ))}
+                  </div>
                 </div>
-              ))}
-              {SLOTS.map((slot) => (
-                <Row key={slot} slot={slot} sec={sec} />
-              ))}
-            </div>
+              </AnimatedSection>
+            ))}
           </div>
-
-          {/* Alerts panel */}
-          <aside className="space-y-6">
-            <div className="card-base p-5">
-              <div className="flex items-center justify-between">
-                <p className="label-eyebrow">Recent Alerts · Sec {sec}</p>
-                <span className="text-[11px] text-success font-semibold">LIVE</span>
-              </div>
-              <ul className="mt-4 space-y-4">
-                {ALERTS.map((a, i) => (
-                  <li
-                    key={i}
-                    className="pl-3 py-1"
-                    style={{ borderLeft: `3px solid ${a.type === "cancelled" ? "#B91C1C" : a.type === "venue" ? "#E8490F" : "#1E6640"}` }}
-                  >
-                    <p className="text-[13px] font-semibold">{a.title}</p>
-                    <p className="text-[13px] text-text-secondary mt-0.5">{a.body}</p>
-                    <p className="text-[11px] text-text-muted mt-1">{a.when}</p>
-                  </li>
+        ) : (
+          /* List view */
+          <div className="card-base overflow-x-auto">
+            <table className="w-full min-w-[600px]">
+              <thead>
+                <tr style={{ background: "#F9F8F6" }}>
+                  <th className="text-left text-[11px] uppercase tracking-[0.08em] font-semibold text-text-muted py-3 px-4">Day</th>
+                  <th className="text-left text-[11px] uppercase tracking-[0.08em] font-semibold text-text-muted py-3 px-4">Slot</th>
+                  <th className="text-left text-[11px] uppercase tracking-[0.08em] font-semibold text-text-muted py-3 px-4">Course</th>
+                  <th className="text-left text-[11px] uppercase tracking-[0.08em] font-semibold text-text-muted py-3 px-4">Faculty</th>
+                  <th className="text-left text-[11px] uppercase tracking-[0.08em] font-semibold text-text-muted py-3 px-4">Room</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((e, i) => (
+                  <tr key={i} className="border-t border-border hover:bg-orange-tint/20 transition-colors">
+                    <td className="py-2.5 px-4 text-[13px]">{e.day}</td>
+                    <td className="py-2.5 px-4 text-[13px]" style={{ fontFamily: "var(--font-mono)", color: "#E8490F" }}>{e.slot}</td>
+                    <td className="py-2.5 px-4 text-[14px] font-semibold">{e.course}</td>
+                    <td className="py-2.5 px-4 text-[13px] text-text-secondary">{e.faculty}</td>
+                    <td className="py-2.5 px-4 text-[13px] text-text-muted">{e.room}</td>
+                  </tr>
                 ))}
-              </ul>
-            </div>
-
-            <div className="card-base p-5">
-              <p className="label-eyebrow">Get Alerts</p>
-              <p className="mt-3 text-[13px] text-text-secondary">
-                Stay updated on any timetable changes for your section.
-              </p>
-              <button className="btn-primary mt-4 h-10 px-4 text-[13px]">Subscribe to Alerts</button>
-            </div>
-          </aside>
-        </div>
-      </section>
-    </PageShell>
-  );
-}
-
-function Row({ slot, sec: _sec }: { slot: string; sec: string }) {
-  return (
-    <>
-      <div className="border-b border-r border-border px-3 py-4 text-[12px] text-text-muted font-mono">{slot}</div>
-      {DAYS.map((d) => {
-        const cls = SCHEDULE[`${d}-${slot}`];
-        return (
-          <div key={d + slot} className="border-b border-r border-border last:border-r-0 p-2 min-h-[88px]">
-            {cls ? (
-              <div
-                className="h-full rounded-[8px] p-3 text-[12px]"
-                style={
-                  cls.tag === "Moved" || cls.tag === "Make-up"
-                    ? { background: "#FFF0EB", borderLeft: "3px solid #E8490F" }
-                    : { background: "#FAFAF8", borderLeft: "3px solid #E8E4DE" }
-                }
-              >
-                <p className="font-semibold text-text-primary leading-tight">{cls.course}</p>
-                <p className="text-text-secondary mt-1">{cls.faculty}</p>
-                <p className="text-text-muted mt-0.5">{cls.room}</p>
-                {cls.tag && (
-                  <span
-                    className="mt-2 inline-block pill pill-orange"
-                    style={{ fontSize: 10, padding: "2px 6px" }}
-                  >
-                    {cls.tag}
-                  </span>
-                )}
-              </div>
-            ) : null}
+              </tbody>
+            </table>
           </div>
-        );
-      })}
-    </>
+        )}
+
+        {/* Stats */}
+        {entries.length > 0 && (
+          <div className="mt-8 grid grid-cols-3 gap-4">
+            {[
+              { n: entries.length, l: "Total sessions" },
+              { n: sections.length, l: "Sections" },
+              { n: [...new Set(entries.map(e => e.course))].length, l: "Courses" },
+            ].map((s, i) => (
+              <div key={i} className="card-base p-4 text-center">
+                <p className="text-[24px] font-bold" style={{ fontFamily: "var(--font-mono)", color: "#E8490F" }}>{s.n}</p>
+                <p className="text-[11px] text-text-muted uppercase tracking-[0.08em] mt-1">{s.l}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </PageShell>
   );
 }

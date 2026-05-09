@@ -34,6 +34,7 @@ function Home() {
       <StatsBar />
       <Features />
       <CasePreview />
+      <LiveTerminal />
       <ActivityGraph />
       <HowItWorks />
       <CompanyIntel />
@@ -311,6 +312,118 @@ function HowItWorks() {
 }
 
 /* ── COMPANY INTEL ── */
+/* ── LIVE TERMINAL ── */
+function LiveTerminal() {
+  const [lines, setLines] = useState<{type: 'system'|'user'|'result'; text: string}[]>([
+    { type: 'system', text: '> constrat init --mode=case-solver' },
+    { type: 'system', text: '  Loading case engine...' },
+    { type: 'system', text: '  Connected to framework database' },
+    { type: 'system', text: '' },
+  ]);
+  const [phase, setPhase] = useState(0);
+  const [typing, setTyping] = useState('');
+  const [started, setStarted] = useState(false);
+  const [timer, setTimer] = useState(0);
+
+  const prompts = [
+    { q: '> CASE: Your client is a mid-size Indian airline losing Rs 400 Cr annually despite 85% load factor. The CEO wants to reach breakeven in 18 months. How would you approach this?', hint: 'Framework: Profitability = Revenue - Costs' },
+    { q: '> GUESSTIMATE: How many cups of chai are sold daily across all Indian railway stations?', hint: 'Decompose: stations × platforms × vendors × cups/day' },
+    { q: '> PI: Why consulting? Why not investment banking?', hint: 'Structure: passion + skills + impact + fit' },
+  ];
+
+  useEffect(() => {
+    if (!started) return;
+    const t = setInterval(() => setTimer(p => p + 1), 1000);
+    return () => clearInterval(t);
+  }, [started]);
+
+  function handleStart() {
+    setStarted(true);
+    setLines(prev => [...prev, { type: 'system', text: prompts[0].q }, { type: 'system', text: `  Hint: ${prompts[0].hint}` }, { type: 'system', text: '' }]);
+  }
+
+  function handleSubmit() {
+    if (!typing.trim()) return;
+    const newLines = [
+      ...lines,
+      { type: 'user' as const, text: `$ ${typing}` },
+      { type: 'result' as const, text: `  ✓ Answer recorded (${timer}s) — Framework detected: ${phase === 0 ? 'Profitability' : phase === 1 ? 'Decomposition' : 'Behavioral'}` },
+      { type: 'system' as const, text: '' },
+    ];
+    setTyping('');
+    if (phase < 2) {
+      newLines.push(
+        { type: 'system', text: prompts[phase + 1].q },
+        { type: 'system', text: `  Hint: ${prompts[phase + 1].hint}` },
+        { type: 'system', text: '' },
+      );
+    } else {
+      newLines.push(
+        { type: 'result', text: '  ═══════════════════════════════════════' },
+        { type: 'result', text: `  SESSION COMPLETE — Total time: ${timer}s` },
+        { type: 'result', text: '  Case: ██████████ scored' },
+        { type: 'result', text: '  Guesstimate: ██████████ scored' },
+        { type: 'result', text: '  PI: ██████████ scored' },
+        { type: 'result', text: '' },
+        { type: 'result', text: '  → Sign up to see your full score & percentile' },
+      );
+    }
+    setLines(newLines);
+    setPhase(p => Math.min(p + 1, 3));
+  }
+
+  return (
+    <section style={{ background: '#130F0A' }}>
+      <div className="mx-auto max-w-[1180px] px-5 md:px-6 py-20 md:py-28">
+        <AnimatedSection>
+          <div className="grid lg:grid-cols-[1fr_1.3fr] gap-10 items-center">
+            <div>
+              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-semibold" style={{ background: 'rgba(232,73,15,0.15)', color: '#FF8C42' }}>
+                <span className="pulse-dot" style={{ background: '#FF8C42', boxShadow: '0 0 0 0 rgba(255,140,66,0.5)' }} /> Try it live
+              </span>
+              <h2 className="mt-5 font-serif text-[34px] md:text-[44px] leading-[1.2]" style={{ color: '#F4ECE2' }}>Case Solver Terminal.</h2>
+              <p className="mt-4 text-[15px] leading-[1.65]" style={{ color: '#888' }}>Practice a mini case interview right here. No signup needed. Case, guesstimate, and PI — timed, structured, evaluated.</p>
+              {!started && <button onClick={handleStart} className="btn-primary mt-6">Launch Session</button>}
+            </div>
+            <div className="rounded-xl overflow-hidden border" style={{ background: '#0D0D0D', borderColor: '#222' }}>
+              {/* Terminal header */}
+              <div className="flex items-center gap-2 px-4 py-2.5 border-b" style={{ borderColor: '#222', background: '#111' }}>
+                <div className="w-3 h-3 rounded-full" style={{ background: '#EF4444' }} />
+                <div className="w-3 h-3 rounded-full" style={{ background: '#F59E0B' }} />
+                <div className="w-3 h-3 rounded-full" style={{ background: '#22C55E' }} />
+                <span className="ml-3 text-[11px]" style={{ fontFamily: 'var(--font-mono)', color: '#555' }}>constrat — case-solver v2.1</span>
+                {started && <span className="ml-auto text-[11px] font-bold" style={{ fontFamily: 'var(--font-mono)', color: '#E8490F' }}>{Math.floor(timer/60)}:{String(timer%60).padStart(2,'0')}</span>}
+              </div>
+              {/* Terminal body */}
+              <div className="p-4 h-[340px] overflow-y-auto" style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', lineHeight: '1.7' }}>
+                {lines.map((l, i) => (
+                  <div key={i} style={{ color: l.type === 'system' ? '#888' : l.type === 'user' ? '#22C55E' : '#E8490F' }}>
+                    {l.text || '\u00A0'}
+                  </div>
+                ))}
+                {started && phase < 3 && (
+                  <div className="flex items-center gap-1 mt-1">
+                    <span style={{ color: '#22C55E' }}>$</span>
+                    <input
+                      value={typing}
+                      onChange={e => setTyping(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && handleSubmit()}
+                      className="flex-1 bg-transparent outline-none border-none"
+                      style={{ color: '#F4ECE2', fontFamily: 'var(--font-mono)', fontSize: '12px' }}
+                      placeholder="Type your approach and press Enter..."
+                      autoFocus
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </AnimatedSection>
+      </div>
+    </section>
+  );
+}
+
 function CompanyIntel() {
   const firms = [
     { name: "McKinsey", style: "Exhibit-heavy, structured, MECE at every level" },
