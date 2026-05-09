@@ -6,9 +6,8 @@ const links = [
   { label: "Practice", to: "/practice" },
   { label: "Cases", to: "/cases" },
   { label: "News", to: "/news" },
+  { label: "Leaderboard", to: "/leaderboard" },
   { label: "Timetable", to: "/timetable" },
-  { label: "Events", to: "/events" },
-  { label: "Alumni", to: "/alumni" },
   { label: "Deadlines", to: "/deadlines" },
 ];
 

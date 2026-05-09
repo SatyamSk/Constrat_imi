@@ -1,228 +1,90 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { PageShell } from "@/components/PageShell";
 import { useAuth } from "@/lib/auth";
 
-export const Route = createFileRoute("/join")({
-  component: Join,
-});
+export const Route = createFileRoute("/join")({ component: Join });
 
 function Join() {
-  const { signUp, user } = useAuth();
+  const { signUp, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
-
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [batch, setBatch] = useState("2025");
-  const [section, setSection] = useState("A");
-  const [phone, setPhone] = useState("");
-  const [isMember, setIsMember] = useState(false);
-  const [password, setPassword] = useState("");
-  const [confirmPw, setConfirmPw] = useState("");
+  const [pass, setPass] = useState("");
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
-
-  // If already logged in, redirect
-  if (user) {
-    navigate({ to: "/" });
-    return null;
-  }
+  const [success, setSuccess] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-
-    // Validation
-    if (!name.trim()) return setError("Please enter your full name.");
-    if (!email.trim()) return setError("Please enter your email.");
-    if (password.length < 6) return setError("Password must be at least 6 characters.");
-    if (password !== confirmPw) return setError("Passwords do not match.");
-
+    if (!name.trim()) return setError("Name is required");
+    if (!email.includes("@")) return setError("Enter a valid email");
+    if (pass.length < 6) return setError("Password must be 6+ characters");
     setLoading(true);
     try {
-      const { error: authError } = await signUp(email, password, {
-        full_name: name.trim(),
-        batch,
-        section,
-        phone: phone.trim(),
-        is_constrat_member: isMember,
-      });
-
-      if (authError) {
-        setError(authError.message);
-      } else {
-        setSuccess(true);
-      }
+      await signUp(email, pass, name);
+      setSuccess(true);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Something went wrong.");
+      setError(err instanceof Error ? err.message : "Signup failed");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   if (success) {
     return (
-      <PageShell>
-        <section className="bg-background">
-          <div className="mx-auto max-w-[520px] px-6 py-24 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-success/10 flex items-center justify-center text-success text-[28px] mx-auto">
-              &#x2713;
-            </div>
-            <h1 className="mt-6 font-serif text-[36px] font-semibold leading-tight">
-              Account created!
-            </h1>
-            <p className="mt-4 text-[16px] text-text-secondary max-w-[400px] mx-auto">
-              Check your email for a confirmation link. Once confirmed, you can log in and access everything.
-            </p>
-            <Link to="/login" className="btn-primary mt-8 inline-flex">
-              Go to Login &rarr;
-            </Link>
+      <div className="min-h-screen flex items-center justify-center px-5" style={{ background: "radial-gradient(ellipse 80% 50% at 50% -20%, rgba(232,73,15,0.06), transparent), #FAFAF8" }}>
+        <div className="w-full max-w-[420px] text-center">
+          <div className="w-14 h-14 rounded-full bg-green-50 flex items-center justify-center mx-auto mb-6">
+            <svg className="w-7 h-7 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
           </div>
-        </section>
-      </PageShell>
+          <h1 className="font-serif text-[28px]">Check your email.</h1>
+          <p className="mt-3 text-[14px] text-text-secondary leading-[1.65]">We've sent a confirmation link to <strong>{email}</strong>. Click it to activate your account.</p>
+          <Link to="/login" className="btn-primary mt-8 inline-flex">Go to Login</Link>
+        </div>
+      </div>
     );
   }
 
   return (
-    <PageShell>
-      <section className="bg-background">
-        <div className="mx-auto max-w-[520px] px-6 py-20">
-          <div className="text-center">
-            <p className="font-serif text-[22px] font-semibold">Constrat</p>
-            <p className="text-[12px] text-text-muted mt-1">Consulting &amp; Strategy Club</p>
-          </div>
-          <h1 className="mt-10 font-serif text-[44px] md:text-[48px] font-semibold leading-[1.05] tracking-[-0.025em] text-center">
-            Join the community.
-          </h1>
-          <p className="mt-4 text-[16px] text-text-secondary text-center">
-            Create your account. Access everything Constrat has built.
-          </p>
+    <div className="min-h-screen flex items-center justify-center px-5" style={{ background: "radial-gradient(ellipse 80% 50% at 50% -20%, rgba(232,73,15,0.06), transparent), #FAFAF8" }}>
+      <div className="w-full max-w-[420px]">
+        <Link to="/" className="flex items-center gap-2 mb-10 justify-center">
+          <div className="w-8 h-8 rounded-lg bg-orange flex items-center justify-center text-white font-serif font-bold text-sm">C</div>
+          <span className="font-serif text-[20px] font-semibold">Constrat</span>
+        </Link>
 
-          <form
-            onSubmit={handleSubmit}
-            className="mt-10 bg-white rounded-[16px] p-6 border border-border space-y-4"
-            style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.05)" }}
-          >
-            {error && (
-              <div className="p-3 rounded-lg bg-urgent-bg border border-urgent/20 text-[13px] text-urgent font-medium">
-                {error}
-              </div>
-            )}
+        <h1 className="font-serif text-[32px] text-center leading-[1.1]">Start preparing today.</h1>
+        <p className="mt-3 text-[14px] text-text-secondary text-center">Free. No credit card. Instant access to daily cases.</p>
 
-            <Field label="Full Name">
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="input-base w-full"
-                placeholder="Your full name"
-                required
-              />
-            </Field>
+        <button
+          onClick={() => signInWithGoogle()}
+          className="mt-8 w-full h-[48px] flex items-center justify-center gap-3 border border-border rounded-[10px] text-[14px] font-medium hover:border-text-primary transition-colors bg-white"
+        >
+          <svg className="w-5 h-5" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+          Continue with Google
+        </button>
 
-            <Field label="Email">
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="input-base w-full"
-                placeholder="your@email.com"
-                required
-              />
-            </Field>
-
-            <div className="grid grid-cols-2 gap-4">
-              <Field label="Batch / Year">
-                <select value={batch} onChange={(e) => setBatch(e.target.value)} className="input-base w-full">
-                  <option>2025</option><option>2026</option><option>2027</option>
-                </select>
-              </Field>
-              <Field label="Section">
-                <select value={section} onChange={(e) => setSection(e.target.value)} className="input-base w-full">
-                  <option>A</option><option>B</option><option>C</option><option>D</option>
-                </select>
-              </Field>
-            </div>
-
-            <Field label="Phone (optional)">
-              <input
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="input-base w-full"
-                placeholder="+91"
-              />
-            </Field>
-
-            <label className="flex items-center gap-2 text-[13px] text-text-secondary cursor-pointer">
-              <input
-                type="checkbox"
-                checked={isMember}
-                onChange={(e) => setIsMember(e.target.checked)}
-                className="accent-orange"
-              />
-              I am a Constrat member
-            </label>
-
-            <div className="grid grid-cols-2 gap-4">
-              <Field label="Password">
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="input-base w-full"
-                  placeholder="Min 6 characters"
-                  required
-                  minLength={6}
-                />
-              </Field>
-              <Field label="Confirm Password">
-                <input
-                  type="password"
-                  value={confirmPw}
-                  onChange={(e) => setConfirmPw(e.target.value)}
-                  className="input-base w-full"
-                  placeholder="Confirm"
-                  required
-                />
-              </Field>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn-primary w-full disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              {loading ? "Creating account..." : "Create Account \u2192"}
-            </button>
-
-            <p className="text-[13px] text-text-secondary text-center">
-              Already have an account?{" "}
-              <Link to="/login" className="btn-ghost">Login &rarr;</Link>
-            </p>
-          </form>
-
-          <div className="mt-10 grid md:grid-cols-3 gap-3 text-[13px]">
-            {[
-              "Access 120+ case decks",
-              "Daily practice questions and streaks",
-              "Timetable alerts for your section",
-            ].map((b) => (
-              <div key={b} className="flex items-start gap-2">
-                <span className="text-orange font-semibold">&#x2713;</span>
-                <span className="text-text-secondary">{b}</span>
-              </div>
-            ))}
-          </div>
+        <div className="flex items-center gap-3 my-6">
+          <div className="flex-1 h-px bg-border" />
+          <span className="text-[12px] text-text-muted">or sign up with email</span>
+          <div className="flex-1 h-px bg-border" />
         </div>
-      </section>
-    </PageShell>
-  );
-}
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <label className="block text-[12px] font-medium text-text-secondary mb-1.5">{label}</label>
-      {children}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Full name" className="input-base w-full" />
+          <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Email address" className="input-base w-full" />
+          <input type="password" value={pass} onChange={e => setPass(e.target.value)} placeholder="Password (6+ characters)" className="input-base w-full" />
+          {error && <p className="text-[13px] text-urgent">{error}</p>}
+          <button type="submit" disabled={loading} className="btn-primary w-full">
+            {loading ? "Creating account..." : "Create Account"}
+          </button>
+        </form>
+
+        <p className="mt-6 text-center text-[13px] text-text-muted">
+          Already have an account? <Link to="/login" className="text-orange font-semibold hover:underline">Login</Link>
+        </p>
+      </div>
     </div>
   );
 }
