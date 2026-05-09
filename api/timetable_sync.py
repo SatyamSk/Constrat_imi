@@ -1,56 +1,75 @@
 """
 Timetable Sync — Vercel Python Serverless Function
-READ-ONLY access to Google Sheet. No modifications. No notifications to sheet owner.
-Runs every 2 hours via Vercel Cron.
+Fetches timetable data via Google Apps Script proxy (deployed by user).
+Falls back to direct CSV export if Apps Script URL not configured.
+READ-ONLY. No modifications. No notifications.
 """
 import os
 import json
-import csv
-import io
 from http.server import BaseHTTPRequestHandler
 from urllib.request import urlopen, Request
 from datetime import datetime
 
+# Apps Script URL (deployed by user from their college Google account)
+APPS_SCRIPT_URL = os.environ.get("TIMETABLE_APPS_SCRIPT_URL", "")
+
+# Fallback: direct CSV export (only works for public sheets)
 SHEET_ID = os.environ.get("TIMETABLE_SHEET_ID", "1e3UMC2TIHujnTBZLbfAJl4pxz3IRWiQ8")
 GID = os.environ.get("TIMETABLE_GID", "619368696")
+
 SUPABASE_URL = os.environ.get("SUPABASE_URL", os.environ.get("VITE_SUPABASE_URL", ""))
 SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
 
 
-def fetch_sheet_csv():
-    """
-    Fetch the Google Sheet as CSV using the public export URL.
-    This is a READ-ONLY operation — identical to opening the sheet in a browser.
-    Google does NOT notify sheet owners of CSV export requests.
-    """
+def fetch_via_apps_script():
+    """Fetch timetable via Google Apps Script proxy (works with private sheets)."""
+    req = Request(APPS_SCRIPT_URL, headers={"User-Agent": "Mozilla/5.0"})
+    response = urlopen(req, timeout=30)
+    data = json.loads(response.read().decode("utf-8"))
+    
+    if not data.get("success"):
+        raise Exception(data.get("error", "Apps Script returned error"))
+    
+    entries = []
+    for row in data.get("rows", []):
+        entry = {
+            "section": row.get("section", row.get("sec", "")),
+            "day": row.get("day", row.get("date", "")),
+            "slot": row.get("slot", row.get("time", row.get("period", ""))),
+            "course": row.get("course", row.get("subject", row.get("name", ""))),
+            "faculty": row.get("faculty", row.get("professor", row.get("prof", ""))),
+            "room": row.get("room", row.get("venue", row.get("location", ""))),
+        }
+        if entry["course"]:
+            entries.append(entry)
+    
+    return entries
+
+
+def fetch_via_csv():
+    """Fallback: fetch via direct CSV export (only works for public sheets)."""
+    import csv
+    import io
+    
     url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv&gid={GID}"
     req = Request(url, headers={"User-Agent": "Mozilla/5.0"})
     response = urlopen(req, timeout=30)
-    return response.read().decode("utf-8")
-
-
-def parse_timetable(csv_text):
-    """Parse the CSV into structured timetable entries."""
+    csv_text = response.read().decode("utf-8")
+    
     reader = csv.reader(io.StringIO(csv_text))
     rows = list(reader)
-    
     if len(rows) < 2:
         return []
     
-    # Try to detect header row and structure
-    entries = []
     headers = [h.strip().lower() for h in rows[0]]
-    
+    entries = []
     for row in rows[1:]:
         if len(row) < 3:
             continue
-        
         entry = {}
         for i, header in enumerate(headers):
             if i < len(row):
                 entry[header] = row[i].strip()
-        
-        # Map common column names
         entries.append({
             "section": entry.get("section", entry.get("sec", "")),
             "day": entry.get("day", entry.get("date", "")),
@@ -60,83 +79,30 @@ def parse_timetable(csv_text):
             "room": entry.get("room", entry.get("venue", entry.get("location", ""))),
         })
     
-    return [e for e in entries if e["course"]]  # Filter empty entries
+    return [e for e in entries if e["course"]]
 
 
 def upsert_to_supabase(entries):
-    """Upsert timetable entries to Supabase. Detect changes for alerts."""
+    """Upsert timetable entries to Supabase."""
     if not SUPABASE_URL or not SUPABASE_KEY:
         return {"status": "skipped", "reason": "Supabase not configured"}
     
     import urllib.request
+    now = datetime.utcnow().isoformat()
     
-    # First, fetch existing entries
-    fetch_url = f"{SUPABASE_URL}/rest/v1/timetable?select=*"
-    req = urllib.request.Request(fetch_url, headers={
+    # Delete existing
+    del_url = f"{SUPABASE_URL}/rest/v1/timetable?id=not.is.null"
+    del_req = urllib.request.Request(del_url, method="DELETE", headers={
         "apikey": SUPABASE_KEY,
         "Authorization": f"Bearer {SUPABASE_KEY}",
     })
-    
     try:
-        resp = urllib.request.urlopen(req)
-        existing = json.loads(resp.read().decode())
+        urllib.request.urlopen(del_req)
     except Exception:
-        existing = []
+        pass
     
-    # Build lookup of existing entries
-    existing_lookup = {}
-    for e in existing:
-        key = f"{e['section']}-{e['day']}-{e['slot']}"
-        existing_lookup[key] = e
-    
-    changes = []
-    now = datetime.utcnow().isoformat()
-    
-    for entry in entries:
-        key = f"{entry['section']}-{entry['day']}-{entry['slot']}"
-        old = existing_lookup.get(key)
-        
-        if old:
-            # Check for changes
-            if old["course"] != entry["course"]:
-                changes.append({
-                    "section": entry["section"],
-                    "change_type": "course_change",
-                    "title": f"Course changed for {entry['day']} {entry['slot']}",
-                    "body": f"{old['course']} → {entry['course']}",
-                    "detected_at": now,
-                })
-            if old["room"] != entry["room"] and entry["room"]:
-                changes.append({
-                    "section": entry["section"],
-                    "change_type": "venue",
-                    "title": f"Venue changed: {entry['course']}",
-                    "body": f"{old['room']} → {entry['room']}",
-                    "detected_at": now,
-                })
-            if old["faculty"] != entry["faculty"] and entry["faculty"]:
-                changes.append({
-                    "section": entry["section"],
-                    "change_type": "faculty",
-                    "title": f"Faculty change: {entry['course']}",
-                    "body": f"{old['faculty']} → {entry['faculty']}",
-                    "detected_at": now,
-                })
-    
-    # Upsert all entries (delete old, insert new)
+    # Insert new
     if entries:
-        # Delete existing
-        del_url = f"{SUPABASE_URL}/rest/v1/timetable?id=not.is.null"
-        del_req = urllib.request.Request(del_url, method="DELETE", headers={
-            "apikey": SUPABASE_KEY,
-            "Authorization": f"Bearer {SUPABASE_KEY}",
-        })
-        try:
-            urllib.request.urlopen(del_req)
-        except Exception:
-            pass
-        
-        # Insert new
         for entry in entries:
             entry["synced_at"] = now
         
@@ -153,33 +119,20 @@ def upsert_to_supabase(entries):
         except Exception as e:
             return {"status": "error", "error": str(e)}
     
-    # Insert alerts
-    if changes:
-        alert_url = f"{SUPABASE_URL}/rest/v1/timetable_alerts"
-        alert_data = json.dumps(changes).encode()
-        alert_req = urllib.request.Request(alert_url, data=alert_data, method="POST", headers={
-            "apikey": SUPABASE_KEY,
-            "Authorization": f"Bearer {SUPABASE_KEY}",
-            "Content-Type": "application/json",
-            "Prefer": "return=minimal",
-        })
-        try:
-            urllib.request.urlopen(alert_req)
-        except Exception:
-            pass
-    
-    return {
-        "status": "ok",
-        "entries_synced": len(entries),
-        "changes_detected": len(changes),
-    }
+    return {"status": "ok", "entries_synced": len(entries)}
 
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
         try:
-            csv_text = fetch_sheet_csv()
-            entries = parse_timetable(csv_text)
+            # Try Apps Script first, fall back to CSV
+            if APPS_SCRIPT_URL:
+                entries = fetch_via_apps_script()
+                method = "apps_script"
+            else:
+                entries = fetch_via_csv()
+                method = "csv_export"
+            
             result = upsert_to_supabase(entries)
             
             self.send_response(200)
@@ -187,6 +140,7 @@ class handler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(json.dumps({
                 "success": True,
+                "method": method,
                 "timestamp": datetime.utcnow().isoformat(),
                 **result,
             }).encode())
@@ -197,4 +151,5 @@ class handler(BaseHTTPRequestHandler):
             self.wfile.write(json.dumps({
                 "success": False,
                 "error": str(e),
+                "hint": "If 401: set TIMETABLE_APPS_SCRIPT_URL env var. Deploy the Google Apps Script from docs/google_apps_script.js"
             }).encode())

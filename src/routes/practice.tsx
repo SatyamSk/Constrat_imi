@@ -34,12 +34,18 @@ const QUESTIONS = [
   { type: "GUESTIMATE", q: "Total airtime sold by FM radio stations in India in a year.", fn: "Marketing", diff: "Hard", src: "Reported · IIM-A" },
 ];
 
+const PER_PAGE = 6;
+
 function Practice() {
   const [tab, setTab] = useState("All");
   const [fn, setFn] = useState("All");
   const [diff, setDiff] = useState("All");
   const [src, setSrc] = useState("All");
   const [q, setQ] = useState("");
+  const [page, setPage] = useState(1);
+  const [bookmarks, setBookmarks] = useState<Set<number>>(new Set());
+  const [attemptIdx, setAttemptIdx] = useState<number | null>(null);
+  const [attemptText, setAttemptText] = useState("");
 
   const filtered = QUESTIONS.filter((x) => {
     if (tab !== "All" && !x.type.toLowerCase().includes(tab.toLowerCase().split(" ")[0])) return false;
@@ -48,6 +54,13 @@ function Practice() {
     if (q && !x.q.toLowerCase().includes(q.toLowerCase())) return false;
     return true;
   });
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
+  const paged = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+
+  function toggleBookmark(idx: number) {
+    setBookmarks(prev => { const s = new Set(prev); s.has(idx) ? s.delete(idx) : s.add(idx); return s; });
+  }
 
   return (
     <PageShell>
@@ -116,21 +129,25 @@ function Practice() {
                 <span className="pill">Reported · MBB</span>
               </div>
               <div className="mt-6 flex flex-wrap gap-3">
-                <button className="btn-primary">Attempt &amp; Submit Answer</button>
-                <button className="btn-secondary">See Framework Hint</button>
+                <button className="btn-primary" onClick={() => { setAttemptIdx(-1); setAttemptText(""); }}>Attempt &amp; Submit Answer</button>
+                <button className="btn-secondary" onClick={() => alert("Framework: Start with population of Delhi → coffee-drinking % → cups per day per drinker → adjust for chai preference. Use top-down approach.")}>See Framework Hint</button>
               </div>
               <p className="mt-4 text-[13px] text-text-secondary">87 members attempted today</p>
             </div>
 
             {/* Grid */}
             <div className="mt-10 grid md:grid-cols-2 xl:grid-cols-3 gap-5">
-              {filtered.map((x, i) => (
-                <article key={i} className="card-base p-5 relative">
+              {paged.map((x, i) => {
+                const gi = (page - 1) * PER_PAGE + i;
+                return (
+                <article key={gi} className="card-base p-5 relative">
                   <button
                     aria-label="Bookmark"
-                    className="absolute top-4 right-4 text-[14px] text-text-muted hover:text-orange transition-colors"
+                    onClick={() => toggleBookmark(gi)}
+                    className="absolute top-4 right-4 text-[14px] hover:text-orange transition-colors"
+                    style={{ color: bookmarks.has(gi) ? "#E8490F" : "#A8A199" }}
                   >
-                    ☆
+                    {bookmarks.has(gi) ? "★" : "☆"}
                   </button>
                   <p className="text-[10px] uppercase tracking-[0.08em] font-semibold" style={{ color: x.type === "GUESTIMATE" || x.type === "CASE" ? "#E8490F" : "#5C5C5A" }}>
                     {x.type}
@@ -138,31 +155,45 @@ function Practice() {
                   <p className="mt-3 text-[15px] font-semibold leading-[1.45] text-text-primary line-clamp-3">
                     {x.q}
                   </p>
-                  <div className="mt-4 flex gap-2 flex-wrap">
-                    <span className="pill">{x.fn}</span>
-                    <span className="pill pill-orange">{x.diff}</span>
-                  </div>
-                  <div className="mt-5 flex items-center justify-between">
-                    <span className="text-[12px] text-text-muted truncate max-w-[160px]">Reported by: {x.src}</span>
-                    <span className="btn-ghost text-[13px]">Attempt →</span>
-                  </div>
+                  {attemptIdx === gi ? (
+                    <div className="mt-3 space-y-2">
+                      <textarea value={attemptText} onChange={e => setAttemptText(e.target.value)} placeholder="Type your approach..." className="input-base w-full h-20 resize-none text-[13px]" />
+                      <div className="flex gap-2">
+                        <button onClick={() => { alert("Answer saved! Keep practicing."); setAttemptIdx(null); setAttemptText(""); }} className="btn-primary text-[12px] h-8 px-3">Submit</button>
+                        <button onClick={() => setAttemptIdx(null)} className="btn-secondary text-[12px] h-8 px-3">Cancel</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="mt-4 flex gap-2 flex-wrap">
+                        <span className="pill">{x.fn}</span>
+                        <span className="pill pill-orange">{x.diff}</span>
+                      </div>
+                      <div className="mt-5 flex items-center justify-between">
+                        <span className="text-[12px] text-text-muted truncate max-w-[160px]">{x.src}</span>
+                        <button onClick={() => { setAttemptIdx(gi); setAttemptText(""); }} className="btn-ghost text-[13px]">Attempt →</button>
+                      </div>
+                    </>
+                  )}
                 </article>
-              ))}
+              );})}
             </div>
 
             <div className="mt-12 flex items-center justify-between">
-              <p className="text-[13px] text-text-muted">Showing 1–{filtered.length} of 84 questions</p>
+              <p className="text-[13px] text-text-muted">Showing {(page-1)*PER_PAGE+1}–{Math.min(page*PER_PAGE, filtered.length)} of {filtered.length} questions</p>
               <div className="flex gap-1">
-                {[1, 2, 3, 4, 5].map((n) => (
+                {page > 1 && <button onClick={() => setPage(page-1)} className="w-9 h-9 rounded-md border border-border text-[13px]">←</button>}
+                {Array.from({length: totalPages}, (_, i) => i+1).map(n => (
                   <button
                     key={n}
+                    onClick={() => setPage(n)}
                     className="w-9 h-9 rounded-md border border-border text-[13px]"
-                    style={n === 1 ? { background: "#E8490F", color: "#fff", borderColor: "#E8490F" } : {}}
+                    style={n === page ? { background: "#E8490F", color: "#fff", borderColor: "#E8490F" } : {}}
                   >
                     {n}
                   </button>
                 ))}
-                <button className="w-9 h-9 rounded-md border border-border text-[13px]">→</button>
+                {page < totalPages && <button onClick={() => setPage(page+1)} className="w-9 h-9 rounded-md border border-border text-[13px]">→</button>}
               </div>
             </div>
           </div>

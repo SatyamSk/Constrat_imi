@@ -124,7 +124,7 @@ CREATE TABLE IF NOT EXISTS public.case_decks (
   description TEXT DEFAULT '',
   category TEXT DEFAULT '',
   source TEXT DEFAULT '',
-  file_type TEXT DEFAULT 'PDF' CHECK (file_type IN ('PDF', 'PPTX', 'XLSX')),
+  file_type TEXT DEFAULT 'PDF',
   file_url TEXT DEFAULT '',
   downloads INTEGER DEFAULT 0,
   added_by UUID REFERENCES public.profiles(id),

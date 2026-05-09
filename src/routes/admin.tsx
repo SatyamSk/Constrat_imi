@@ -214,7 +214,7 @@ function CaseDeckUploader() {
   return (
     <div>
       <h2 className="font-serif text-[28px] font-semibold">Case Deck Upload</h2>
-      <p className="mt-2 text-[14px] text-text-secondary">Drop files or select a folder. File names are auto-cleaned and categorized.</p>
+      <p className="mt-2 text-[14px] text-text-secondary">Drop files or folders. Select multiple folders one by one — they all add to the queue. Drag multiple folders at once too.</p>
 
       {/* Drop zone */}
       <div
@@ -225,13 +225,15 @@ function CaseDeckUploader() {
         onDrop={handleDrop}
       >
         <p className="text-[16px] font-semibold text-text-primary">Drop files or folders here</p>
-        <p className="mt-1 text-[13px] text-text-muted">Any format - PDF, PPT, XLSX, DOCX, images, ZIP - or entire folders</p>
-        <div className="mt-4 flex justify-center gap-3">
-          <button onClick={(e) => { e.stopPropagation(); fileRef.current?.click(); }} className="btn-secondary text-[13px] h-9 px-4">Select Files</button>
-          <button onClick={(e) => { e.stopPropagation(); folderRef.current?.click(); }} className="btn-secondary text-[13px] h-9 px-4">Select Folder</button>
+        <p className="mt-1 text-[13px] text-text-muted">Any format — PDF, PPT, XLSX, DOCX, images, ZIP — or entire folders. Keep adding more!</p>
+        {queue.length > 0 && <p className="mt-2 text-[13px] text-orange font-semibold">{queue.length} file(s) in queue</p>}
+        <div className="mt-4 flex justify-center gap-3 flex-wrap">
+          <button onClick={(e) => { e.stopPropagation(); fileRef.current?.click(); }} className="btn-secondary text-[13px] h-9 px-4">+ Select Files</button>
+          <button onClick={(e) => { e.stopPropagation(); folderRef.current?.click(); }} className="btn-secondary text-[13px] h-9 px-4">+ Select Folder</button>
+          {queue.length > 0 && <button onClick={(e) => { e.stopPropagation(); setQueue([]); }} className="text-[12px] text-text-muted hover:text-urgent transition-colors px-3">Clear All</button>}
         </div>
-        <input ref={fileRef} type="file" multiple className="hidden" onChange={(e) => handleFiles(e.target.files)} />
-        <input ref={folderRef} type="file" multiple {...({ webkitdirectory: "", directory: "" } as React.InputHTMLAttributes<HTMLInputElement>)} className="hidden" onChange={(e) => handleFiles(e.target.files)} />
+        <input ref={fileRef} type="file" multiple className="hidden" onChange={(e) => { handleFiles(e.target.files); e.target.value = ""; }} />
+        <input ref={folderRef} type="file" multiple {...({ webkitdirectory: "", directory: "" } as React.InputHTMLAttributes<HTMLInputElement>)} className="hidden" onChange={(e) => { handleFiles(e.target.files); e.target.value = ""; }} />
       </div>
 
       {/* Queue */}
