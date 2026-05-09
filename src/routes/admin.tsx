@@ -12,8 +12,8 @@ export const Route = createFileRoute("/admin")({
 /* ─── Smart file name cleaner ─── */
 function cleanFileName(raw: string): { name: string; category: string; fileType: string } {
   let name = raw.replace(/\.[^/.]+$/, ""); // strip extension
-  const ext = raw.split(".").pop()?.toUpperCase() || "PDF";
-  const fileType = ["PDF","PPTX","XLSX","DOCX","PPT","XLS","DOC"].includes(ext) ? (ext === "PPT" ? "PPTX" : ext === "XLS" ? "XLSX" : ext === "DOC" ? "PDF" : ext) : "PDF";
+  const ext = raw.split(".").pop()?.toUpperCase() || "OTHER";
+  const fileType = ext === "PPT" ? "PPTX" : ext === "XLS" ? "XLSX" : ext === "DOC" ? "DOCX" : ext;
 
   // Remove common junk patterns
   name = name
@@ -101,14 +101,63 @@ function Admin() {
 function CaseDeckUploader() {
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
+  const folderRef = useRef<HTMLInputElement>(null);
 
   function handleFiles(files: FileList | null) {
     if (!files) return;
-    const items: QueueItem[] = Array.from(files).map((f) => {
-      const { name, category, fileType } = cleanFileName(f.name);
-      return { file: f, cleanName: name, category, fileType, status: "pending" };
-    });
+    const validExts = ["pdf","pptx","ppt","xlsx","xls","docx","doc","csv","txt","zip","png","jpg","jpeg"];
+    const items: QueueItem[] = Array.from(files)
+      .filter(f => {
+        const ext = f.name.split(".").pop()?.toLowerCase() || "";
+        return validExts.includes(ext) || f.size > 0;
+      })
+      .map((f) => {
+        const { name, category, fileType } = cleanFileName(f.name);
+        return { file: f, cleanName: name, category, fileType, status: "pending" };
+      });
     setQueue((prev) => [...prev, ...items]);
+  }
+
+  async function handleDrop(e: React.DragEvent) {
+    e.preventDefault();
+    e.currentTarget.classList.remove("border-orange");
+    const items = e.dataTransfer.items;
+    if (items) {
+      const files: File[] = [];
+      const entries = Array.from(items).map(i => i.webkitGetAsEntry?.()).filter(Boolean);
+      async function readDir(entry: FileSystemDirectoryEntry): Promise<File[]> {
+        return new Promise((resolve) => {
+          const reader = entry.createReader();
+          reader.readEntries(async (results) => {
+            const all: File[] = [];
+            for (const r of results) {
+              if (r.isFile) {
+                const f = await new Promise<File>((res) => (r as FileSystemFileEntry).file(res));
+                all.push(f);
+              } else if (r.isDirectory) {
+                const sub = await readDir(r as FileSystemDirectoryEntry);
+                all.push(...sub);
+              }
+            }
+            resolve(all);
+          });
+        });
+      }
+      for (const entry of entries) {
+        if (entry!.isFile) {
+          const f = await new Promise<File>((res) => (entry as FileSystemFileEntry).file(res));
+          files.push(f);
+        } else if (entry!.isDirectory) {
+          const sub = await readDir(entry as FileSystemDirectoryEntry);
+          files.push(...sub);
+        }
+      }
+      const dt = new DataTransfer();
+      files.forEach(f => dt.items.add(f));
+      handleFiles(dt.files);
+    } else {
+      handleFiles(e.dataTransfer.files);
+    }
   }
 
   function updateItem(idx: number, patch: Partial<QueueItem>) {
@@ -173,18 +222,16 @@ function CaseDeckUploader() {
         onClick={() => fileRef.current?.click()}
         onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("border-orange"); }}
         onDragLeave={(e) => e.currentTarget.classList.remove("border-orange")}
-        onDrop={(e) => { e.preventDefault(); e.currentTarget.classList.remove("border-orange"); handleFiles(e.dataTransfer.files); }}
+        onDrop={handleDrop}
       >
-        <p className="text-[16px] font-semibold text-text-primary">Drop case deck files here</p>
-        <p className="mt-1 text-[13px] text-text-muted">PDF, PPTX, XLSX, DOCX - or click to browse</p>
-        <input
-          ref={fileRef}
-          type="file"
-          multiple
-          accept=".pdf,.pptx,.xlsx,.docx,.ppt,.xls,.doc"
-          className="hidden"
-          onChange={(e) => handleFiles(e.target.files)}
-        />
+        <p className="text-[16px] font-semibold text-text-primary">Drop files or folders here</p>
+        <p className="mt-1 text-[13px] text-text-muted">Any format - PDF, PPT, XLSX, DOCX, images, ZIP - or entire folders</p>
+        <div className="mt-4 flex justify-center gap-3">
+          <button onClick={(e) => { e.stopPropagation(); fileRef.current?.click(); }} className="btn-secondary text-[13px] h-9 px-4">Select Files</button>
+          <button onClick={(e) => { e.stopPropagation(); folderRef.current?.click(); }} className="btn-secondary text-[13px] h-9 px-4">Select Folder</button>
+        </div>
+        <input ref={fileRef} type="file" multiple className="hidden" onChange={(e) => handleFiles(e.target.files)} />
+        <input ref={folderRef} type="file" multiple {...({ webkitdirectory: "", directory: "" } as React.InputHTMLAttributes<HTMLInputElement>)} className="hidden" onChange={(e) => handleFiles(e.target.files)} />
       </div>
 
       {/* Queue */}

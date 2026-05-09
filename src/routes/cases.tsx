@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PageShell, PageHeader } from "@/components/PageShell";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 
 export const Route = createFileRoute("/cases")({
   component: Cases,
@@ -29,12 +30,32 @@ const DECKS = [
   { name: "Tata Crucible 2023 — Strategy Deck", desc: "Auto-OEM EV transition, 2nd place nationals.", cat: "Student Decks", src: "IIM-B 2023", type: "PPTX", date: "Sep 2023", dl: 178 },
 ];
 
+type Deck = { name: string; desc: string; cat: string; src: string; type: string; date: string; dl: number; url?: string };
+
 function Cases() {
   const [cat, setCat] = useState("All");
   const [type, setType] = useState<string | null>(null);
   const [q, setQ] = useState("");
+  const [dbDecks, setDbDecks] = useState<Deck[]>([]);
 
-  const filtered = DECKS.filter((d) => {
+  useEffect(() => {
+    if (isSupabaseConfigured && supabase) {
+      supabase.from("case_decks").select("*").order("created_at", { ascending: false }).then(({ data }) => {
+        if (data) {
+          setDbDecks(data.map((d: Record<string, unknown>) => ({
+            name: d.name as string, desc: (d.description as string) || "",
+            cat: (d.category as string) || "General", src: (d.source as string) || "Upload",
+            type: (d.file_type as string) || "PDF", date: (d.added_date as string) || "Recent",
+            dl: (d.downloads as number) || 0, url: (d.file_url as string) || "",
+          })));
+        }
+      });
+    }
+  }, []);
+
+  const allDecks = [...dbDecks, ...(dbDecks.length > 0 ? [] : DECKS)];
+
+  const filtered = allDecks.filter((d) => {
     if (cat !== "All" && d.cat !== cat && d.src && !d.src.includes(cat)) return false;
     if (type && d.type !== type) return false;
     if (q && !(d.name + d.desc).toLowerCase().includes(q.toLowerCase())) return false;
@@ -151,7 +172,11 @@ function Cases() {
                 <p className="mt-4 text-[12px] text-text-muted">Added {d.date}</p>
                 <div className="mt-3 pt-3 border-t border-border flex items-center justify-between">
                   <span className="text-[12px] text-text-muted">{d.dl} downloads</span>
-                  <button className="btn-ghost text-[13px]" onClick={() => alert(`Download for "${d.name}" will be available once uploaded by admin via the Admin Panel.`)}>Download →</button>
+                  {d.url ? (
+                    <a href={d.url} target="_blank" rel="noopener noreferrer" className="btn-ghost text-[13px]">Download &rarr;</a>
+                  ) : (
+                    <button className="btn-ghost text-[13px]" onClick={() => alert(`"${d.name}" will be available for download once uploaded via Admin Panel.`)}>Download &rarr;</button>
+                  )}
                 </div>
               </article>
             ))}

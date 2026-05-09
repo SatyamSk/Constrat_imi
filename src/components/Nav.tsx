@@ -72,15 +72,6 @@ export function Nav() {
 
           {/* Desktop right side */}
           <div className="hidden lg:flex items-center gap-2.5">
-            {user && isMember && (
-              <span
-                className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-[12px] font-semibold"
-                style={{ background: "#FFF0EB", color: "#C03A08" }}
-                title="Constrat member"
-              >
-                ✦ Member
-              </span>
-            )}
             {user && isAdmin && (
               <Link
                 to="/admin"
@@ -90,12 +81,21 @@ export function Nav() {
               </Link>
             )}
             {user ? (
-              <button
-                onClick={() => signOut()}
-                className="h-9 px-4 inline-flex items-center text-[13px] border border-border rounded-lg text-text-secondary hover:text-text-primary hover:border-text-primary transition-colors"
-              >
-                Logout
-              </button>
+              <div className="flex items-center gap-2">
+                <div
+                  className="w-9 h-9 rounded-full flex items-center justify-center font-semibold text-[12px] cursor-pointer border-2 border-orange/30 hover:border-orange transition-colors"
+                  style={{ background: "#FFF0EB", color: "#C03A08" }}
+                  title={user.email || "Profile"}
+                >
+                  {(user.user_metadata?.full_name || user.email || "U").split(" ").map((s: string) => s[0]).join("").slice(0, 2).toUpperCase()}
+                </div>
+                <button
+                  onClick={() => signOut()}
+                  className="h-8 px-3 inline-flex items-center text-[12px] border border-border rounded-lg text-text-secondary hover:text-text-primary hover:border-text-primary transition-colors"
+                >
+                  Logout
+                </button>
+              </div>
             ) : (
               <>
                 <Link
