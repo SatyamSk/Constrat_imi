@@ -2,121 +2,119 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { PageShell } from "@/components/PageShell";
 import { AnimatedSection } from "@/components/AnimatedSection";
 import { GlowCard } from "@/components/GlowCard";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 export const Route = createFileRoute("/")({ component: Home });
+
+function useCountUp(target: number, duration = 2000) {
+  const [val, setVal] = useState(0);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const obs = new IntersectionObserver(([e]) => {
+      if (!e.isIntersecting) return;
+      obs.disconnect();
+      const start = performance.now();
+      const step = (now: number) => {
+        const p = Math.min((now - start) / duration, 1);
+        setVal(Math.round(p * target));
+        if (p < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    }, { threshold: 0.3 });
+    if (ref.current) obs.observe(ref.current);
+    return () => obs.disconnect();
+  }, [target, duration]);
+  return { val, ref };
+}
 
 function Home() {
   return (
     <PageShell>
       <Hero />
-      <StreakBar />
-      <TryNow />
-      <ToolkitGrid />
-      <CompanyTracks />
-      <FrameworkOfWeek />
-      <CaseShowcase />
-      <CompetitionsTeaser />
-      <NewsTeaser />
-      <LeaderboardTeaser />
-      <JoinCTA />
+      <StatsBar />
+      <Features />
+      <CasePreview />
+      <HowItWorks />
+      <CompanyIntel />
+      <SocialProof />
+      <CollegeNetwork />
+      <FinalCTA />
     </PageShell>
   );
 }
 
-/* ═══ HERO ═══ */
+/* ── HERO ── */
 function Hero() {
-  const [c, setC] = useState(0);
-  useEffect(() => { const t = setInterval(() => setC(p => (p < 47 ? p + 1 : p)), 60); return () => clearInterval(t); }, []);
   return (
-    <section className="gradient-hero relative overflow-hidden">
-      <div className="absolute top-[-200px] right-[-100px] w-[500px] h-[500px] rounded-full bg-orange/5 blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-150px] left-[-80px] w-[400px] h-[400px] rounded-full bg-orange/3 blur-[100px] pointer-events-none" />
-      <div className="mx-auto max-w-[1180px] px-5 md:px-6 pt-28 md:pt-[140px] pb-16 md:pb-24 relative z-10">
-        <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-10 lg:gap-14 items-center">
-          <div className="slide-up">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-orange/10 border border-orange/20 text-[12px] text-orange font-semibold">
-              <span className="pulse-dot" /> {c} students active right now
-            </div>
-            <h1 className="mt-5 font-serif font-extrabold text-[42px] sm:text-[54px] md:text-[64px] leading-[0.96] tracking-[-0.03em] text-text-primary">
-              Your unfair<br />advantage for<br /><span className="text-gradient">placements.</span>
-            </h1>
-            <p className="mt-5 text-[16px] md:text-[17px] text-text-secondary max-w-[460px] leading-[1.65]">
-              Case practice, company-specific prep, 120+ decks, daily questions, live timetable, alumni intel — everything an IMI student needs.
-            </p>
-            <div className="mt-7 flex flex-wrap items-center gap-3">
-              <Link to="/join" className="btn-primary">Get Started Free</Link>
-              <Link to="/practice" className="btn-secondary">Try a Question</Link>
-            </div>
-            <div className="mt-6 flex items-center gap-4 text-[12px] text-text-muted">
-              <span>No credit card</span>
-              <span className="w-1 h-1 rounded-full bg-border" />
-              <span>Free for all IMI students</span>
-            </div>
+    <section className="relative overflow-hidden" style={{ background: "radial-gradient(ellipse 80% 50% at 50% -20%, rgba(232,73,15,0.08), transparent), radial-gradient(ellipse 60% 40% at 100% 0%, rgba(232,73,15,0.05), transparent), #FAFAF8" }}>
+      <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")" }} />
+      <div className="mx-auto max-w-[1180px] px-5 md:px-6 pt-32 md:pt-[160px] pb-20 md:pb-28 relative z-10">
+        <div className="max-w-[720px] slide-up">
+          <h1 className="font-serif text-[44px] sm:text-[56px] md:text-[72px] leading-[1.05] tracking-[-0.03em] text-text-primary">
+            The operating system for MBA placement.
+          </h1>
+          <p className="mt-6 text-[17px] md:text-[19px] text-text-secondary leading-[1.65] max-w-[560px]" style={{ fontFamily: "var(--font-sans)" }}>
+            Daily cases, guesstimates, company intel, and interview prep — built for students who are serious about where they land.
+          </p>
+          <div className="mt-8 flex flex-wrap items-center gap-3">
+            <Link to="/join" className="btn-primary text-[15px] h-[52px] px-7">Start Preparing — It's Free</Link>
+            <a href="#how-it-works" className="btn-secondary text-[15px] h-[52px] px-7">See How It Works</a>
           </div>
-          <AnimatedSection delay={200}>
-            <QuickAttempt />
-          </AnimatedSection>
         </div>
       </div>
     </section>
   );
 }
 
-function QuickAttempt() {
-  const [show, setShow] = useState(false);
-  const [ans, setAns] = useState("");
+/* ── STATS BAR ── */
+function StatsBar() {
+  const s1 = useCountUp(2847);
+  const s2 = useCountUp(312);
+  const s3 = useCountUp(28);
+  const s4 = useCountUp(47);
+  const stats = [
+    { ...s1, label: "Cases Solved This Week", suffix: "" },
+    { ...s2, label: "Active Streak Users", suffix: "" },
+    { ...s3, label: "Companies Tracked", suffix: "" },
+    { ...s4, label: "Interview Experiences", suffix: "" },
+  ];
   return (
-    <GlowCard className="p-6 md:p-7">
-      <div className="relative z-10">
-        <div className="flex items-center justify-between">
-          <span className="label-orange">Today&apos;s Question</span>
-          <span className="pill pill-orange">Guestimate</span>
-        </div>
-        <p className="mt-4 font-serif text-[20px] md:text-[22px] leading-[1.25] text-text-primary">
-          How many cups of chai are sold daily across all railway stations in India?
-        </p>
-        <div className="mt-4 flex gap-2 flex-wrap">
-          <span className="pill">Operations</span><span className="pill">Medium</span><span className="pill">MBB Reported</span>
-        </div>
-        {!show ? (
-          <button onClick={() => setShow(true)} className="btn-primary mt-5 w-full">Attempt Now</button>
-        ) : (
-          <div className="mt-5 space-y-3">
-            <textarea value={ans} onChange={e => setAns(e.target.value)} placeholder="Type your approach..." className="input-base w-full h-24 resize-none text-[14px]" />
-            <div className="flex gap-2">
-              <Link to="/practice" className="btn-primary flex-1 text-center">Submit &amp; See More</Link>
-              <button onClick={() => setShow(false)} className="btn-secondary">Cancel</button>
-            </div>
+    <section style={{ background: "#130F0A" }}>
+      <div className="mx-auto max-w-[1180px] px-5 md:px-6 py-6 md:py-8 grid grid-cols-2 md:grid-cols-4 gap-6">
+        {stats.map((s, i) => (
+          <div key={i} ref={s.ref} className="text-center">
+            <p className="text-[32px] md:text-[40px] font-bold leading-none" style={{ fontFamily: "var(--font-mono)", color: "#E8490F" }}>
+              {s.val.toLocaleString()}{s.suffix}
+            </p>
+            <p className="mt-1 text-[12px] uppercase tracking-[0.1em] font-medium" style={{ fontFamily: "var(--font-sans)", color: "#888" }}>{s.label}</p>
           </div>
-        )}
-        <p className="mt-3 text-[12px] text-text-muted">143 students attempted today</p>
+        ))}
       </div>
-    </GlowCard>
+    </section>
   );
 }
 
-/* ═══ STREAK BAR ═══ */
-function StreakBar() {
-  const items = [
-    { icon: "🔥", n: "7", l: "Day Streak", sub: "Don't break it!" },
-    { icon: "👥", n: "47", l: "Active Today", sub: "Join them" },
-    { icon: "📂", n: "120+", l: "Case Decks", sub: "Free downloads" },
-    { icon: "🎯", n: "500+", l: "Questions", sub: "All categories" },
-    { icon: "🏆", n: "14", l: "Core Members", sub: "Batch 24 + 25" },
-    { icon: "⚡", n: "7,000+", l: "Attempts", sub: "This semester" },
+/* ── FEATURES ── */
+function Features() {
+  const cols = [
+    { title: "Daily Practice Loop", desc: "A new case and guesstimate every morning. Timed. Framework-guided. AI-evaluated. Build your streak or fall behind.", icon: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" },
+    { title: "Placement Intelligence", desc: "Company profiles, interview experiences, insider data on what each firm asks and what they look for. Know before you walk in.", icon: "M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" },
+    { title: "IMI-Specific Layer", desc: "Live timetable sync, batch leaderboard, Telegram alerts for schedule changes, placement deadlines, and club events.", icon: "M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" },
   ];
   return (
-    <section className="bg-dark text-white overflow-hidden">
-      <div className="mx-auto max-w-[1180px] px-5 md:px-6 py-6 md:py-8">
-        <div className="grid grid-cols-3 md:grid-cols-6 gap-4 md:gap-6">
-          {items.map(s => (
-            <div key={s.l} className="text-center group cursor-default">
-              <span className="text-[20px]">{s.icon}</span>
-              <p className="font-serif text-[26px] md:text-[30px] font-bold text-orange leading-none mt-1 group-hover:scale-110 transition-transform">{s.n}</p>
-              <p className="mt-1 text-[12px] font-semibold text-white/90">{s.l}</p>
-              <p className="text-[10px] text-white/40">{s.sub}</p>
-            </div>
+    <section className="bg-background">
+      <div className="mx-auto max-w-[1180px] px-5 md:px-6 py-20 md:py-28">
+        <div className="grid md:grid-cols-3 gap-8">
+          {cols.map((c, i) => (
+            <AnimatedSection key={i} delay={i * 100}>
+              <div className="p-6">
+                <div className="w-11 h-11 rounded-lg flex items-center justify-center" style={{ background: "#FFF0EB" }}>
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="#E8490F" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d={c.icon} /></svg>
+                </div>
+                <h3 className="mt-5 text-[20px] font-semibold tracking-[-0.01em]" style={{ fontFamily: "var(--font-sans)" }}>{c.title}</h3>
+                <p className="mt-3 text-[14px] text-text-secondary leading-[1.65]">{c.desc}</p>
+              </div>
+            </AnimatedSection>
           ))}
         </div>
       </div>
@@ -124,271 +122,179 @@ function StreakBar() {
   );
 }
 
-/* ═══ TRY NOW ═══ */
-function TryNow() {
-  const qs = [
-    { type: "GUESTIMATE", q: "Estimate the annual revenue of Zomato's delivery fleet in Mumbai.", d: "Medium", fn: "Operations" },
-    { type: "CASE", q: "A D2C skincare brand is losing repeat customers. Diagnose.", d: "Hard", fn: "Marketing" },
-    { type: "GD TOPIC", q: "Should India ban unpaid internships?", d: "Easy", fn: "HR" },
-    { type: "INTERVIEW Q", q: "Walk me through how you'd evaluate an acquisition target.", d: "Hard", fn: "Finance" },
-    { type: "GUESTIMATE", q: "Number of elevators in Gurugram right now.", d: "Medium", fn: "Consulting" },
-    { type: "CASE", q: "An airline wants to enter the cargo-only business. Should they?", d: "Hard", fn: "Strategy" },
+/* ── CASE PREVIEW (FOMO) ── */
+function CasePreview() {
+  const [h, setH] = useState(23);
+  const [m, setM] = useState(47);
+  useEffect(() => {
+    const t = setInterval(() => setM(p => { if (p <= 0) { setH(q => Math.max(q - 1, 0)); return 59; } return p - 1; }), 60000);
+    return () => clearInterval(t);
+  }, []);
+  return (
+    <section style={{ background: "#FFF7F3" }}>
+      <div className="mx-auto max-w-[1180px] px-5 md:px-6 py-20 md:py-28">
+        <AnimatedSection>
+          <div className="grid lg:grid-cols-[1fr_1.1fr] gap-10 items-center">
+            <div>
+              <span className="label-orange">Live Now</span>
+              <h2 className="mt-5 font-serif text-[34px] md:text-[44px] leading-[1.08] tracking-[-0.025em]">Today's Case is Live.</h2>
+              <p className="mt-4 text-[15px] text-text-secondary leading-[1.65] max-w-[440px]">A new case drops every morning. Solve it, get AI feedback, see your percentile. Miss it, and it locks at midnight.</p>
+              <Link to="/login" className="btn-primary mt-6">Solve It — Login to Continue</Link>
+            </div>
+            <GlowCard className="p-7 md:p-8">
+              <div className="relative z-10">
+                <div className="flex items-center justify-between">
+                  <div className="flex gap-2">
+                    <span className="pill pill-orange">Market Entry</span>
+                    <span className="pill pill-red">Hard</span>
+                  </div>
+                  <span className="text-[13px] font-semibold" style={{ fontFamily: "var(--font-mono)", color: "#E8490F" }}>{String(h).padStart(2,"0")}:{String(m).padStart(2,"0")} left</span>
+                </div>
+                <h3 className="mt-5 font-serif text-[22px] md:text-[26px] leading-[1.2]">A leading Indian FMCG company is considering entering the premium pet food market. Should they?</h3>
+                <p className="mt-4 text-[14px] text-text-secondary leading-[1.6]">The client is a Rs 12,000 Cr FMCG conglomerate with strong rural distribution. They've noticed premium pet food growing at 28% CAGR in urban India...</p>
+                <div className="mt-5 p-4 rounded-lg" style={{ background: "#F3F2EF", filter: "blur(4px)", userSelect: "none", pointerEvents: "none" }}>
+                  <p className="text-[13px]">Framework: Start with market sizing → customer segmentation → competitive landscape → channel strategy → financial viability...</p>
+                </div>
+                <div className="mt-4 flex items-center justify-between text-[12px] text-text-muted">
+                  <span>Resembles: McKinsey Round 1</span>
+                  <span>143 solved today</span>
+                </div>
+              </div>
+            </GlowCard>
+          </div>
+        </AnimatedSection>
+      </div>
+    </section>
+  );
+}
+
+/* ── HOW IT WORKS ── */
+function HowItWorks() {
+  const steps = [
+    { n: "01", title: "Set your targets", desc: "Pick your target firms and domains. We personalize your daily prep." },
+    { n: "02", title: "Solve daily", desc: "Case + guesstimate + news brief. Timed. Scored. Tracked." },
+    { n: "03", title: "Track your streak", desc: "See where you rank among your batch. Don't break the chain." },
+    { n: "04", title: "Walk in prepared", desc: "Know what each firm asks, how they evaluate, what they want to hear." },
   ];
   return (
-    <section className="bg-surface">
-      <div className="mx-auto max-w-[1180px] px-5 md:px-6 py-16 md:py-[90px]">
+    <section id="how-it-works" className="bg-background">
+      <div className="mx-auto max-w-[1180px] px-5 md:px-6 py-20 md:py-28">
         <AnimatedSection>
-          <span className="label-orange">Daily Practice</span>
-          <h2 className="mt-4 font-serif text-[34px] md:text-[40px] font-semibold leading-[1.05] tracking-[-0.025em]">New questions every day. No excuses.</h2>
-          <p className="mt-3 text-[15px] text-text-secondary max-w-[540px]">Guestimates, case crackers, GD topics, HR questions — filtered by function and difficulty.</p>
+          <h2 className="font-serif text-[34px] md:text-[44px] leading-[1.08] tracking-[-0.025em] text-center">How it works.</h2>
+        </AnimatedSection>
+        <div className="mt-14 grid md:grid-cols-4 gap-8">
+          {steps.map((s, i) => (
+            <AnimatedSection key={i} delay={i * 100}>
+              <div className="text-center md:text-left">
+                <span className="text-[36px] font-bold leading-none" style={{ fontFamily: "var(--font-mono)", color: "#E8490F" }}>{s.n}</span>
+                <h3 className="mt-4 text-[17px] font-semibold" style={{ fontFamily: "var(--font-sans)" }}>{s.title}</h3>
+                <p className="mt-2 text-[13px] text-text-secondary leading-[1.6]">{s.desc}</p>
+              </div>
+            </AnimatedSection>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ── COMPANY INTEL ── */
+function CompanyIntel() {
+  const firms = [
+    { name: "McKinsey", style: "Exhibit-heavy, structured, MECE at every level" },
+    { name: "BCG", style: "Creative, data-heavy, comfortable with ambiguity" },
+    { name: "Bain", style: "Commercial sense, buddy interviews, strong opinions" },
+    { name: "Goldman Sachs", style: "Valuation, market sizing, financial modeling" },
+    { name: "HUL", style: "Market entry, rural distribution, P&L management" },
+    { name: "Amazon", style: "LP-driven cases, customer obsession, scale thinking" },
+  ];
+  return (
+    <section style={{ background: "#FFF7F3" }}>
+      <div className="mx-auto max-w-[1180px] px-5 md:px-6 py-20 md:py-28">
+        <AnimatedSection>
+          <span className="label-orange">Company Intelligence</span>
+          <h2 className="mt-5 font-serif text-[34px] md:text-[44px] leading-[1.08] tracking-[-0.025em]">Know what they want before you walk in.</h2>
+          <p className="mt-4 text-[15px] text-text-secondary max-w-[520px]">Interview style, case types, common PI questions, and insider data for 28+ firms.</p>
         </AnimatedSection>
         <div className="mt-10 grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {qs.map((x, i) => (
-            <AnimatedSection key={i} delay={i * 60}>
-              <div className="card-base p-5 h-full flex flex-col">
-                <p className="text-[10px] uppercase tracking-[0.08em] font-semibold" style={{ color: x.type === "GUESTIMATE" || x.type === "CASE" ? "#E8490F" : "#5C5C5A" }}>{x.type}</p>
-                <p className="mt-2 text-[15px] font-semibold leading-[1.45] text-text-primary flex-1">{x.q}</p>
-                <div className="mt-3 flex items-center justify-between">
-                  <div className="flex gap-1.5"><span className="pill pill-orange">{x.d}</span><span className="pill">{x.fn}</span></div>
-                  <Link to="/practice" className="btn-ghost text-[12px]">Attempt</Link>
+          {firms.map((f, i) => (
+            <AnimatedSection key={f.name} delay={i * 60}>
+              <div className="card-base p-5">
+                <h3 className="text-[16px] font-semibold" style={{ fontFamily: "var(--font-sans)" }}>{f.name}</h3>
+                <p className="mt-2 text-[13px] text-text-secondary leading-[1.55]">{f.style}</p>
+                <Link to="/cases" className="btn-ghost text-[12px] mt-3 inline-block">View Profile →</Link>
+              </div>
+            </AnimatedSection>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ── SOCIAL PROOF ── */
+function SocialProof() {
+  const quotes = [
+    { text: "Constrat's daily cases forced me into a routine. By the time interviews came, I'd solved 60+ cases. Got McKinsey shortlist.", name: "Ananya R.", info: "IMI Delhi, Batch 2025" },
+    { text: "The company profiles told me exactly what Deloitte asks in Round 2. Walked in knowing the framework they wanted.", name: "Karan M.", info: "IMI Delhi, Batch 2025" },
+    { text: "I was doing random prep before Constrat. The streak system and leaderboard made me consistent. 47-day streak and counting.", name: "Priya S.", info: "IMI Delhi, Batch 2026" },
+    { text: "The guesstimate practice alone was worth it. 100+ solved, and my speed went from 8 minutes to under 3.", name: "Arjun D.", info: "IMI Delhi, Batch 2025" },
+  ];
+  return (
+    <section className="bg-background">
+      <div className="mx-auto max-w-[1180px] px-5 md:px-6 py-20 md:py-28">
+        <AnimatedSection><h2 className="font-serif text-[34px] md:text-[44px] leading-[1.08] tracking-[-0.025em] text-center">What students say.</h2></AnimatedSection>
+        <div className="mt-12 grid md:grid-cols-2 gap-6">
+          {quotes.map((q, i) => (
+            <AnimatedSection key={i} delay={i * 80}>
+              <div className="card-base p-6">
+                <p className="text-[14px] text-text-secondary leading-[1.7] italic">"{q.text}"</p>
+                <div className="mt-4 pt-4 border-t border-border">
+                  <p className="text-[13px] font-semibold">{q.name}</p>
+                  <p className="text-[12px] text-text-muted">{q.info}</p>
                 </div>
               </div>
             </AnimatedSection>
           ))}
         </div>
-        <div className="mt-8 text-center"><Link to="/practice" className="btn-primary">See All 500+ Questions &rarr;</Link></div>
       </div>
     </section>
   );
 }
 
-/* ═══ TOOLKIT GRID — NEW MBA Toolkit ═══ */
-function ToolkitGrid() {
-  const tools = [
-    { icon: "📚", title: "Case Repository", desc: "120+ curated decks from MBB, Big 4, competitions", link: "/cases", cta: "Browse Decks" },
-    { icon: "📰", title: "Business News", desc: "Daily headlines from ET, Reuters, Bloomberg — curated for GDs", link: "/news", cta: "Read Today's News" },
-    { icon: "📅", title: "Live Timetable", desc: "Section-wise class schedule, synced from college sheet", link: "/timetable", cta: "Check Schedule" },
-    { icon: "⏰", title: "Critical Deadlines", desc: "Placement, internship, and academic deadlines — never miss one", link: "/deadlines", cta: "View Deadlines" },
-    { icon: "🎪", title: "Events & Workshops", desc: "Case comps, speaker sessions, GD marathons by Constrat", link: "/events", cta: "See Events" },
-    { icon: "🎓", title: "Alumni Network", desc: "Connect with placed seniors — real advice, real referrals", link: "/alumni", cta: "Explore Alumni" },
-  ];
+/* ── COLLEGE NETWORK ── */
+function CollegeNetwork() {
+  const colleges = ["IMI Delhi", "IIM Ahmedabad", "IIM Bangalore", "IIM Kozhikode", "XLRI", "FMS Delhi", "ISB Hyderabad", "MDI Gurgaon"];
   return (
-    <section className="bg-section-alt">
-      <div className="mx-auto max-w-[1180px] px-5 md:px-6 py-16 md:py-[90px]">
+    <section style={{ background: "#FFF7F3" }}>
+      <div className="mx-auto max-w-[1180px] px-5 md:px-6 py-20 md:py-28 text-center">
         <AnimatedSection>
-          <span className="label-orange">MBA Toolkit</span>
-          <h2 className="mt-4 font-serif text-[34px] md:text-[40px] font-semibold leading-[1.05] tracking-[-0.025em]">Everything in one place. No more 12 WhatsApp groups.</h2>
-        </AnimatedSection>
-        <div className="mt-10 grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {tools.map((t, i) => (
-            <AnimatedSection key={t.title} delay={i * 60}>
-              <Link to={t.link} className="block">
-                <GlowCard className="p-6 h-full"><div className="relative z-10 flex flex-col h-full">
-                  <span className="text-[28px]">{t.icon}</span>
-                  <h3 className="mt-3 text-[17px] font-semibold text-text-primary">{t.title}</h3>
-                  <p className="mt-2 text-[13px] text-text-secondary leading-[1.55] flex-1">{t.desc}</p>
-                  <span className="btn-ghost text-[13px] mt-4 inline-block">{t.cta} &rarr;</span>
-                </div></GlowCard>
-              </Link>
-            </AnimatedSection>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ═══ COMPANY TRACKS ═══ */
-function CompanyTracks() {
-  const cos = [
-    { name: "McKinsey", focus: "Problem-solving, PEI stories, exhibit reading", tip: "Structure > speed. They want MECE at every level." },
-    { name: "BCG", focus: "Creativity, data-heavy cases, guesstimate combos", tip: "Show you can handle ambiguity. Charts are your friend." },
-    { name: "Bain", focus: "Commercial sense, buddy interviews, partner fit", tip: "Be opinionated. They like conviction backed by logic." },
-    { name: "Deloitte S&O", focus: "Industry expertise, implementation plans", tip: "Go deep on one sector. Show you can build, not just advise." },
-    { name: "Accenture Strategy", focus: "Digital transformation, tech-enabled solutions", tip: "Bridge strategy and tech. Know AI/cloud use cases." },
-    { name: "Goldman Sachs", focus: "Valuation, market sizing, financial modeling", tip: "DCF cold. Know LBO basics. Read deal news daily." },
-  ];
-  return (
-    <section className="bg-surface">
-      <div className="mx-auto max-w-[1180px] px-5 md:px-6 py-16 md:py-[90px]">
-        <AnimatedSection>
-          <span className="label-orange">Company-Specific Prep</span>
-          <h2 className="mt-4 font-serif text-[34px] md:text-[40px] font-semibold leading-[1.05] tracking-[-0.025em]">Know exactly what they want.</h2>
-          <p className="mt-3 text-[15px] text-text-secondary max-w-[560px]">Each firm has a style. We break it down so you walk in prepared, not surprised.</p>
-        </AnimatedSection>
-        <div className="mt-10 grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {cos.map((c, i) => (
-            <AnimatedSection key={c.name} delay={i * 60}>
-              <GlowCard className="p-5 h-full"><div className="relative z-10 flex flex-col h-full">
-                <h3 className="text-[18px] font-semibold text-text-primary">{c.name}</h3>
-                <p className="mt-2 text-[13px] text-text-secondary leading-[1.55]"><strong>Focus:</strong> {c.focus}</p>
-                <p className="mt-2 text-[13px] text-orange leading-[1.55] italic flex-1">&ldquo;{c.tip}&rdquo;</p>
-                <Link to="/cases" className="btn-ghost text-[12px] mt-4 inline-block">View {c.name} Decks &rarr;</Link>
-              </div></GlowCard>
-            </AnimatedSection>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ═══ FRAMEWORK OF THE WEEK ═══ */
-function FrameworkOfWeek() {
-  return (
-    <section className="bg-section-alt">
-      <div className="mx-auto max-w-[1180px] px-5 md:px-6 py-16 md:py-[90px] grid lg:grid-cols-2 gap-10 items-center">
-        <AnimatedSection>
-          <span className="label-orange">Framework of the Week</span>
-          <h2 className="mt-4 font-serif text-[34px] md:text-[38px] font-semibold leading-[1.08] tracking-[-0.025em]">Porter&apos;s Five Forces</h2>
-          <p className="mt-4 text-[15px] text-text-secondary leading-[1.65]">The go-to framework for industry analysis. Use it to evaluate competitive intensity, supplier/buyer power, threat of substitutes, and barriers to entry.</p>
-          <div className="mt-5 space-y-2 text-[14px]">
-            <p><strong className="text-orange">When to use:</strong> Market entry cases, industry attractiveness, competitive strategy</p>
-            <p><strong className="text-orange">Pro tip:</strong> Don&apos;t just list the forces. Rank them by impact and explain why.</p>
-          </div>
-          <Link to="/practice" className="btn-primary mt-6">Practice Cases Using This</Link>
-        </AnimatedSection>
-        <AnimatedSection delay={150}>
-          <div className="card-base p-6 space-y-3">
-            {["Threat of New Entrants","Bargaining Power of Suppliers","Bargaining Power of Buyers","Threat of Substitutes","Competitive Rivalry"].map((f,i) => (
-              <div key={f} className="flex items-center gap-3 p-3 rounded-lg bg-orange-tint/40">
-                <span className="w-8 h-8 rounded-lg bg-orange text-white flex items-center justify-center font-serif font-bold text-[13px]">{i+1}</span>
-                <span className="text-[14px] font-medium text-text-primary">{f}</span>
-              </div>
+          <span className="label-orange">College Network</span>
+          <h2 className="mt-5 font-serif text-[34px] md:text-[44px] leading-[1.08] tracking-[-0.025em]">Built for every B-school.</h2>
+          <div className="mt-10 flex flex-wrap justify-center gap-3">
+            {colleges.map(c => (
+              <span key={c} className="px-5 py-2.5 rounded-lg border text-[13px] font-medium" style={{ borderColor: c === "IMI Delhi" ? "#E8490F" : "#E8E4DE", color: c === "IMI Delhi" ? "#E8490F" : "#5C5C5A", background: c === "IMI Delhi" ? "#FFF0EB" : "#fff" }}>{c}</span>
             ))}
           </div>
+          <p className="mt-8 text-[14px] text-text-secondary">Your college isn't here yet? <a href="https://forms.gle/placeholder" target="_blank" rel="noopener noreferrer" className="text-orange font-semibold hover:underline">Bring Constrat to your campus.</a></p>
         </AnimatedSection>
       </div>
     </section>
   );
 }
 
-/* ═══ CASE SHOWCASE ═══ */
-function CaseShowcase() {
-  const decks = [
-    { name: "MECE & Issue Trees Guide", cat: "Consulting Frameworks", type: "PDF", dl: 412 },
-    { name: "BCG Growth-Share Matrix", cat: "BCG", type: "PPTX", dl: 287 },
-    { name: "IIM-A Confluence 2024 Winner", cat: "Competition Decks", type: "PPTX", dl: 612 },
-    { name: "McKinsey Profitability Pack", cat: "McKinsey", type: "PDF", dl: 533 },
-  ];
-  return (
-    <section className="bg-surface">
-      <div className="mx-auto max-w-[1180px] px-5 md:px-6 py-16 md:py-[90px]">
-        <AnimatedSection>
-          <span className="label-orange">Popular Decks</span>
-          <h2 className="mt-4 font-serif text-[34px] md:text-[40px] font-semibold leading-[1.05]">Top downloaded this month.</h2>
-        </AnimatedSection>
-        <div className="mt-8 grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {decks.map((d, i) => (
-            <AnimatedSection key={d.name} delay={i * 60}>
-              <div className="card-base p-5 h-full flex flex-col">
-                <span className={`pill self-start ${d.type === "PDF" ? "pill-red" : "pill-orange"}`}>{d.type}</span>
-                <h3 className="mt-3 text-[15px] font-semibold leading-[1.35] flex-1">{d.name}</h3>
-                <p className="mt-2 text-[12px] text-text-muted">{d.cat} · {d.dl} downloads</p>
-                <Link to="/cases" className="btn-ghost text-[12px] mt-3">Download &rarr;</Link>
-              </div>
-            </AnimatedSection>
-          ))}
-        </div>
-        <div className="mt-8 text-center"><Link to="/cases" className="btn-primary">Browse All 120+ Decks &rarr;</Link></div>
-      </div>
-    </section>
-  );
-}
-
-/* ═══ COMPETITIONS ═══ */
-function CompetitionsTeaser() {
-  const comps = [
-    { name: "Unstop Case Challenge 2026", org: "Unstop", deadline: "May 25, 2026", prize: "₹3,00,000", tag: "Live", url: "https://unstop.com" },
-    { name: "Deloitte Maverick S9", org: "Grad Partners", deadline: "Jun 1, 2026", prize: "PPO + ₹5L", tag: "Opening Soon", url: "https://unstop.com" },
-    { name: "Flipkart GRiD 7.0", org: "Unstop", deadline: "May 30, 2026", prize: "₹4,00,000", tag: "Live", url: "https://unstop.com" },
-  ];
-  return (
-    <section className="bg-section-alt">
-      <div className="mx-auto max-w-[1180px] px-5 md:px-6 py-16 md:py-[90px]">
-        <AnimatedSection>
-          <span className="label-orange">Competitions</span>
-          <h2 className="mt-4 font-serif text-[34px] md:text-[40px] font-semibold leading-[1.05]">Don&apos;t miss what&apos;s out there.</h2>
-        </AnimatedSection>
-        <div className="mt-8 grid md:grid-cols-3 gap-4">
-          {comps.map((c, i) => (
-            <AnimatedSection key={c.name} delay={i * 80}><GlowCard className="p-5 h-full"><div className="relative z-10 flex flex-col h-full">
-              <div className="flex items-center justify-between"><span className="text-[11px] uppercase tracking-[0.08em] text-text-muted">{c.org}</span><span className={`pill ${c.tag === "Live" ? "pill-red" : "pill-orange"}`}>{c.tag}</span></div>
-              <h3 className="mt-3 text-[16px] font-semibold leading-[1.35]">{c.name}</h3>
-              <div className="mt-auto pt-4 flex items-center justify-between">
-                <div><p className="text-[12px] text-text-muted">Deadline: {c.deadline}</p><p className="text-[13px] font-semibold text-orange mt-0.5">{c.prize}</p></div>
-                <a href={c.url} target="_blank" rel="noopener noreferrer" className="btn-ghost text-[12px]">Apply &rarr;</a>
-              </div>
-            </div></GlowCard></AnimatedSection>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ═══ NEWS ═══ */
-function NewsTeaser() {
-  const items = [
-    { src: "Economic Times", title: "RBI holds repo rate at 6.5%, signals cautious stance.", url: "https://economictimes.indiatimes.com" },
-    { src: "Reuters", title: "TCS posts ₹61,000Cr Q4 revenue, deal pipeline at 5-year high.", url: "https://www.reuters.com/world/india/" },
-    { src: "Bloomberg", title: "Zepto closes $665M round, valuation crosses $5B.", url: "https://www.bloomberg.com/asia" },
-  ];
-  return (
-    <section className="bg-surface">
-      <div className="mx-auto max-w-[1180px] px-5 md:px-6 py-16 md:py-[90px]">
-        <AnimatedSection><span className="label-orange">Business News</span><h2 className="mt-4 font-serif text-[34px] md:text-[40px] font-semibold leading-[1.05]">Read what your interviewer reads.</h2></AnimatedSection>
-        <div className="mt-8 grid md:grid-cols-3 gap-4">
-          {items.map((n, i) => (
-            <AnimatedSection key={i} delay={i * 80}><div className="card-base p-5"><p className="text-[11px] uppercase tracking-[0.08em] text-text-muted">{n.src}</p><h3 className="mt-2 text-[15px] font-semibold leading-[1.4]">{n.title}</h3><a href={n.url} target="_blank" rel="noopener noreferrer" className="btn-ghost text-[12px] mt-3 inline-block">Read &rarr;</a></div></AnimatedSection>
-          ))}
-        </div>
-        <div className="mt-6 text-center"><Link to="/news" className="btn-ghost">All News &rarr;</Link></div>
-      </div>
-    </section>
-  );
-}
-
-/* ═══ LEADERBOARD ═══ */
-function LeaderboardTeaser() {
-  const rows = [
-    { rank: 1, name: "Jainishha Sethia", pts: 100 },
-    { rank: 2, name: "Adesh", pts: 100 },
-    { rank: 3, name: "Satyam", pts: 100 },
-    { rank: 4, name: "Aheli", pts: 100 },
-    { rank: 5, name: "Shambhavi", pts: 100 },
-  ];
-  return (
-    <section className="bg-section-alt">
-      <div className="mx-auto max-w-[1180px] px-5 md:px-6 py-16 md:py-[90px]">
-        <AnimatedSection><span className="label-orange">Leaderboard</span><h2 className="mt-4 font-serif text-[34px] md:text-[40px] font-semibold leading-[1.05]">Who&apos;s putting in the work.</h2></AnimatedSection>
-        <AnimatedSection delay={100}>
-          <div className="mt-8 card-base divide-y divide-border">
-            {rows.map(r => (
-              <div key={r.rank} className="flex items-center gap-4 px-5 py-4 hover:bg-orange-tint/30 transition-colors">
-                <span className="font-serif text-[22px] font-light text-orange w-8">{String(r.rank).padStart(2, "0")}</span>
-                <div className="w-9 h-9 rounded-full flex items-center justify-center font-semibold text-[12px] shrink-0" style={{ background: "#FFF0EB", color: "#C03A08" }}>{r.name.split(" ").map(s => s[0]).join("")}</div>
-                <p className="text-[14px] font-semibold flex-1">{r.name}</p>
-                <span className="text-[14px] font-semibold text-orange">{r.pts} pts</span>
-              </div>
-            ))}
-          </div>
-          <div className="mt-5 text-center"><Link to="/leaderboard" className="btn-ghost text-[13px]">Full Leaderboard &rarr;</Link></div>
-        </AnimatedSection>
-      </div>
-    </section>
-  );
-}
-
-/* ═══ JOIN CTA ═══ */
-function JoinCTA() {
+/* ── FINAL CTA ── */
+function FinalCTA() {
   return (
     <section className="gradient-cta relative overflow-hidden">
-      <div className="mx-auto max-w-[1180px] px-5 md:px-6 py-20 md:py-[100px] text-center relative z-10">
+      <div className="mx-auto max-w-[1180px] px-5 md:px-6 py-24 md:py-32 text-center relative z-10">
         <AnimatedSection>
-          <h2 className="font-serif text-[36px] sm:text-[44px] md:text-[52px] font-semibold leading-[1.05] tracking-[-0.025em] text-[#F4ECE2]">Stop preparing alone.</h2>
-          <p className="mt-5 text-[16px] max-w-[500px] mx-auto text-[#A8A199]">Join Constrat. Access every case deck, daily questions, company prep tracks, and a community that pushes you.</p>
-          <Link to="/join" className="inline-flex items-center justify-center h-[52px] px-7 rounded-[14px] bg-orange text-white font-semibold text-[15px] hover:bg-orange-hover transition-all hover:-translate-y-px shadow-lg shadow-orange/20 mt-8">Join Constrat Free</Link>
+          <h2 className="font-serif text-[36px] sm:text-[48px] md:text-[56px] leading-[1.05] tracking-[-0.025em]" style={{ color: "#F4ECE2" }}>
+            Placement season doesn't wait.<br />Neither should you.
+          </h2>
+          <Link to="/join" className="inline-flex items-center justify-center h-[56px] px-8 rounded-[12px] bg-orange text-white font-semibold text-[16px] hover:bg-orange-hover transition-all hover:-translate-y-px shadow-lg shadow-orange/20 mt-10" style={{ fontFamily: "var(--font-sans)" }}>
+            Start Preparing — It's Free
+          </Link>
         </AnimatedSection>
       </div>
     </section>
