@@ -50,7 +50,7 @@ function Hero() {
       <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")" }} />
       <div className="mx-auto max-w-[1180px] px-5 md:px-6 pt-32 md:pt-[160px] pb-20 md:pb-28 relative z-10">
         <div className="max-w-[720px] slide-up">
-          <h1 className="font-serif text-[44px] sm:text-[56px] md:text-[72px] leading-[1.05] tracking-[-0.03em] text-text-primary">
+          <h1 className="font-serif text-[44px] sm:text-[56px] md:text-[72px] leading-[1.2] tracking-[-0.01em] text-text-primary">
             The operating system for MBA placement.
           </h1>
           <p className="mt-6 text-[17px] md:text-[19px] text-text-secondary leading-[1.65] max-w-[560px]" style={{ fontFamily: "var(--font-sans)" }}>
@@ -137,7 +137,7 @@ function CasePreview() {
           <div className="grid lg:grid-cols-[1fr_1.1fr] gap-10 items-center">
             <div>
               <span className="label-orange">Live Now</span>
-              <h2 className="mt-5 font-serif text-[34px] md:text-[44px] leading-[1.08] tracking-[-0.025em]">Today's Case is Live.</h2>
+              <h2 className="mt-5 font-serif text-[34px] md:text-[44px] leading-[1.2] tracking-[-0.01em]">Today's Case is Live.</h2>
               <p className="mt-4 text-[15px] text-text-secondary leading-[1.65] max-w-[440px]">A new case drops every morning. Solve it, get AI feedback, see your percentile. Miss it, and it locks at midnight.</p>
               <Link to="/login" className="btn-primary mt-6">Solve It — Login to Continue</Link>
             </div>
@@ -180,7 +180,7 @@ function HowItWorks() {
     <section id="how-it-works" className="bg-background">
       <div className="mx-auto max-w-[1180px] px-5 md:px-6 py-20 md:py-28">
         <AnimatedSection>
-          <h2 className="font-serif text-[34px] md:text-[44px] leading-[1.08] tracking-[-0.025em] text-center">How it works.</h2>
+          <h2 className="font-serif text-[34px] md:text-[44px] leading-[1.2] tracking-[-0.01em] text-center">How it works.</h2>
         </AnimatedSection>
         <div className="mt-14 grid md:grid-cols-4 gap-8">
           {steps.map((s, i) => (
@@ -213,7 +213,7 @@ function CompanyIntel() {
       <div className="mx-auto max-w-[1180px] px-5 md:px-6 py-20 md:py-28">
         <AnimatedSection>
           <span className="label-orange">Company Intelligence</span>
-          <h2 className="mt-5 font-serif text-[34px] md:text-[44px] leading-[1.08] tracking-[-0.025em]">Know what they want before you walk in.</h2>
+          <h2 className="mt-5 font-serif text-[34px] md:text-[44px] leading-[1.2] tracking-[-0.01em]">Know what they want before you walk in.</h2>
           <p className="mt-4 text-[15px] text-text-secondary max-w-[520px]">Interview style, case types, common PI questions, and insider data for 28+ firms.</p>
         </AnimatedSection>
         <div className="mt-10 grid md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -243,7 +243,7 @@ function SocialProof() {
   return (
     <section className="bg-background">
       <div className="mx-auto max-w-[1180px] px-5 md:px-6 py-20 md:py-28">
-        <AnimatedSection><h2 className="font-serif text-[34px] md:text-[44px] leading-[1.08] tracking-[-0.025em] text-center">What students say.</h2></AnimatedSection>
+        <AnimatedSection><h2 className="font-serif text-[34px] md:text-[44px] leading-[1.2] tracking-[-0.01em] text-center">What students say.</h2></AnimatedSection>
         <div className="mt-12 grid md:grid-cols-2 gap-6">
           {quotes.map((q, i) => (
             <AnimatedSection key={i} delay={i * 80}>
@@ -270,7 +270,7 @@ function CollegeNetwork() {
       <div className="mx-auto max-w-[1180px] px-5 md:px-6 py-20 md:py-28 text-center">
         <AnimatedSection>
           <span className="label-orange">College Network</span>
-          <h2 className="mt-5 font-serif text-[34px] md:text-[44px] leading-[1.08] tracking-[-0.025em]">Built for every B-school.</h2>
+          <h2 className="mt-5 font-serif text-[34px] md:text-[44px] leading-[1.2] tracking-[-0.01em]">Built for every B-school.</h2>
           <div className="mt-10 flex flex-wrap justify-center gap-3">
             {colleges.map(c => (
               <span key={c} className="px-5 py-2.5 rounded-lg border text-[13px] font-medium" style={{ borderColor: c === "IMI Delhi" ? "#E8490F" : "#E8E4DE", color: c === "IMI Delhi" ? "#E8490F" : "#5C5C5A", background: c === "IMI Delhi" ? "#FFF0EB" : "#fff" }}>{c}</span>
@@ -289,7 +289,7 @@ function FinalCTA() {
     <section className="gradient-cta relative overflow-hidden">
       <div className="mx-auto max-w-[1180px] px-5 md:px-6 py-24 md:py-32 text-center relative z-10">
         <AnimatedSection>
-          <h2 className="font-serif text-[36px] sm:text-[48px] md:text-[56px] leading-[1.05] tracking-[-0.025em]" style={{ color: "#F4ECE2" }}>
+          <h2 className="font-serif text-[36px] sm:text-[48px] md:text-[56px] leading-[1.2] tracking-[-0.01em]" style={{ color: "#F4ECE2" }}>
             Placement season doesn't wait.<br />Neither should you.
           </h2>
           <Link to="/join" className="inline-flex items-center justify-center h-[56px] px-8 rounded-[12px] bg-orange text-white font-semibold text-[16px] hover:bg-orange-hover transition-all hover:-translate-y-px shadow-lg shadow-orange/20 mt-10" style={{ fontFamily: "var(--font-sans)" }}>
