@@ -208,7 +208,7 @@ CREATE TABLE IF NOT EXISTS public.deadlines (
   title TEXT NOT NULL,
   description TEXT DEFAULT '',
   deadline_date DATE NOT NULL,
-  source TEXT DEFAULT 'PlaceComm',
+  source TEXT DEFAULT 'Placement',
   batch TEXT DEFAULT 'All',
   relevance TEXT DEFAULT 'All Sections',
   urgency TEXT DEFAULT 'medium' CHECK (urgency IN ('low', 'medium', 'high')),
@@ -237,6 +237,28 @@ CREATE TABLE IF NOT EXISTS public.leaderboard_points (
 ALTER TABLE public.leaderboard_points ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Public read points" ON public.leaderboard_points FOR SELECT USING (true);
 CREATE POLICY "Authenticated insert points" ON public.leaderboard_points FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+-- ============================================================
+-- COMPETITIONS (Unstop, Grad Partners, Kampus Connect)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS public.competitions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  organizer TEXT NOT NULL DEFAULT 'Unstop',
+  deadline_date DATE,
+  prize TEXT DEFAULT '',
+  url TEXT DEFAULT '',
+  tag TEXT DEFAULT 'Live' CHECK (tag IN ('Live', 'Opening Soon', 'Closed')),
+  description TEXT DEFAULT '',
+  created_by UUID REFERENCES public.profiles(id),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.competitions ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public read competitions" ON public.competitions FOR SELECT USING (true);
+CREATE POLICY "Members manage competitions" ON public.competitions FOR ALL USING (
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('member', 'admin'))
+);
 
 -- ============================================================
 -- INDEXES

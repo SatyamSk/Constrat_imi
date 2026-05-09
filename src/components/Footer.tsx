@@ -28,7 +28,7 @@ export function Footer() {
             <span className="font-serif text-[18px] text-white font-semibold">Constrat</span>
           </div>
           <p className="text-[12px] text-white/40 mt-3 leading-relaxed">
-            Consulting & Strategy Club<br />
+            Consulting &amp; Strategy Club<br />
             International Management Institute, Delhi
           </p>
         </div>
@@ -66,7 +66,7 @@ export function Footer() {
               className="inline-flex items-center gap-2 h-9 px-4 rounded-lg text-[13px] font-medium w-fit"
               style={{ background: "#FFF0EB", color: "#C03A08" }}
             >
-              Join Telegram →
+              Join Telegram &rarr;
             </a>
             <div className="flex gap-2">
               <a href="#" className="w-9 h-9 rounded-lg border border-white/15 flex items-center justify-center text-white/60 hover:text-orange hover:border-orange transition-colors text-[12px]">
@@ -82,8 +82,8 @@ export function Footer() {
 
       <div className="border-t border-white/8">
         <div className="mx-auto max-w-[1180px] px-5 md:px-6 py-5 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-white/30">
-          <span>© {new Date().getFullYear()} Constrat · IMI Delhi</span>
-          <span>Built for the MBA community worldwide</span>
+          <span>&copy; {new Date().getFullYear()} Constrat &middot; IMI Delhi</span>
+          <span>Built by <span className="text-orange/70 font-medium">Satyam</span>, Constrat Member</span>
         </div>
       </div>
     </footer>

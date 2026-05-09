@@ -7,9 +7,9 @@ export const Route = createFileRoute("/timetable")({
   head: () => ({
     meta: [
       { title: "Timetable — Constrat" },
-      { name: "description", content: "Live class timetable with instant Telegram alerts when slots, venues, or faculty change." },
+      { name: "description", content: "Class timetable for IMI Delhi students. Section filters and alerts." },
       { property: "og:title", content: "Timetable — Constrat" },
-      { property: "og:description", content: "Always know what's next. Synced live from the official timetable." },
+      { property: "og:description", content: "Always know what's next." },
     ],
   }),
 });
@@ -47,17 +47,17 @@ function Timetable() {
     <PageShell>
       <PageHeader
         eyebrow="Live Timetable"
-        title="Always know what's next. Synced live."
-        subtitle="The class timetable, updated in real-time. Any change pings your section on Telegram instantly."
+        title="Always know what's next."
+        subtitle="Class timetable for IMI Delhi. Filter by section. Get alerts on changes."
         alt
       >
         <div className="flex flex-wrap items-center gap-3">
           <span className="inline-flex items-center gap-2 text-[13px] text-success">
             <span className="pulse-dot" />
-            Synced 2 min ago
+            Live
           </span>
           <span className="text-[13px] text-text-secondary">·</span>
-          <span className="text-[13px] text-text-secondary">12 alerts sent today</span>
+          <span className="text-[13px] text-text-secondary">For IMI students</span>
         </div>
       </PageHeader>
 
@@ -126,11 +126,11 @@ function Timetable() {
             </div>
 
             <div className="card-base p-5">
-              <p className="label-eyebrow">Telegram Setup</p>
+              <p className="label-eyebrow">Get Alerts</p>
               <p className="mt-3 text-[13px] text-text-secondary">
-                Add your phone in your profile to receive instant section-specific alerts. Currently <b className="text-text-primary">187</b> students subscribed.
+                Stay updated on any timetable changes for your section.
               </p>
-              <button className="btn-primary mt-4 h-10 px-4 text-[13px]">Connect Telegram →</button>
+              <button className="btn-primary mt-4 h-10 px-4 text-[13px]">Subscribe to Alerts</button>
             </div>
           </aside>
         </div>

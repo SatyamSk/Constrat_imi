@@ -7,9 +7,9 @@ export const Route = createFileRoute("/cases")({
   head: () => ({
     meta: [
       { title: "Case Repository — Constrat" },
-      { name: "description", content: "120+ case decks from McKinsey, BCG, Bain, Deloitte and student competitions. Search, filter, download." },
+      { name: "description", content: "120+ case decks. Search, filter, download." },
       { property: "og:title", content: "Case Repository — Constrat" },
-      { property: "og:description", content: "Search, download and win — 120+ curated case decks." },
+      { property: "og:description", content: "120+ curated case decks for IMI students." },
     ],
   }),
 });
