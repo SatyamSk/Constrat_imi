@@ -34,6 +34,7 @@ function Home() {
       <StatsBar />
       <Features />
       <CasePreview />
+      <ActivityGraph />
       <HowItWorks />
       <CompanyIntel />
       <SocialProof />
@@ -169,6 +170,117 @@ function CasePreview() {
 }
 
 /* ── HOW IT WORKS ── */
+/* ── ACTIVITY GRAPH ── */
+function ActivityGraph() {
+  // Sample data: 4 weeks of daily practice counts
+  const weeklyData = [12, 18, 24, 31, 28, 35, 42, 38, 45, 52, 48, 56];
+  const labels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const maxVal = Math.max(...weeklyData);
+  const w = 560, h = 180, px = 40, py = 20;
+  const plotW = w - px * 2, plotH = h - py * 2;
+  const points = weeklyData.map((v, i) => ({
+    x: px + (i / (weeklyData.length - 1)) * plotW,
+    y: py + plotH - (v / maxVal) * plotH,
+  }));
+  const linePath = points.map((p, i) => `${i === 0 ? "M" : "L"}${p.x},${p.y}`).join(" ");
+  const areaPath = `${linePath} L${points[points.length-1].x},${h - py} L${points[0].x},${h - py} Z`;
+
+  // Heatmap: 12 weeks x 7 days
+  const heatmap: number[][] = Array.from({ length: 12 }, () => Array.from({ length: 7 }, () => Math.random()));
+
+  return (
+    <section className="bg-background">
+      <div className="mx-auto max-w-[1180px] px-5 md:px-6 py-20 md:py-28">
+        <AnimatedSection>
+          <div className="grid lg:grid-cols-[1.2fr_1fr] gap-8 items-start">
+            {/* Chart */}
+            <GlowCard className="p-6 md:p-8">
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <span className="label-orange">Platform Activity</span>
+                    <h3 className="mt-2 text-[22px] font-serif leading-[1.3]">Cases solved per month</h3>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[28px] font-bold" style={{ fontFamily: "var(--font-mono)", color: "#E8490F" }}>56</p>
+                    <p className="text-[11px] text-text-muted">this month</p>
+                  </div>
+                </div>
+                <svg viewBox={`0 0 ${w} ${h}`} className="w-full" style={{ overflow: "visible" }}>
+                  {/* Grid lines */}
+                  {[0, 0.25, 0.5, 0.75, 1].map(f => (
+                    <line key={f} x1={px} x2={w-px} y1={py + plotH * (1-f)} y2={py + plotH * (1-f)} stroke="#E8E4DE" strokeWidth={0.5} strokeDasharray={f > 0 && f < 1 ? "4 4" : "0"} />
+                  ))}
+                  {/* Area fill */}
+                  <path d={areaPath} fill="url(#areaGrad)" opacity={0.3} />
+                  {/* Line */}
+                  <path d={linePath} fill="none" stroke="#E8490F" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+                  {/* Dots */}
+                  {points.map((p, i) => (
+                    <g key={i}>
+                      <circle cx={p.x} cy={p.y} r={3.5} fill="#E8490F" />
+                      <circle cx={p.x} cy={p.y} r={6} fill="#E8490F" opacity={0.15} />
+                    </g>
+                  ))}
+                  {/* X labels */}
+                  {points.map((p, i) => (
+                    <text key={i} x={p.x} y={h - 2} textAnchor="middle" fill="#9A9997" fontSize={10} fontFamily="var(--font-sans)">{labels[i]}</text>
+                  ))}
+                  <defs>
+                    <linearGradient id="areaGrad" x1="0" x2="0" y1="0" y2="1">
+                      <stop offset="0%" stopColor="#E8490F" stopOpacity={0.4} />
+                      <stop offset="100%" stopColor="#E8490F" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                </svg>
+              </div>
+            </GlowCard>
+
+            {/* Heatmap + streak stats */}
+            <div className="space-y-5">
+              <GlowCard className="p-6">
+                <div className="relative z-10">
+                  <h3 className="text-[16px] font-semibold mb-4" style={{ fontFamily: "var(--font-sans)" }}>Daily practice activity</h3>
+                  <div className="flex gap-[3px]">
+                    {heatmap.map((week, wi) => (
+                      <div key={wi} className="flex flex-col gap-[3px]">
+                        {week.map((v, di) => (
+                          <div
+                            key={di}
+                            className="w-[14px] h-[14px] rounded-[3px] transition-colors"
+                            style={{ background: v > 0.7 ? "#E8490F" : v > 0.4 ? "#FFA064" : v > 0.15 ? "#FFD4B8" : "#F3F2EF" }}
+                          />
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-3 flex items-center gap-2 text-[10px] text-text-muted">
+                    <span>Less</span>
+                    {["#F3F2EF", "#FFD4B8", "#FFA064", "#E8490F"].map(c => <div key={c} className="w-[10px] h-[10px] rounded-[2px]" style={{ background: c }} />)}
+                    <span>More</span>
+                  </div>
+                </div>
+              </GlowCard>
+              <div className="grid grid-cols-2 gap-4">
+                {[
+                  { n: "312", l: "Active streaks", sub: "users practicing daily" },
+                  { n: "87%", l: "Completion rate", sub: "daily case attempts" },
+                ].map((s, i) => (
+                  <div key={i} className="card-base p-4">
+                    <p className="text-[28px] font-bold leading-none" style={{ fontFamily: "var(--font-mono)", color: i === 0 ? "#E8490F" : "#22C55E" }}>{s.n}</p>
+                    <p className="text-[12px] font-semibold text-text-primary mt-2">{s.l}</p>
+                    <p className="text-[11px] text-text-muted">{s.sub}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </AnimatedSection>
+      </div>
+    </section>
+  );
+}
+
 function HowItWorks() {
   const steps = [
     { n: "01", title: "Set your targets", desc: "Pick your target firms and domains. We personalize your daily prep." },
