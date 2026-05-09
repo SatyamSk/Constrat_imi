@@ -1,19 +1,48 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
 import { PageShell } from "@/components/PageShell";
+import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/login")({
   component: Login,
-  head: () => ({
-    meta: [
-      { title: "Login — Constrat" },
-      { name: "description", content: "Login to your Constrat account." },
-      { property: "og:title", content: "Login — Constrat" },
-      { property: "og:description", content: "Welcome back to Constrat." },
-    ],
-  }),
 });
 
 function Login() {
+  const { signIn, user } = useAuth();
+  const navigate = useNavigate();
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  // If already logged in, redirect
+  if (user) {
+    navigate({ to: "/" });
+    return null;
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+
+    if (!email.trim()) return setError("Please enter your email.");
+    if (!password) return setError("Please enter your password.");
+
+    setLoading(true);
+    try {
+      const { error: authError } = await signIn(email, password);
+      if (authError) {
+        setError(authError.message);
+      } else {
+        navigate({ to: "/" });
+      }
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Something went wrong.");
+    }
+    setLoading(false);
+  }
+
   return (
     <PageShell>
       <section className="bg-background">
@@ -27,22 +56,51 @@ function Login() {
           </h1>
 
           <form
-            onSubmit={(e) => e.preventDefault()}
+            onSubmit={handleSubmit}
             className="mt-10 bg-white rounded-[16px] p-6 border border-border space-y-4"
             style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.05)" }}
           >
+            {error && (
+              <div className="p-3 rounded-lg bg-urgent-bg border border-urgent/20 text-[13px] text-urgent font-medium">
+                {error}
+              </div>
+            )}
+
             <div>
               <label className="block text-[12px] font-medium text-text-secondary mb-1.5">Email</label>
-              <input type="email" className="input-base w-full" />
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="input-base w-full"
+                placeholder="your@email.com"
+                required
+              />
             </div>
+
             <div>
               <label className="block text-[12px] font-medium text-text-secondary mb-1.5">Password</label>
-              <input type="password" className="input-base w-full" />
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="input-base w-full"
+                placeholder="Your password"
+                required
+              />
             </div>
-            <button className="btn-primary w-full">Login →</button>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="btn-primary w-full disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {loading ? "Logging in..." : "Login \u2192"}
+            </button>
+
             <div className="flex items-center justify-between text-[13px]">
-              <a href="#" className="text-text-secondary hover:text-orange">Forgot password?</a>
-              <Link to="/join" className="btn-ghost">Don't have an account? Join →</Link>
+              <span className="text-text-muted">Forgot password? Contact admin.</span>
+              <Link to="/join" className="btn-ghost">Join &rarr;</Link>
             </div>
           </form>
         </div>

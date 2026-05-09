@@ -72,7 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const signIn = async (email: string, password: string) => {
-    if (!supabase) return { error: new Error("Supabase not configured") };
+    if (!supabase) return { error: new Error("Supabase not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your environment.") };
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     return { error: error ? new Error(error.message) : null };
   };
@@ -82,18 +82,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     password: string,
     metadata: Record<string, unknown>,
   ) => {
-    if (!supabase) return { error: new Error("Supabase not configured") };
-    const { error } = await supabase.auth.signUp({
+    if (!supabase) return { error: new Error("Supabase not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your environment.") };
+
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: { data: metadata },
     });
-    return { error: error ? new Error(error.message) : null };
+
+    if (error) return { error: new Error(error.message) };
+
+    // After signup, update the profile with additional fields
+    // The DB trigger creates the basic profile, we enrich it here
+    if (data.user) {
+      const profileUpdate: Record<string, unknown> = {};
+      if (metadata.full_name) profileUpdate.full_name = metadata.full_name;
+      if (metadata.batch) profileUpdate.batch = metadata.batch;
+      if (metadata.section) profileUpdate.section = metadata.section;
+      if (metadata.phone) profileUpdate.phone = metadata.phone;
+
+      // Small delay to let the trigger create the profile first
+      setTimeout(async () => {
+        if (!supabase) return;
+        await supabase
+          .from("profiles")
+          .update(profileUpdate)
+          .eq("id", data.user!.id);
+      }, 1000);
+    }
+
+    return { error: null };
   };
 
   const signOut = async () => {
     if (!supabase) return;
     await supabase.auth.signOut();
+    setRole("guest");
   };
 
   return (
