@@ -29,10 +29,10 @@ export function Nav() {
   return (
     <>
       <header
-        className={`fixed top-0 inset-x-0 z-50 h-16 transition-all duration-300 ${
+        className={`fixed top-0 inset-x-0 z-50 h-[70px] transition-all duration-300 ${
           scrolled
-            ? "glass border-b border-white/20 shadow-sm"
-            : "bg-transparent border-b border-transparent"
+            ? "glass-dark shadow-lg"
+            : "bg-transparent"
         }`}
       >
         <div className="mx-auto max-w-[1180px] h-full px-5 md:px-6 flex items-center justify-between">
