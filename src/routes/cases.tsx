@@ -1,8 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { PageShell } from "@/components/PageShell";
 import { PageHeader } from "@/components/PageHeader";
 import { GlowCard } from "@/components/GlowCard";
 import { useState, useEffect } from "react";
+import { useAuth } from "@/lib/auth";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 
 export const Route = createFileRoute("/cases")({ component: Cases });
@@ -164,6 +165,8 @@ const difficultyMap: Record<string, { label: string; color: string }> = {
 };
 
 function Cases() {
+  const { user, isMember } = useAuth();
+  const navigate = useNavigate();
   const [decks, setDecks] = useState<CaseDeck[]>(FALLBACK);
   const [cat, setCat] = useState("All");
   const [search, setSearch] = useState("");
@@ -267,17 +270,32 @@ function Cases() {
                           {d.file_type} · {d.downloads} downloads
                         </p>
                       </div>
-                      {d.file_url && d.file_url !== "#" ? (
-                        <a
-                          href={d.file_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="btn-primary text-[12px] h-8 px-4"
-                        >
-                          Download
-                        </a>
+                      {user && isMember ? (
+                        d.file_url && d.file_url !== "#" ? (
+                          <a
+                            href={d.file_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn-primary text-[12px] h-8 px-4"
+                          >
+                            Download
+                          </a>
+                        ) : (
+                          <button
+                            onClick={() => navigate({ to: "/submit-case" })}
+                            className="btn-primary text-[12px] h-8 px-4"
+                          >
+                            Submit
+                          </button>
+                        )
                       ) : (
-                        <span className="text-[11px] text-text-muted italic">Login to access</span>
+                        <button
+                          onClick={() => navigate({ to: "/login" })}
+                          className="btn-secondary text-[12px] h-8 px-4"
+                        >
+                          Login
+                        </button>
+                      )}
                       )}
                     </div>
                   </div>

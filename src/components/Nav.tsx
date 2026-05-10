@@ -185,15 +185,24 @@ export function Nav() {
 
             <div className="p-5 border-t border-border space-y-2.5">
               {user ? (
-                <button
-                  onClick={() => {
-                    signOut();
-                    setOpen(false);
-                  }}
-                  className="w-full h-11 flex items-center justify-center border border-border rounded-lg text-[14px] font-medium hover:border-orange hover:text-orange transition-colors"
-                >
-                  Logout
-                </button>
+                <>
+                  <Link
+                    to="/account"
+                    className="w-full h-11 flex items-center justify-center bg-orange text-white rounded-lg text-[14px] font-medium"
+                    onClick={() => setOpen(false)}
+                  >
+                    My Account
+                  </Link>
+                  <button
+                    onClick={() => {
+                      signOut();
+                      setOpen(false);
+                    }}
+                    className="w-full h-11 flex items-center justify-center border border-border rounded-lg text-[14px] font-medium hover:border-orange hover:text-orange transition-colors"
+                  >
+                    Logout
+                  </button>
+                </>
               ) : (
                 <>
                   <Link
