@@ -296,7 +296,6 @@ function Cases() {
                           Login
                         </button>
                       )}
-                      )}
                     </div>
                   </div>
                 </div>
