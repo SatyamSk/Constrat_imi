@@ -37,6 +37,8 @@ function Timetable() {
         const r = await fetch("/api/timetable_sync");
         const j = await r.json();
         if (!j.success) console.log("Sync not available");
+        // Wait for sync to complete
+        await new Promise((resolve) => setTimeout(resolve, 800));
       } catch {}
 
       // Always fetch from Supabase
@@ -54,6 +56,9 @@ function Timetable() {
 
       if (data && data.length > 0) {
         setEntries(data as Entry[]);
+        console.log("Loaded " + data.length + " timetable entries");
+      } else {
+        console.log("No timetable entries found");
       }
     } catch (err) {
       console.error("Error loading timetable:", err);
