@@ -101,7 +101,7 @@ function Features() {
   const cols = [
     { title: "Daily Practice Loop", desc: "A new case and guesstimate every morning. Timed. Framework-guided. AI-evaluated. Build your streak or fall behind.", icon: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" },
     { title: "Placement Intelligence", desc: "Company profiles, interview experiences, insider data on what each firm asks and what they look for. Know before you walk in.", icon: "M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" },
-    { title: "IMI-Specific Layer", desc: "Live timetable sync, batch leaderboard, Telegram alerts for schedule changes, placement deadlines, and club events.", icon: "M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" },
+    { title: "Academic Tools", desc: "Live timetable sync, batch leaderboard, Telegram alerts for schedule changes, placement deadlines, and academic events.", icon: "M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" },
   ];
   return (
     <section className="bg-background">
@@ -315,7 +315,7 @@ function HowItWorks() {
 /* ── LIVE TERMINAL ── */
 function LiveTerminal() {
   const [lines, setLines] = useState<{type: 'system'|'user'|'result'; text: string}[]>([
-    { type: 'system', text: '> constrat init --mode=case-solver' },
+    { type: 'system', text: '> CaseReady init --mode=case-solver' },
     { type: 'system', text: '  Loading case engine...' },
     { type: 'system', text: '  Connected to framework database' },
     { type: 'system', text: '' },
@@ -391,7 +391,7 @@ function LiveTerminal() {
                 <div className="w-3 h-3 rounded-full" style={{ background: '#EF4444' }} />
                 <div className="w-3 h-3 rounded-full" style={{ background: '#F59E0B' }} />
                 <div className="w-3 h-3 rounded-full" style={{ background: '#22C55E' }} />
-                <span className="ml-3 text-[11px]" style={{ fontFamily: 'var(--font-mono)', color: '#555' }}>constrat — case-solver v2.1</span>
+                <span className="ml-3 text-[11px]" style={{ fontFamily: 'var(--font-mono)', color: '#555' }}>CaseReady — case-solver v2.1</span>
                 {started && <span className="ml-auto text-[11px] font-bold" style={{ fontFamily: 'var(--font-mono)', color: '#E8490F' }}>{Math.floor(timer/60)}:{String(timer%60).padStart(2,'0')}</span>}
               </div>
               {/* Terminal body */}
@@ -460,10 +460,10 @@ function CompanyIntel() {
 /* ── SOCIAL PROOF ── */
 function SocialProof() {
   const quotes = [
-    { text: "Constrat's daily cases forced me into a routine. By the time interviews came, I'd solved 60+ cases. Got McKinsey shortlist.", name: "Ananya R.", info: "IMI Delhi, Batch 2025" },
-    { text: "The company profiles told me exactly what Deloitte asks in Round 2. Walked in knowing the framework they wanted.", name: "Karan M.", info: "IMI Delhi, Batch 2025" },
-    { text: "I was doing random prep before Constrat. The streak system and leaderboard made me consistent. 47-day streak and counting.", name: "Priya S.", info: "IMI Delhi, Batch 2026" },
-    { text: "The guesstimate practice alone was worth it. 100+ solved, and my speed went from 8 minutes to under 3.", name: "Arjun D.", info: "IMI Delhi, Batch 2025" },
+    { text: "CaseReady's daily cases forced me into a routine. By the time interviews came, I'd solved 60+ cases. Got McKinsey shortlist.", name: "Ananya R.", info: "MBA Student" },
+    { text: "The company profiles told me exactly what Deloitte asks in Round 2. Walked in knowing the framework they wanted.", name: "Karan M.", info: "MBA Student" },
+    { text: "I was doing random prep before CaseReady. The streak system and leaderboard made me consistent. 47-day streak and counting.", name: "Priya S.", info: "MBA Student" },
+    { text: "The guesstimate practice alone was worth it. 100+ solved, and my speed went from 8 minutes to under 3.", name: "Arjun D.", info: "MBA Student" },
   ];
   return (
     <section className="bg-background">
@@ -489,7 +489,7 @@ function SocialProof() {
 
 /* ── COLLEGE NETWORK ── */
 function CollegeNetwork() {
-  const colleges = ["IMI Delhi", "IIM Ahmedabad", "IIM Bangalore", "IIM Kozhikode", "XLRI", "FMS Delhi", "ISB Hyderabad", "MDI Gurgaon"];
+  const colleges = ["Top B-School", "IIM Ahmedabad", "IIM Bangalore", "IIM Kozhikode", "XLRI", "FMS Delhi", "ISB Hyderabad", "MDI Gurgaon"];
   return (
     <section style={{ background: "#FFF7F3" }}>
       <div className="mx-auto max-w-[1180px] px-5 md:px-6 py-20 md:py-28 text-center">
@@ -498,10 +498,10 @@ function CollegeNetwork() {
           <h2 className="mt-5 font-serif text-[34px] md:text-[44px] leading-[1.2] tracking-[-0.01em]">Built for every B-school.</h2>
           <div className="mt-10 flex flex-wrap justify-center gap-3">
             {colleges.map(c => (
-              <span key={c} className="px-5 py-2.5 rounded-lg border text-[13px] font-medium" style={{ borderColor: c === "IMI Delhi" ? "#E8490F" : "#E8E4DE", color: c === "IMI Delhi" ? "#E8490F" : "#5C5C5A", background: c === "IMI Delhi" ? "#FFF0EB" : "#fff" }}>{c}</span>
+              <span key={c} className="px-5 py-2.5 rounded-lg border text-[13px] font-medium" style={{ borderColor: c === "Top B-School" ? "#E8490F" : "#E8E4DE", color: c === "Top B-School" ? "#E8490F" : "#5C5C5A", background: c === "Top B-School" ? "#FFF0EB" : "#fff" }}>{c}</span>
             ))}
           </div>
-          <p className="mt-8 text-[14px] text-text-secondary">Your college isn't here yet? <a href="https://forms.gle/placeholder" target="_blank" rel="noopener noreferrer" className="text-orange font-semibold hover:underline">Bring Constrat to your campus.</a></p>
+          <p className="mt-8 text-[14px] text-text-secondary">Your college isn't here yet? <a href="https://forms.gle/placeholder" target="_blank" rel="noopener noreferrer" className="text-orange font-semibold hover:underline">Bring CaseReady to your campus.</a></p>
         </AnimatedSection>
       </div>
     </section>

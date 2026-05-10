@@ -11,7 +11,7 @@ export const Route = createFileRoute("/deadlines")({
 const DEADLINES_DATA = [
   { title: "Summer Internship Preference Form", deadline: "2026-05-12", source: "Placement", batch: "2027", relevance: "All Sections", urgency: "high", description: "Fill your SIP company preferences by priority. Late submissions will not be considered." },
   { title: "Resume Review - Final Submission", deadline: "2026-05-15", source: "Placement", batch: "2027", relevance: "All Sections", urgency: "high", description: "Submit your final placement resume in the prescribed format. No extensions." },
-  { title: "Mock GD Registration", deadline: "2026-05-18", source: "Constrat", batch: "All", relevance: "All Sections", urgency: "medium", description: "Register for the Constrat Mock GD marathon. Slots are limited to 60." },
+  { title: "Mock GD Registration", deadline: "2026-05-18", source: "CaseReady", batch: "All", relevance: "All Sections", urgency: "medium", description: "Register for the CaseReady Mock GD marathon. Slots are limited to 60." },
   { title: "Corporate Presentation - Deloitte", deadline: "2026-05-20", source: "Placement", batch: "2026", relevance: "Consulting, Strategy", urgency: "low", description: "Attend the pre-placement talk by Deloitte S&O. Mandatory for shortlisted candidates." },
   { title: "Elective Bidding Round 2", deadline: "2026-05-22", source: "Academics", batch: "2027", relevance: "All Sections", urgency: "medium", description: "Second round of elective bidding. Check registro for available credits." },
 ];
@@ -23,7 +23,7 @@ function getDaysLeft(date: string) {
 
 function Deadlines() {
   const [filter, setFilter] = useState("All");
-  const filters = ["All", "Placement", "Constrat", "Academics"];
+  const filters = ["All", "Placement", "CaseReady", "Academics"];
 
   const filtered = DEADLINES_DATA.filter(
     (d) => filter === "All" || d.source === filter,
@@ -104,7 +104,7 @@ function Deadlines() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className={`pill ${d.source === "Placement" ? "pill-red" : d.source === "Constrat" ? "pill-orange" : "pill-blue"}`}>
+                          <span className={`pill ${d.source === "Placement" ? "pill-red" : d.source === "CaseReady" ? "pill-orange" : "pill-blue"}`}>
                             {d.source}
                           </span>
                           <span className="pill">{d.batch === "All" ? "All Batches" : `Batch ${d.batch}`}</span>

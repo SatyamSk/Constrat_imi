@@ -8,16 +8,16 @@ import { useState } from "react";
 export const Route = createFileRoute("/leaderboard")({ component: Leaderboard });
 
 const USERS = [
-  { rank: 1, name: "Ananya R.", college: "IMI Delhi", cases: 67, guesstimates: 112, streak: 47, longest: 47 },
-  { rank: 2, name: "Karan M.", college: "IMI Delhi", cases: 58, guesstimates: 95, streak: 33, longest: 41 },
-  { rank: 3, name: "Priya S.", college: "IMI Delhi", cases: 52, guesstimates: 88, streak: 29, longest: 35 },
-  { rank: 4, name: "Arjun D.", college: "IMI Delhi", cases: 45, guesstimates: 76, streak: 21, longest: 28 },
-  { rank: 5, name: "Sneha K.", college: "IMI Delhi", cases: 41, guesstimates: 63, streak: 18, longest: 24 },
-  { rank: 6, name: "Rahul P.", college: "IMI Delhi", cases: 38, guesstimates: 58, streak: 14, longest: 22 },
-  { rank: 7, name: "Meera J.", college: "IMI Delhi", cases: 34, guesstimates: 51, streak: 12, longest: 19 },
-  { rank: 8, name: "Vikram S.", college: "IMI Delhi", cases: 29, guesstimates: 44, streak: 9, longest: 16 },
-  { rank: 9, name: "Neha G.", college: "IMI Delhi", cases: 25, guesstimates: 39, streak: 7, longest: 14 },
-  { rank: 10, name: "Amit T.", college: "IMI Delhi", cases: 22, guesstimates: 33, streak: 5, longest: 11 },
+  { rank: 1, name: "Ananya R.", college: "Top B-School", cases: 67, guesstimates: 112, streak: 47, longest: 47 },
+  { rank: 2, name: "Karan M.", college: "Top B-School", cases: 58, guesstimates: 95, streak: 33, longest: 41 },
+  { rank: 3, name: "Priya S.", college: "Top B-School", cases: 52, guesstimates: 88, streak: 29, longest: 35 },
+  { rank: 4, name: "Arjun D.", college: "Top B-School", cases: 45, guesstimates: 76, streak: 21, longest: 28 },
+  { rank: 5, name: "Sneha K.", college: "Top B-School", cases: 41, guesstimates: 63, streak: 18, longest: 24 },
+  { rank: 6, name: "Rahul P.", college: "Top B-School", cases: 38, guesstimates: 58, streak: 14, longest: 22 },
+  { rank: 7, name: "Meera J.", college: "Top B-School", cases: 34, guesstimates: 51, streak: 12, longest: 19 },
+  { rank: 8, name: "Vikram S.", college: "Top B-School", cases: 29, guesstimates: 44, streak: 9, longest: 16 },
+  { rank: 9, name: "Neha G.", college: "Top B-School", cases: 25, guesstimates: 39, streak: 7, longest: 14 },
+  { rank: 10, name: "Amit T.", college: "Top B-School", cases: 22, guesstimates: 33, streak: 5, longest: 11 },
 ].map(u => ({ ...u, score: (u.cases * 3) + (u.guesstimates * 1) + (u.streak * 2) }));
 
 const RANK_COLORS = ["#E8490F", "#FF8C42", "#F59E0B"];
@@ -76,7 +76,7 @@ function Leaderboard() {
           <div className="flex gap-1 p-1 rounded-lg bg-muted/60">
             {(["college", "global"] as const).map(t => (
               <button key={t} onClick={() => setTab(t)} className={`px-4 py-1.5 rounded-md text-[13px] font-medium transition-all ${tab === t ? "bg-white text-orange shadow-sm" : "text-text-muted hover:text-text-primary"}`}>
-                {t === "college" ? "IMI Delhi" : "Global"}
+                {t === "college" ? "Top B-School" : "Global"}
               </button>
             ))}
           </div>

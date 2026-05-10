@@ -6,9 +6,9 @@ export const Route = createFileRoute("/practice")({
   component: Practice,
   head: () => ({
     meta: [
-      { title: "Daily Practice — Constrat" },
+      { title: "Daily Practice — CaseReady" },
       { name: "description", content: "Daily case questions, guestimates, GD topics and function-specific interview Qs — filter by type and business function." },
-      { property: "og:title", content: "Daily Practice — Constrat" },
+      { property: "og:title", content: "Daily Practice — CaseReady" },
       { property: "og:description", content: "Train like you're already there. Daily questions, streaks, and bookmarks." },
     ],
   }),
@@ -28,7 +28,7 @@ const QUESTIONS = [
   { type: "CASE", q: "Help an FMCG client decide whether to enter the men's grooming category.", fn: "Strategy", diff: "Medium", src: "BCG Round 2 2023" },
   { type: "INTERVIEW Q", q: "Tell me about a time you had to convince a team that disagreed with you.", fn: "HR", diff: "Easy", src: "Reported · ITC" },
   { type: "GUESTIMATE", q: "Annual electricity consumption of all malls in Delhi-NCR.", fn: "Operations", diff: "Hard", src: "McKinsey 2023" },
-  { type: "CASE", q: "A telco is losing post-paid subscribers to JioFiber. What's the response strategy?", fn: "Strategy", diff: "Medium", src: "Constrat Internal" },
+  { type: "CASE", q: "A telco is losing post-paid subscribers to JioFiber. What's the response strategy?", fn: "Strategy", diff: "Medium", src: "CaseReady Internal" },
   { type: "INTERVIEW Q", q: "How would you measure the success of a new CRM rollout for a mid-size bank?", fn: "Consulting", diff: "Medium", src: "Reported · Deloitte" },
   { type: "GD TOPIC", q: "Quick-commerce: profitable model or VC-fueled mirage?", fn: "Marketing", diff: "Medium", src: "GD Pool" },
   { type: "GUESTIMATE", q: "Total airtime sold by FM radio stations in India in a year.", fn: "Marketing", diff: "Hard", src: "Reported · IIM-A" },

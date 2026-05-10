@@ -42,7 +42,7 @@ export function Nav() {
               C
             </div>
             <span className="font-serif text-[20px] font-semibold text-text-primary tracking-tight">
-              Constrat
+              CaseReady
             </span>
           </Link>
 
@@ -107,7 +107,7 @@ export function Nav() {
                   to="/join"
                   className="h-9 px-5 inline-flex items-center text-[13px] font-semibold rounded-lg bg-orange text-white hover:bg-orange-hover transition-all hover:-translate-y-px shadow-sm"
                 >
-                  Join Constrat
+                  Join CaseReady
                 </Link>
               </>
             )}
@@ -142,7 +142,7 @@ export function Nav() {
                 <div className="w-8 h-8 rounded-lg bg-orange flex items-center justify-center text-white font-serif font-bold text-sm">
                   C
                 </div>
-                <span className="font-serif text-[18px] font-semibold">Constrat</span>
+                <span className="font-serif text-[18px] font-semibold">CaseReady</span>
               </div>
               <button
                 onClick={() => setOpen(false)}
@@ -192,7 +192,7 @@ export function Nav() {
                     to="/join"
                     className="w-full h-11 flex items-center justify-center bg-orange text-white rounded-lg text-[14px] font-semibold"
                   >
-                    Join Constrat
+                    Join CaseReady
                   </Link>
                 </>
               )}
