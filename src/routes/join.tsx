@@ -51,7 +51,7 @@ function Join() {
       <div className="w-full max-w-[420px]">
         <Link to="/" className="flex items-center gap-2 mb-10 justify-center">
           <div className="w-8 h-8 rounded-lg bg-orange flex items-center justify-center text-white font-serif font-bold text-sm">C</div>
-          <span className="font-serif text-[20px] font-semibold">CaseReady</span>
+          <span className="font-serif text-[20px] font-semibold">Constrat</span>
         </Link>
 
         <h1 className="font-serif text-[32px] text-center leading-[1.1]">Start preparing today.</h1>

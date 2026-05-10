@@ -317,7 +317,7 @@ function DeadlineManager() {
         <div className="grid grid-cols-2 gap-3">
           <input type="date" value={form.deadline} onChange={(e) => setForm({ ...form, deadline: e.target.value })} className="input-base" />
           <select value={form.source} onChange={(e) => setForm({ ...form, source: e.target.value })} className="input-base">
-            <option>Placement</option><option>CaseReady</option><option>Academics</option>
+            <option>Placement</option><option>Constrat</option><option>Academics</option>
           </select>
         </div>
         <div className="grid grid-cols-2 gap-3">

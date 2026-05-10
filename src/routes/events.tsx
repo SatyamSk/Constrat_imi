@@ -6,14 +6,14 @@ export const Route = createFileRoute("/events")({
   component: Events,
   head: () => ({
     meta: [
-      { title: "Events — CaseReady" },
+      { title: "Events — Constrat" },
       { name: "description", content: "Upcoming case competitions, workshops, and speaker sessions." },
     ],
   }),
 });
 
 const UPCOMING = [
-  { name: "CaseReady Case Open 2026", date: "May 22", venue: "Main Auditorium", type: "Case Competition", desc: "Inter-batch flagship case competition. ₹1.2L prize pool.", time: "6:00 PM" },
+  { name: "Constrat Case Open 2026", date: "May 22", venue: "Main Auditorium", type: "Case Competition", desc: "Inter-batch flagship case competition. ₹1.2L prize pool.", time: "6:00 PM" },
   { name: "BCG Practice Workshop", date: "May 28", venue: "Seminar Hall 2", type: "Workshop", desc: "Live problem structuring with two BCG associates from the Mumbai office.", time: "4:00 PM" },
   { name: "Speaker · Partner @ Bain", date: "Jun 04", venue: "Online (Zoom)", type: "Speaker Session", desc: "Career arc, what Bain looks for, live Q&A with the cohort.", time: "7:00 PM" },
   { name: "GD Marathon Night", date: "Jun 09", venue: "Block C Lounge", type: "Social", desc: "8 GDs, two evaluators, dinner included. RSVP capped at 60.", time: "6:30 PM" },
@@ -22,7 +22,7 @@ const UPCOMING = [
 const PAST = [
   { name: "Strategy Sprint 2026", date: "Apr 12", participants: 142, recap: "Team Tigris won with a 14-slide retail growth deck." },
   { name: "Goldman SIP Prep AMA", date: "Mar 30", participants: 78, recap: "Fund-flow walkthroughs + live mock interview." },
-  { name: "CaseReady Welcome Mixer", date: "Aug 10, 2025", participants: 220, recap: "New batch onboarding + senior speed-mentoring." },
+  { name: "Constrat Welcome Mixer", date: "Aug 10, 2025", participants: 220, recap: "New batch onboarding + senior speed-mentoring." },
 ];
 
 function generateICS(event: typeof UPCOMING[0]) {
@@ -48,7 +48,7 @@ function Events() {
 
   return (
     <PageShell>
-      <PageHeader eyebrow="Events" title="What CaseReady is building. What we've already done.">
+      <PageHeader eyebrow="Events" title="What Constrat is building. What we've already done.">
         <div className="flex gap-6 border-b border-border -mb-2">
           <button onClick={() => setTab("up")} className="pb-3 text-[14px] font-medium relative" style={{ color: tab === "up" ? "#E8490F" : "#5C5C5A" }}>
             Upcoming Events {tab === "up" && <span className="absolute left-0 right-0 -bottom-px h-0.5 bg-orange" />}

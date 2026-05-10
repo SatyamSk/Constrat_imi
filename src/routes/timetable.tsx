@@ -76,7 +76,7 @@ function Timetable() {
 
   return (
     <PageShell>
-      <PageHeader eyebrow="Top B-School" title="Live Timetable" subtitle="Synced from college academic calendar. Updated daily." />
+      <PageHeader eyebrow="IMI Delhi" title="Live Timetable" subtitle="Synced from college academic calendar. Updated daily." />
       <div className="mx-auto max-w-[1180px] px-5 md:px-6 -mt-4 pb-20">
         {/* Today's classes highlight */}
         {todayClasses.length > 0 && (

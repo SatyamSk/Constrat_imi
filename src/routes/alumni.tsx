@@ -40,8 +40,8 @@ function Alumni() {
   return (
     <PageShell>
       <PageHeader
-        eyebrow="CaseReady Family"
-        title="The people behind CaseReady."
+        eyebrow="Constrat Family"
+        title="The people behind Constrat."
         subtitle="Alumni, current members, and their journeys. Editable by verified members."
         alt
       />
