@@ -8,6 +8,16 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 export const supabase =
-  supabaseUrl && supabaseAnonKey ? createClient(supabaseUrl, supabaseAnonKey) : null;
+  supabaseUrl && supabaseAnonKey
+    ? createClient(supabaseUrl, supabaseAnonKey, {
+        auth: {
+          detectSessionInUrl: true,
+          flowType: "implicit",
+          autoRefreshToken: true,
+          persistSession: true,
+          storage: globalThis.localStorage,
+        },
+      })
+    : null;
 
 export const isSupabaseConfigured = !!supabase;

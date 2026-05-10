@@ -42,20 +42,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    supabase.auth.getSession().then(({ data: { session: s } }) => {
+    // 1. Set up the auth state listener FIRST — this catches OAuth callbacks
+    //    where the hash fragment contains the access token (implicit flow)
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, s) => {
+      console.log("[Auth] State change:", event, s?.user?.email);
       setSession(s);
       setUser(s?.user ?? null);
-      if (s?.user) fetchRole(s.user.id);
+      if (s?.user) {
+        // Use setTimeout to avoid Supabase deadlock on concurrent requests
+        setTimeout(() => fetchRole(s.user.id), 0);
+      } else {
+        setRole("guest");
+      }
       setLoading(false);
     });
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, s) => {
+    // 2. Then check for an existing session in storage
+    supabase.auth.getSession().then(({ data: { session: s } }) => {
       setSession(s);
       setUser(s?.user ?? null);
-      if (s?.user) fetchRole(s.user.id);
-      else setRole("guest");
+      if (s?.user) {
+        fetchRole(s.user.id);
+      }
+      // Only stop loading if there's no OAuth callback in progress
+      // The hash fragment (#access_token=...) signals an implicit flow callback
+      const hasAuthCallback = window.location.hash.includes("access_token");
+      if (!hasAuthCallback) {
+        setLoading(false);
+      }
+      // If hasAuthCallback is true, onAuthStateChange will fire and set loading=false
     });
 
     return () => subscription.unsubscribe();
@@ -63,8 +80,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function fetchRole(userId: string) {
     if (!supabase) return;
-    const { data } = await supabase.from("profiles").select("role").eq("id", userId).single();
-    if (data?.role) setRole(data.role);
+    try {
+      const { data } = await supabase.from("profiles").select("role").eq("id", userId).single();
+      if (data?.role) setRole(data.role);
+    } catch {
+      // Profile may not exist yet for new OAuth users — the trigger creates it
+      setRole("member");
+    }
   }
 
   const signIn = async (email: string, password: string) => {
@@ -117,7 +139,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!supabase) return { error: new Error("Supabase not configured") };
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/` },
+      options: {
+        redirectTo: `${window.location.origin}/`,
+      },
     });
     return { error: error ? new Error(error.message) : null };
   };

@@ -234,7 +234,7 @@ function Practice() {
                     setAttemptText("");
                   }}
                 >
-                  Attempt &amp; Submit Answer
+                  Attempt & Submit Answer
                 </button>
                 <button
                   className="btn-secondary"

@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { PageShell } from "@/components/PageShell";
 import { PageHeader } from "@/components/PageHeader";
 import { GlowCard } from "@/components/GlowCard";
@@ -283,9 +283,9 @@ function Leaderboard() {
             <p className="text-[14px] font-semibold">Your Rank</p>
             <p className="text-[12px] text-text-muted">Login to see where you stand</p>
           </div>
-          <a href="/join" className="btn-primary h-9 px-5 text-[12px]">
+          <Link to="/join" className="btn-primary h-9 px-5 text-[12px]">
             Join Now
-          </a>
+          </Link>
         </div>
       </div>
     </PageShell>
