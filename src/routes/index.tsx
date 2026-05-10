@@ -45,7 +45,6 @@ function Home() {
       <StatsBar />
       <Features />
       <CasePreview />
-      <LiveTerminal />
       <ActivityGraph />
       <HowItWorks />
       <CompanyIntel />
