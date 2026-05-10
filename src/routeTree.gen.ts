@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from "./routes/__root"
 import { Route as TimetableRouteImport } from "./routes/timetable"
+import { Route as SubmitCaseRouteImport } from "./routes/submit-case"
 import { Route as PracticeRouteImport } from "./routes/practice"
 import { Route as NewsRouteImport } from "./routes/news"
 import { Route as LoginRouteImport } from "./routes/login"
@@ -20,11 +21,17 @@ import { Route as DeadlinesRouteImport } from "./routes/deadlines"
 import { Route as CasesRouteImport } from "./routes/cases"
 import { Route as AlumniRouteImport } from "./routes/alumni"
 import { Route as AdminRouteImport } from "./routes/admin"
+import { Route as AccountRouteImport } from "./routes/account"
 import { Route as IndexRouteImport } from "./routes/index"
 
 const TimetableRoute = TimetableRouteImport.update({
   id: "/timetable",
   path: "/timetable",
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SubmitCaseRoute = SubmitCaseRouteImport.update({
+  id: "/submit-case",
+  path: "/submit-case",
   getParentRoute: () => rootRouteImport,
 } as any)
 const PracticeRoute = PracticeRouteImport.update({
@@ -77,6 +84,11 @@ const AdminRoute = AdminRouteImport.update({
   path: "/admin",
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountRoute = AccountRouteImport.update({
+  id: "/account",
+  path: "/account",
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: "/",
   path: "/",
@@ -85,6 +97,7 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   "/": typeof IndexRoute
+  "/account": typeof AccountRoute
   "/admin": typeof AdminRoute
   "/alumni": typeof AlumniRoute
   "/cases": typeof CasesRoute
@@ -95,10 +108,12 @@ export interface FileRoutesByFullPath {
   "/login": typeof LoginRoute
   "/news": typeof NewsRoute
   "/practice": typeof PracticeRoute
+  "/submit-case": typeof SubmitCaseRoute
   "/timetable": typeof TimetableRoute
 }
 export interface FileRoutesByTo {
   "/": typeof IndexRoute
+  "/account": typeof AccountRoute
   "/admin": typeof AdminRoute
   "/alumni": typeof AlumniRoute
   "/cases": typeof CasesRoute
@@ -109,11 +124,13 @@ export interface FileRoutesByTo {
   "/login": typeof LoginRoute
   "/news": typeof NewsRoute
   "/practice": typeof PracticeRoute
+  "/submit-case": typeof SubmitCaseRoute
   "/timetable": typeof TimetableRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   "/": typeof IndexRoute
+  "/account": typeof AccountRoute
   "/admin": typeof AdminRoute
   "/alumni": typeof AlumniRoute
   "/cases": typeof CasesRoute
@@ -124,12 +141,14 @@ export interface FileRoutesById {
   "/login": typeof LoginRoute
   "/news": typeof NewsRoute
   "/practice": typeof PracticeRoute
+  "/submit-case": typeof SubmitCaseRoute
   "/timetable": typeof TimetableRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | "/"
+    | "/account"
     | "/admin"
     | "/alumni"
     | "/cases"
@@ -140,10 +159,12 @@ export interface FileRouteTypes {
     | "/login"
     | "/news"
     | "/practice"
+    | "/submit-case"
     | "/timetable"
   fileRoutesByTo: FileRoutesByTo
   to:
     | "/"
+    | "/account"
     | "/admin"
     | "/alumni"
     | "/cases"
@@ -154,10 +175,12 @@ export interface FileRouteTypes {
     | "/login"
     | "/news"
     | "/practice"
+    | "/submit-case"
     | "/timetable"
   id:
     | "__root__"
     | "/"
+    | "/account"
     | "/admin"
     | "/alumni"
     | "/cases"
@@ -168,11 +191,13 @@ export interface FileRouteTypes {
     | "/login"
     | "/news"
     | "/practice"
+    | "/submit-case"
     | "/timetable"
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AccountRoute: typeof AccountRoute
   AdminRoute: typeof AdminRoute
   AlumniRoute: typeof AlumniRoute
   CasesRoute: typeof CasesRoute
@@ -183,6 +208,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   NewsRoute: typeof NewsRoute
   PracticeRoute: typeof PracticeRoute
+  SubmitCaseRoute: typeof SubmitCaseRoute
   TimetableRoute: typeof TimetableRoute
 }
 
@@ -193,6 +219,13 @@ declare module "@tanstack/react-router" {
       path: "/timetable"
       fullPath: "/timetable"
       preLoaderRoute: typeof TimetableRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    "/submit-case": {
+      id: "/submit-case"
+      path: "/submit-case"
+      fullPath: "/submit-case"
+      preLoaderRoute: typeof SubmitCaseRouteImport
       parentRoute: typeof rootRouteImport
     }
     "/practice": {
@@ -265,6 +298,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
+    "/account": {
+      id: "/account"
+      path: "/account"
+      fullPath: "/account"
+      preLoaderRoute: typeof AccountRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     "/": {
       id: "/"
       path: "/"
@@ -277,6 +317,7 @@ declare module "@tanstack/react-router" {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AccountRoute: AccountRoute,
   AdminRoute: AdminRoute,
   AlumniRoute: AlumniRoute,
   CasesRoute: CasesRoute,
@@ -287,6 +328,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   NewsRoute: NewsRoute,
   PracticeRoute: PracticeRoute,
+  SubmitCaseRoute: SubmitCaseRoute,
   TimetableRoute: TimetableRoute,
 }
 export const routeTree = rootRouteImport
