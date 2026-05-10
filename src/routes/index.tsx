@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PageShell } from "@/components/PageShell";
-import { AnimatedSection } from "@/components/AnimatedSection";
+import { AnimatedSection, ParallaxBg } from "@/components/AnimatedSection";
 import { GlowCard } from "@/components/GlowCard";
 import { useState, useEffect, useRef } from "react";
 
@@ -28,8 +28,19 @@ function useCountUp(target: number, duration = 2000) {
 }
 
 function Home() {
+  const [scrollPct, setScrollPct] = useState(0);
+  useEffect(() => {
+    function onScroll() {
+      const h = document.documentElement.scrollHeight - window.innerHeight;
+      setScrollPct(h > 0 ? (window.scrollY / h) * 100 : 0);
+    }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   return (
     <PageShell>
+      <div className="scroll-progress" style={{ width: `${scrollPct}%` }} />
       <Hero />
       <StatsBar />
       <Features />
@@ -48,21 +59,28 @@ function Home() {
 /* ── HERO ── */
 function Hero() {
   return (
-    <section className="relative overflow-hidden" style={{ background: "radial-gradient(ellipse 80% 50% at 50% -20%, rgba(232,73,15,0.08), transparent), radial-gradient(ellipse 60% 40% at 100% 0%, rgba(232,73,15,0.05), transparent), #FAFAF8" }}>
+    <section className="relative overflow-hidden grain-overlay" style={{ background: "radial-gradient(ellipse 80% 50% at 50% -20%, rgba(232,73,15,0.08), transparent), radial-gradient(ellipse 60% 40% at 100% 0%, rgba(232,73,15,0.05), transparent), #FAFAF8" }}>
+      <ParallaxBg src="/images/chess-hero.png" speed={0.15} opacity={0.06} />
       <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")" }} />
+      {/* Floating chess knight accent */}
+      <div className="absolute right-[8%] top-[18%] hidden lg:block float-chess opacity-[0.07] pointer-events-none">
+        <img src="/images/chess-knight.png" alt="" className="w-[180px] h-[180px] object-contain rounded-2xl" />
+      </div>
       <div className="mx-auto max-w-[1180px] px-5 md:px-6 pt-32 md:pt-[160px] pb-20 md:pb-28 relative z-10">
-        <div className="max-w-[720px] slide-up">
-          <h1 className="font-serif text-[44px] sm:text-[56px] md:text-[72px] leading-[1.2] tracking-[-0.01em] text-text-primary">
-            The operating system for MBA placement.
-          </h1>
-          <p className="mt-6 text-[17px] md:text-[19px] text-text-secondary leading-[1.65] max-w-[560px]" style={{ fontFamily: "var(--font-sans)" }}>
-            Daily cases, guesstimates, company intel, and interview prep — built for students who are serious about where they land.
-          </p>
-          <div className="mt-8 flex flex-wrap items-center gap-3">
-            <Link to="/join" className="btn-primary text-[15px] h-[52px] px-7">Start Preparing — It's Free</Link>
-            <a href="#how-it-works" className="btn-secondary text-[15px] h-[52px] px-7">See How It Works</a>
+        <AnimatedSection variant="blur">
+          <div className="max-w-[720px]">
+            <h1 className="font-serif text-[44px] sm:text-[56px] md:text-[72px] leading-[1.1] tracking-[-0.02em] text-text-primary">
+              The operating system for <span style={{ color: "#E8490F" }}>MBA placement.</span>
+            </h1>
+            <p className="mt-6 text-[17px] md:text-[19px] text-text-secondary leading-[1.65] max-w-[560px]" style={{ fontFamily: "var(--font-sans)" }}>
+              Daily cases, guesstimates, company intel, and interview prep — built for students who are serious about where they land.
+            </p>
+            <div className="mt-8 flex flex-wrap items-center gap-3">
+              <Link to="/join" className="btn-primary text-[15px] h-[52px] px-7">Start Preparing — It's Free</Link>
+              <a href="#how-it-works" className="btn-secondary text-[15px] h-[52px] px-7">See How It Works</a>
+            </div>
           </div>
-        </div>
+        </AnimatedSection>
       </div>
     </section>
   );
@@ -133,9 +151,10 @@ function CasePreview() {
     return () => clearInterval(t);
   }, []);
   return (
-    <section style={{ background: "#FFF7F3" }}>
-      <div className="mx-auto max-w-[1180px] px-5 md:px-6 py-20 md:py-28">
-        <AnimatedSection>
+    <section className="relative overflow-hidden grain-overlay" style={{ background: "#FFF7F3" }}>
+      <ParallaxBg src="/images/chess-hero.png" speed={0.1} opacity={0.04} />
+      <div className="mx-auto max-w-[1180px] px-5 md:px-6 py-20 md:py-28 relative z-10">
+        <AnimatedSection variant="blur">
           <div className="grid lg:grid-cols-[1fr_1.1fr] gap-10 items-center">
             <div>
               <span className="label-orange">Live Now</span>
@@ -143,7 +162,8 @@ function CasePreview() {
               <p className="mt-4 text-[15px] text-text-secondary leading-[1.65] max-w-[440px]">A new case drops every morning. Solve it, get AI feedback, see your percentile. Miss it, and it locks at midnight.</p>
               <Link to="/login" className="btn-primary mt-6">Solve It — Login to Continue</Link>
             </div>
-            <GlowCard className="p-7 md:p-8">
+            <AnimatedSection variant="scale" delay={200}>
+              <GlowCard className="p-7 md:p-8 card-magnetic">
               <div className="relative z-10">
                 <div className="flex items-center justify-between">
                   <div className="flex gap-2">
@@ -163,6 +183,7 @@ function CasePreview() {
                 </div>
               </div>
             </GlowCard>
+            </AnimatedSection>
           </div>
         </AnimatedSection>
       </div>
@@ -426,27 +447,31 @@ function LiveTerminal() {
 
 function CompanyIntel() {
   const firms = [
-    { name: "McKinsey", style: "Exhibit-heavy, structured, MECE at every level" },
-    { name: "BCG", style: "Creative, data-heavy, comfortable with ambiguity" },
-    { name: "Bain", style: "Commercial sense, buddy interviews, strong opinions" },
-    { name: "Goldman Sachs", style: "Valuation, market sizing, financial modeling" },
-    { name: "HUL", style: "Market entry, rural distribution, P&L management" },
-    { name: "Amazon", style: "LP-driven cases, customer obsession, scale thinking" },
+    { name: "McKinsey", style: "Exhibit-heavy, structured, MECE at every level", icon: "♔" },
+    { name: "BCG", style: "Creative, data-heavy, comfortable with ambiguity", icon: "♕" },
+    { name: "Bain", style: "Commercial sense, buddy interviews, strong opinions", icon: "♖" },
+    { name: "Goldman Sachs", style: "Valuation, market sizing, financial modeling", icon: "♗" },
+    { name: "HUL", style: "Market entry, rural distribution, P&L management", icon: "♘" },
+    { name: "Amazon", style: "LP-driven cases, customer obsession, scale thinking", icon: "♙" },
   ];
   return (
-    <section style={{ background: "#FFF7F3" }}>
-      <div className="mx-auto max-w-[1180px] px-5 md:px-6 py-20 md:py-28">
-        <AnimatedSection>
+    <section className="relative overflow-hidden grain-overlay" style={{ background: "#FFF7F3" }}>
+      <ParallaxBg src="/images/chess-board.png" speed={0.2} opacity={0.05} />
+      <div className="mx-auto max-w-[1180px] px-5 md:px-6 py-20 md:py-28 relative z-10">
+        <AnimatedSection variant="blur">
           <span className="label-orange">Company Intelligence</span>
           <h2 className="mt-5 font-serif text-[34px] md:text-[44px] leading-[1.2] tracking-[-0.01em]">Know what they want before you walk in.</h2>
           <p className="mt-4 text-[15px] text-text-secondary max-w-[520px]">Interview style, case types, common PI questions, and insider data for 28+ firms.</p>
         </AnimatedSection>
         <div className="mt-10 grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {firms.map((f, i) => (
-            <AnimatedSection key={f.name} delay={i * 60}>
-              <div className="card-base p-5">
-                <h3 className="text-[16px] font-semibold" style={{ fontFamily: "var(--font-sans)" }}>{f.name}</h3>
-                <p className="mt-2 text-[13px] text-text-secondary leading-[1.55]">{f.style}</p>
+            <AnimatedSection key={f.name} delay={i * 80} variant={i % 2 === 0 ? "slide-left" : "slide-right"}>
+              <div className="card-base card-magnetic p-5">
+                <div className="flex items-center gap-3 mb-3">
+                  <span className="text-[28px] opacity-20">{f.icon}</span>
+                  <h3 className="text-[16px] font-semibold highlight-bar" style={{ fontFamily: "var(--font-sans)" }}>{f.name}</h3>
+                </div>
+                <p className="text-[13px] text-text-secondary leading-[1.55]">{f.style}</p>
                 <Link to="/cases" className="btn-ghost text-[12px] mt-3 inline-block">View Profile →</Link>
               </div>
             </AnimatedSection>

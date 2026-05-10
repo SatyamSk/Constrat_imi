@@ -36,16 +36,22 @@ function News() {
       <div className="mx-auto max-w-[1180px] px-5 md:px-6 -mt-4 pb-20">
         {/* Today's featured + progress */}
         <div className="grid lg:grid-cols-[2fr_1fr] gap-5 mb-10">
-          <GlowCard className="p-6 md:p-8" style={{ background: "linear-gradient(135deg, #130F0A 0%, #1A1510 100%)" }}>
+          <GlowCard className="p-0 overflow-hidden" style={{ background: "#130F0A" }}>
             <div className="relative z-10">
-              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-semibold" style={{ background: "rgba(232,73,15,0.15)", color: "#FF8C42" }}>
-                <span className="pulse-dot" style={{ background: "#FF8C42", boxShadow: "0 0 0 0 rgba(255,140,66,0.5)" }} /> Featured Story
-              </span>
-              <h3 className="mt-4 text-[22px] md:text-[26px] font-serif leading-[1.3]" style={{ color: "#F4ECE2" }}>{BRIEFS[0].title}</h3>
-              <p className="mt-3 text-[13px] leading-[1.65]" style={{ color: "#999" }}>{BRIEFS[0].why}</p>
-              <div className="mt-5 flex items-center gap-3">
-                <span className="pill" style={{ background: `${DOMAIN_COLORS[BRIEFS[0].domain]}20`, color: DOMAIN_COLORS[BRIEFS[0].domain] }}>{BRIEFS[0].domain}</span>
-                <span className="text-[11px]" style={{ color: "#666" }}>Source: {BRIEFS[0].source}</span>
+              <div className="absolute inset-0 z-0">
+                <img src="/images/news-bg.png" alt="" className="w-full h-full object-cover opacity-30" />
+                <div className="absolute inset-0" style={{ background: "linear-gradient(to top, #130F0A 30%, transparent 100%)" }} />
+              </div>
+              <div className="relative z-10 p-6 md:p-8 flex flex-col justify-end min-h-[260px]">
+                <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-semibold w-fit" style={{ background: "rgba(232,73,15,0.15)", color: "#FF8C42" }}>
+                  <span className="pulse-dot" style={{ background: "#FF8C42", boxShadow: "0 0 0 0 rgba(255,140,66,0.5)" }} /> Featured Story
+                </span>
+                <h3 className="mt-4 text-[22px] md:text-[26px] font-serif leading-[1.3]" style={{ color: "#F4ECE2" }}>{BRIEFS[0].title}</h3>
+                <p className="mt-3 text-[13px] leading-[1.65]" style={{ color: "#999" }}>{BRIEFS[0].why}</p>
+                <div className="mt-5 flex items-center gap-3">
+                  <span className="pill" style={{ background: `${DOMAIN_COLORS[BRIEFS[0].domain]}20`, color: DOMAIN_COLORS[BRIEFS[0].domain] }}>{BRIEFS[0].domain}</span>
+                  <span className="text-[11px]" style={{ color: "#666" }}>Source: {BRIEFS[0].source}</span>
+                </div>
               </div>
             </div>
           </GlowCard>
