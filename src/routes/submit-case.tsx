@@ -45,6 +45,8 @@ function SubmitCase() {
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [selectedSubmission, setSelectedSubmission] = useState<CaseSubmission | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -80,12 +82,15 @@ function SubmitCase() {
     if (!user || !isSupabaseConfigured || !supabase || !answer.trim()) return;
 
     setSubmitting(true);
+    setError(null);
+    setSuccess(null);
+
     try {
       // Analyze the case
       const analysis = await analyzeCaseSubmission(answer);
 
       // Save to database
-      const { data: saved } = await supabase
+      const { data: saved, error: insertError } = await supabase
         .from("case_submissions")
         .insert({
           user_id: user.id,
@@ -102,6 +107,13 @@ function SubmitCase() {
           },
         })
         .select();
+
+      if (insertError) {
+        console.error("Supabase insert error:", insertError);
+        setError(`Failed to submit case: ${insertError.message}`);
+        setSubmitting(false);
+        return;
+      }
 
       if (saved && saved.length > 0) {
         // Track activity
@@ -120,28 +132,25 @@ function SubmitCase() {
         setTitle("");
         setAnswer("");
         setCaseId(null);
+        clearMessages();
 
         // Reload submissions
         await loadSubmissions();
+        setSuccess("✅ Case submitted successfully! Score: " + analysis.overall_score);
+      } else {
+        throw new Error("No data returned from submission");
       }
     } catch (err) {
       console.error("Error submitting case:", err);
-      alert("Error submitting case. Please try again.");
+      setError("Error submitting case: " + (err instanceof Error ? err.message : "Unknown error"));
     } finally {
       setSubmitting(false);
     }
   };
 
-  const loadRankings = async (submissionId: string) => {
-    const submission = submissions.find((s) => s.id === submissionId);
-    if (!submission || !submission.id) return;
-
-    try {
-      const ranks = await getCaseRankings(submission.id, 5);
-      setRankings(ranks);
-    } catch (err) {
-      console.error("Error loading rankings:", err);
-    }
+  const clearMessages = () => {
+    setError(null);
+    setSuccess(null);
   };
 
   return (
@@ -158,6 +167,21 @@ function SubmitCase() {
             <GlowCard className="p-8">
               <div className="relative z-10">
                 <h2 className="text-[20px] font-semibold mb-6">New Case</h2>
+
+                {/* Error Message */}
+                {error && (
+                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                    {error}
+                  </div>
+                )}
+
+                {/* Success Message */}
+                {success && (
+                  <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">
+                    {success}
+                  </div>
+                )}
+
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
                     <label className="text-[12px] font-semibold text-text-muted mb-2 block">
@@ -166,7 +190,10 @@ function SubmitCase() {
                     <input
                       type="text"
                       value={title}
-                      onChange={(e) => setTitle(e.target.value)}
+                      onChange={(e) => {
+                        setTitle(e.target.value);
+                        clearMessages();
+                      }}
                       placeholder="e.g., Market Entry Strategy for Indian EV Market"
                       className="input-base w-full"
                     />
@@ -178,7 +205,10 @@ function SubmitCase() {
                     </label>
                     <textarea
                       value={answer}
-                      onChange={(e) => setAnswer(e.target.value)}
+                      onChange={(e) => {
+                        setAnswer(e.target.value);
+                        clearMessages();
+                      }}
                       placeholder="Write your case solution here. Use headings, bullet points, and structured frameworks for better analysis."
                       rows={12}
                       className="input-base w-full font-mono text-[13px]"
