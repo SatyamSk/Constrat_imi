@@ -19,12 +19,12 @@ function cleanFileName(raw: string): { name: string; category: string; fileType:
   name = name
     .replace(/[-_]+/g, " ")
     .replace(/\s+/g, " ")
-    .replace(/\(\d+\)/g, "")         // remove (1), (2) etc
+    .replace(/\(\d+\)/g, "") // remove (1), (2) etc
     .replace(/\bcopy\b/gi, "")
     .replace(/\bfinal\s*v?\d*/gi, "")
     .replace(/\bv\d+(\.\d+)?/gi, "")
-    .replace(/\b\d{8,}\b/g, "")       // remove long number strings
-    .replace(/^\d+[\s.-]+/, "")        // leading numbers
+    .replace(/\b\d{8,}\b/g, "") // remove long number strings
+    .replace(/^\d+[\s.-]+/, "") // leading numbers
     .trim();
 
   // Title case
@@ -61,7 +61,9 @@ type QueueItem = {
 };
 
 function Admin() {
-  const [tab, setTab] = useState<"cases" | "deadlines" | "competitions" | "news" | "timetable">("cases");
+  const [tab, setTab] = useState<"cases" | "deadlines" | "competitions" | "news" | "timetable">(
+    "cases",
+  );
 
   return (
     <PageShell>
@@ -71,12 +73,16 @@ function Admin() {
         subtitle="Upload case decks, add deadlines, manage competitions, and control content."
       >
         <div className="flex gap-2 flex-wrap">
-          {(["cases","deadlines","competitions","news","timetable"] as const).map((t) => (
+          {(["cases", "deadlines", "competitions", "news", "timetable"] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
               className="px-4 h-9 rounded-lg text-[13px] font-medium border capitalize transition-colors"
-              style={tab === t ? { background: "#E8490F", color: "#fff", borderColor: "#E8490F" } : { background: "#fff", color: "#5C5C5A", borderColor: "#E8E4DE" }}
+              style={
+                tab === t
+                  ? { background: "#E8490F", color: "#fff", borderColor: "#E8490F" }
+                  : { background: "#fff", color: "#5C5C5A", borderColor: "#E8E4DE" }
+              }
             >
               {t}
             </button>
@@ -105,9 +111,23 @@ function CaseDeckUploader() {
 
   function handleFiles(files: FileList | null) {
     if (!files) return;
-    const validExts = ["pdf","pptx","ppt","xlsx","xls","docx","doc","csv","txt","zip","png","jpg","jpeg"];
+    const validExts = [
+      "pdf",
+      "pptx",
+      "ppt",
+      "xlsx",
+      "xls",
+      "docx",
+      "doc",
+      "csv",
+      "txt",
+      "zip",
+      "png",
+      "jpg",
+      "jpeg",
+    ];
     const items: QueueItem[] = Array.from(files)
-      .filter(f => {
+      .filter((f) => {
         const ext = f.name.split(".").pop()?.toLowerCase() || "";
         return validExts.includes(ext) || f.size > 0;
       })
@@ -124,7 +144,9 @@ function CaseDeckUploader() {
     const items = e.dataTransfer.items;
     if (items) {
       const files: File[] = [];
-      const entries = Array.from(items).map(i => i.webkitGetAsEntry?.()).filter(Boolean);
+      const entries = Array.from(items)
+        .map((i) => i.webkitGetAsEntry?.())
+        .filter(Boolean);
       async function readDir(entry: FileSystemDirectoryEntry): Promise<File[]> {
         return new Promise((resolve) => {
           const reader = entry.createReader();
@@ -153,7 +175,7 @@ function CaseDeckUploader() {
         }
       }
       const dt = new DataTransfer();
-      files.forEach(f => dt.items.add(f));
+      files.forEach((f) => dt.items.add(f));
       handleFiles(dt.files);
     } else {
       handleFiles(e.dataTransfer.files);
@@ -186,9 +208,7 @@ function CaseDeckUploader() {
 
         if (uploadErr) throw uploadErr;
 
-        const { data: urlData } = supabase.storage
-          .from("case-files")
-          .getPublicUrl(path);
+        const { data: urlData } = supabase.storage.from("case-files").getPublicUrl(path);
 
         // Insert into case_decks table
         const { error: dbErr } = await supabase.from("case_decks").insert({
@@ -204,7 +224,10 @@ function CaseDeckUploader() {
         if (dbErr) throw dbErr;
         updateItem(i, { status: "done" });
       } catch (err: unknown) {
-        updateItem(i, { status: "error", error: err instanceof Error ? err.message : "Upload failed" });
+        updateItem(i, {
+          status: "error",
+          error: err instanceof Error ? err.message : "Upload failed",
+        });
       }
     }
   }
@@ -214,26 +237,86 @@ function CaseDeckUploader() {
   return (
     <div>
       <h2 className="font-serif text-[28px] font-semibold">Case Deck Upload</h2>
-      <p className="mt-2 text-[14px] text-text-secondary">Drop files or folders. Select multiple folders one by one — they all add to the queue. Drag multiple folders at once too.</p>
+      <p className="mt-2 text-[14px] text-text-secondary">
+        Drop files or folders. Select multiple folders one by one — they all add to the queue. Drag
+        multiple folders at once too.
+      </p>
 
       {/* Drop zone */}
       <div
         className="mt-6 border-2 border-dashed border-border rounded-2xl p-10 text-center cursor-pointer hover:border-orange transition-colors"
         onClick={() => fileRef.current?.click()}
-        onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("border-orange"); }}
+        onDragOver={(e) => {
+          e.preventDefault();
+          e.currentTarget.classList.add("border-orange");
+        }}
         onDragLeave={(e) => e.currentTarget.classList.remove("border-orange")}
         onDrop={handleDrop}
       >
         <p className="text-[16px] font-semibold text-text-primary">Drop files or folders here</p>
-        <p className="mt-1 text-[13px] text-text-muted">Any format — PDF, PPT, XLSX, DOCX, images, ZIP — or entire folders. Keep adding more!</p>
-        {queue.length > 0 && <p className="mt-2 text-[13px] text-orange font-semibold">{queue.length} file(s) in queue</p>}
+        <p className="mt-1 text-[13px] text-text-muted">
+          Any format — PDF, PPT, XLSX, DOCX, images, ZIP — or entire folders. Keep adding more!
+        </p>
+        {queue.length > 0 && (
+          <p className="mt-2 text-[13px] text-orange font-semibold">
+            {queue.length} file(s) in queue
+          </p>
+        )}
         <div className="mt-4 flex justify-center gap-3 flex-wrap">
-          <button onClick={(e) => { e.stopPropagation(); fileRef.current?.click(); }} className="btn-secondary text-[13px] h-9 px-4">+ Select Files</button>
-          <button onClick={(e) => { e.stopPropagation(); folderRef.current?.click(); }} className="btn-secondary text-[13px] h-9 px-4">+ Select Folder</button>
-          {queue.length > 0 && <button onClick={(e) => { e.stopPropagation(); setQueue([]); }} className="text-[12px] text-text-muted hover:text-urgent transition-colors px-3">Clear All</button>}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              fileRef.current?.click();
+            }}
+            className="btn-secondary text-[13px] h-9 px-4"
+          >
+            + Select Files
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              folderRef.current?.click();
+            }}
+            className="btn-secondary text-[13px] h-9 px-4"
+          >
+            + Select Folder
+          </button>
+          {queue.length > 0 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setQueue([]);
+              }}
+              className="text-[12px] text-text-muted hover:text-urgent transition-colors px-3"
+            >
+              Clear All
+            </button>
+          )}
         </div>
-        <input ref={fileRef} type="file" multiple className="hidden" onChange={(e) => { handleFiles(e.target.files); e.target.value = ""; }} />
-        <input ref={folderRef} type="file" multiple {...({ webkitdirectory: "", directory: "" } as React.InputHTMLAttributes<HTMLInputElement>)} className="hidden" onChange={(e) => { handleFiles(e.target.files); e.target.value = ""; }} />
+        <input
+          ref={fileRef}
+          type="file"
+          multiple
+          className="hidden"
+          onChange={(e) => {
+            handleFiles(e.target.files);
+            e.target.value = "";
+          }}
+        />
+        <input
+          ref={folderRef}
+          type="file"
+          multiple
+          {...({
+            webkitdirectory: "",
+            directory: "",
+          } as React.InputHTMLAttributes<HTMLInputElement>)}
+          className="hidden"
+          onChange={(e) => {
+            handleFiles(e.target.files);
+            e.target.value = "";
+          }}
+        />
       </div>
 
       {/* Queue */}
@@ -265,18 +348,44 @@ function CaseDeckUploader() {
                         className="input-base text-[12px] h-7 px-2"
                         disabled={item.status !== "pending"}
                       >
-                        {["General","Consulting Frameworks","Competition Decks","Industry Primers","McKinsey","BCG","Bain","Deloitte","KPMG","Accenture","Student Decks","Excel Models","PPT Templates","Interview Prep","GD Topics"].map((c) => (
+                        {[
+                          "General",
+                          "Consulting Frameworks",
+                          "Competition Decks",
+                          "Industry Primers",
+                          "McKinsey",
+                          "BCG",
+                          "Bain",
+                          "Deloitte",
+                          "KPMG",
+                          "Accenture",
+                          "Student Decks",
+                          "Excel Models",
+                          "PPT Templates",
+                          "Interview Prep",
+                          "GD Topics",
+                        ].map((c) => (
                           <option key={c}>{c}</option>
                         ))}
                       </select>
-                      <span className={`pill ${item.fileType === "PDF" ? "pill-red" : item.fileType === "PPTX" ? "pill-orange" : "pill-blue"}`}>{item.fileType}</span>
+                      <span
+                        className={`pill ${item.fileType === "PDF" ? "pill-red" : item.fileType === "PPTX" ? "pill-orange" : "pill-blue"}`}
+                      >
+                        {item.fileType}
+                      </span>
                     </div>
                   </div>
                   <div className="shrink-0 text-[13px] font-medium w-20 text-right">
                     {item.status === "pending" && <span className="text-text-muted">Pending</span>}
-                    {item.status === "uploading" && <span className="text-orange">Uploading...</span>}
+                    {item.status === "uploading" && (
+                      <span className="text-orange">Uploading...</span>
+                    )}
                     {item.status === "done" && <span className="text-success">Done</span>}
-                    {item.status === "error" && <span className="text-urgent" title={item.error}>Error</span>}
+                    {item.status === "error" && (
+                      <span className="text-urgent" title={item.error}>
+                        Error
+                      </span>
+                    )}
                   </div>
                 </div>
               </GlowCard>
@@ -290,45 +399,98 @@ function CaseDeckUploader() {
 
 /* ─── DEADLINE MANAGER ─── */
 function DeadlineManager() {
-  const [form, setForm] = useState({ title: "", description: "", deadline: "", source: "Placement", batch: "All", urgency: "medium" });
+  const [form, setForm] = useState({
+    title: "",
+    description: "",
+    deadline: "",
+    source: "Placement",
+    batch: "All",
+    urgency: "medium",
+  });
   const [msg, setMsg] = useState("");
 
   async function addDeadline() {
     if (!form.title || !form.deadline) return;
     if (isSupabaseConfigured && supabase) {
       const { error } = await supabase.from("deadlines").insert({
-        title: form.title, description: form.description,
-        deadline_date: form.deadline, source: form.source,
-        batch: form.batch, urgency: form.urgency,
+        title: form.title,
+        description: form.description,
+        deadline_date: form.deadline,
+        source: form.source,
+        batch: form.batch,
+        urgency: form.urgency,
       });
       setMsg(error ? `Error: ${error.message}` : "Deadline added!");
     } else {
       setMsg("Demo mode: Deadline would be saved to database.");
     }
-    setForm({ title: "", description: "", deadline: "", source: "Placement", batch: "All", urgency: "medium" });
+    setForm({
+      title: "",
+      description: "",
+      deadline: "",
+      source: "Placement",
+      batch: "All",
+      urgency: "medium",
+    });
   }
 
   return (
     <div>
       <h2 className="font-serif text-[28px] font-semibold">Add Deadline</h2>
       <div className="mt-6 card-base p-6 space-y-4 max-w-[600px]">
-        <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Deadline title..." className="input-base w-full" />
-        <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Description..." className="input-base w-full h-20 resize-none" />
+        <input
+          value={form.title}
+          onChange={(e) => setForm({ ...form, title: e.target.value })}
+          placeholder="Deadline title..."
+          className="input-base w-full"
+        />
+        <textarea
+          value={form.description}
+          onChange={(e) => setForm({ ...form, description: e.target.value })}
+          placeholder="Description..."
+          className="input-base w-full h-20 resize-none"
+        />
         <div className="grid grid-cols-2 gap-3">
-          <input type="date" value={form.deadline} onChange={(e) => setForm({ ...form, deadline: e.target.value })} className="input-base" />
-          <select value={form.source} onChange={(e) => setForm({ ...form, source: e.target.value })} className="input-base">
-            <option>Placement</option><option>Constrat</option><option>Academics</option>
+          <input
+            type="date"
+            value={form.deadline}
+            onChange={(e) => setForm({ ...form, deadline: e.target.value })}
+            className="input-base"
+          />
+          <select
+            value={form.source}
+            onChange={(e) => setForm({ ...form, source: e.target.value })}
+            className="input-base"
+          >
+            <option>Placement</option>
+            <option>Constrat</option>
+            <option>Academics</option>
           </select>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <select value={form.batch} onChange={(e) => setForm({ ...form, batch: e.target.value })} className="input-base">
-            <option>All</option><option>2025</option><option>2026</option><option>2027</option>
+          <select
+            value={form.batch}
+            onChange={(e) => setForm({ ...form, batch: e.target.value })}
+            className="input-base"
+          >
+            <option>All</option>
+            <option>2025</option>
+            <option>2026</option>
+            <option>2027</option>
           </select>
-          <select value={form.urgency} onChange={(e) => setForm({ ...form, urgency: e.target.value })} className="input-base">
-            <option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option>
+          <select
+            value={form.urgency}
+            onChange={(e) => setForm({ ...form, urgency: e.target.value })}
+            className="input-base"
+          >
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
           </select>
         </div>
-        <button onClick={addDeadline} className="btn-primary w-full">Add Deadline</button>
+        <button onClick={addDeadline} className="btn-primary w-full">
+          Add Deadline
+        </button>
         {msg && <p className="text-[13px] text-success">{msg}</p>}
       </div>
     </div>
@@ -337,16 +499,26 @@ function DeadlineManager() {
 
 /* ─── COMPETITION MANAGER ─── */
 function CompetitionManager() {
-  const [form, setForm] = useState({ name: "", org: "Unstop", deadline: "", prize: "", url: "", tag: "Live" });
+  const [form, setForm] = useState({
+    name: "",
+    org: "Unstop",
+    deadline: "",
+    prize: "",
+    url: "",
+    tag: "Live",
+  });
   const [msg, setMsg] = useState("");
 
   async function addComp() {
     if (!form.name) return;
     if (isSupabaseConfigured && supabase) {
       const { error } = await supabase.from("competitions").insert({
-        name: form.name, organizer: form.org,
-        deadline_date: form.deadline, prize: form.prize,
-        url: form.url, tag: form.tag,
+        name: form.name,
+        organizer: form.org,
+        deadline_date: form.deadline,
+        prize: form.prize,
+        url: form.url,
+        tag: form.tag,
       });
       setMsg(error ? `Error: ${error.message}` : "Competition added!");
     } else {
@@ -358,23 +530,61 @@ function CompetitionManager() {
   return (
     <div>
       <h2 className="font-serif text-[28px] font-semibold">Add Competition</h2>
-      <p className="mt-2 text-[14px] text-text-secondary">From Unstop, Grad Partners, Kampus Connect, or any platform.</p>
+      <p className="mt-2 text-[14px] text-text-secondary">
+        From Unstop, Grad Partners, Kampus Connect, or any platform.
+      </p>
       <div className="mt-6 card-base p-6 space-y-4 max-w-[600px]">
-        <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Competition name..." className="input-base w-full" />
+        <input
+          value={form.name}
+          onChange={(e) => setForm({ ...form, name: e.target.value })}
+          placeholder="Competition name..."
+          className="input-base w-full"
+        />
         <div className="grid grid-cols-2 gap-3">
-          <select value={form.org} onChange={(e) => setForm({ ...form, org: e.target.value })} className="input-base">
-            <option>Unstop</option><option>Grad Partners</option><option>Kampus Connect</option><option>Other</option>
+          <select
+            value={form.org}
+            onChange={(e) => setForm({ ...form, org: e.target.value })}
+            className="input-base"
+          >
+            <option>Unstop</option>
+            <option>Grad Partners</option>
+            <option>Kampus Connect</option>
+            <option>Other</option>
           </select>
-          <select value={form.tag} onChange={(e) => setForm({ ...form, tag: e.target.value })} className="input-base">
-            <option>Live</option><option>Opening Soon</option><option>Closed</option>
+          <select
+            value={form.tag}
+            onChange={(e) => setForm({ ...form, tag: e.target.value })}
+            className="input-base"
+          >
+            <option>Live</option>
+            <option>Opening Soon</option>
+            <option>Closed</option>
           </select>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <input type="date" value={form.deadline} onChange={(e) => setForm({ ...form, deadline: e.target.value })} className="input-base" placeholder="Deadline" />
-          <input value={form.prize} onChange={(e) => setForm({ ...form, prize: e.target.value })} placeholder="Prize (e.g. Rs 3,00,000)" className="input-base" />
+          <input
+            type="date"
+            value={form.deadline}
+            onChange={(e) => setForm({ ...form, deadline: e.target.value })}
+            className="input-base"
+            placeholder="Deadline"
+          />
+          <input
+            value={form.prize}
+            onChange={(e) => setForm({ ...form, prize: e.target.value })}
+            placeholder="Prize (e.g. Rs 3,00,000)"
+            className="input-base"
+          />
         </div>
-        <input value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} placeholder="Link to apply..." className="input-base w-full" />
-        <button onClick={addComp} className="btn-primary w-full">Add Competition</button>
+        <input
+          value={form.url}
+          onChange={(e) => setForm({ ...form, url: e.target.value })}
+          placeholder="Link to apply..."
+          className="input-base w-full"
+        />
+        <button onClick={addComp} className="btn-primary w-full">
+          Add Competition
+        </button>
         {msg && <p className="text-[13px] text-success">{msg}</p>}
       </div>
     </div>
@@ -390,8 +600,11 @@ function NewsManager() {
     if (!form.title) return;
     if (isSupabaseConfigured && supabase) {
       const { error } = await supabase.from("news").insert({
-        title: form.title, source: form.source,
-        topic: form.topic, ai_summary: form.summary, url: form.url,
+        title: form.title,
+        source: form.source,
+        topic: form.topic,
+        ai_summary: form.summary,
+        url: form.url,
       });
       setMsg(error ? `Error: ${error.message}` : "News added!");
     } else {
@@ -404,16 +617,48 @@ function NewsManager() {
     <div>
       <h2 className="font-serif text-[28px] font-semibold">Add News Article</h2>
       <div className="mt-6 card-base p-6 space-y-4 max-w-[600px]">
-        <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Headline..." className="input-base w-full" />
+        <input
+          value={form.title}
+          onChange={(e) => setForm({ ...form, title: e.target.value })}
+          placeholder="Headline..."
+          className="input-base w-full"
+        />
         <div className="grid grid-cols-2 gap-3">
-          <input value={form.source} onChange={(e) => setForm({ ...form, source: e.target.value })} placeholder="Source (ET, Reuters...)" className="input-base" />
-          <select value={form.topic} onChange={(e) => setForm({ ...form, topic: e.target.value })} className="input-base">
-            <option>Macro</option><option>Markets</option><option>Startup</option><option>FMCG</option><option>Tech</option><option>Banking</option><option>Consulting</option>
+          <input
+            value={form.source}
+            onChange={(e) => setForm({ ...form, source: e.target.value })}
+            placeholder="Source (ET, Reuters...)"
+            className="input-base"
+          />
+          <select
+            value={form.topic}
+            onChange={(e) => setForm({ ...form, topic: e.target.value })}
+            className="input-base"
+          >
+            <option>Macro</option>
+            <option>Markets</option>
+            <option>Startup</option>
+            <option>FMCG</option>
+            <option>Tech</option>
+            <option>Banking</option>
+            <option>Consulting</option>
           </select>
         </div>
-        <textarea value={form.summary} onChange={(e) => setForm({ ...form, summary: e.target.value })} placeholder="AI Summary / Key takeaway..." className="input-base w-full h-20 resize-none" />
-        <input value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} placeholder="Article URL..." className="input-base w-full" />
-        <button onClick={addNews} className="btn-primary w-full">Add News</button>
+        <textarea
+          value={form.summary}
+          onChange={(e) => setForm({ ...form, summary: e.target.value })}
+          placeholder="AI Summary / Key takeaway..."
+          className="input-base w-full h-20 resize-none"
+        />
+        <input
+          value={form.url}
+          onChange={(e) => setForm({ ...form, url: e.target.value })}
+          placeholder="Article URL..."
+          className="input-base w-full"
+        />
+        <button onClick={addNews} className="btn-primary w-full">
+          Add News
+        </button>
         {msg && <p className="text-[13px] text-success">{msg}</p>}
       </div>
     </div>
@@ -430,7 +675,11 @@ function TimetableManager() {
     try {
       const res = await fetch("/api/timetable_sync");
       const data = await res.json();
-      setResult(data.success ? `Synced ${data.entries_synced || 0} entries, ${data.changes_detected || 0} changes` : `Error: ${data.error}`);
+      setResult(
+        data.success
+          ? `Synced ${data.entries_synced || 0} entries, ${data.changes_detected || 0} changes`
+          : `Error: ${data.error}`,
+      );
     } catch {
       setResult("Sync endpoint not available in dev mode. Works on Vercel.");
     }
@@ -440,7 +689,9 @@ function TimetableManager() {
   return (
     <div>
       <h2 className="font-serif text-[28px] font-semibold">Timetable Sync</h2>
-      <p className="mt-2 text-[14px] text-text-secondary">Manually trigger timetable sync from Google Sheet.</p>
+      <p className="mt-2 text-[14px] text-text-secondary">
+        Manually trigger timetable sync from Google Sheet.
+      </p>
       <div className="mt-6 card-base p-6 max-w-[600px]">
         <button onClick={triggerSync} disabled={syncing} className="btn-primary w-full">
           {syncing ? "Syncing..." : "Trigger Timetable Sync"}

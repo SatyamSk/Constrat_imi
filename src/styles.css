@@ -98,7 +98,9 @@
    BASE LAYER — Matching Framer template exactly
    ============================================================ */
 @layer base {
-  * { border-color: var(--color-border); }
+  * {
+    border-color: var(--color-border);
+  }
 
   html {
     scroll-behavior: smooth;
@@ -107,7 +109,8 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  html, body {
+  html,
+  body {
     background-color: var(--color-background);
     color: var(--color-text-primary);
     font-family: var(--font-sans);
@@ -119,7 +122,11 @@
     box-sizing: border-box;
   }
 
-  h1, h2, h3, h4, h5 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5 {
     font-family: var(--font-display);
     color: var(--color-text-primary);
     letter-spacing: -0.04em;
@@ -127,22 +134,40 @@
     font-weight: 500;
   }
 
-  ::selection { background: rgba(250, 110, 67, 0.3); color: #fff; }
+  ::selection {
+    background: rgba(250, 110, 67, 0.3);
+    color: #fff;
+  }
 
   /* ── Scrollbar: suppressed (Framer pattern) ── */
-  ::-webkit-scrollbar { width: 0; height: 0; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: transparent; }
-  * { scrollbar-width: none; }
+  ::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: transparent;
+  }
+  * {
+    scrollbar-width: none;
+  }
 }
 
 /* ============================================================
    UTILITIES
    ============================================================ */
 @layer utilities {
-  .font-serif { font-family: var(--font-display); }
-  .font-sans { font-family: var(--font-sans); }
-  .font-display { font-family: var(--font-display); }
+  .font-serif {
+    font-family: var(--font-display);
+  }
+  .font-sans {
+    font-family: var(--font-sans);
+  }
+  .font-display {
+    font-family: var(--font-display);
+  }
 
   /* --- Eyebrow & Label --- */
   .label-eyebrow {
@@ -196,7 +221,9 @@
     box-shadow: 0 0 40px -12px rgba(250, 110, 67, 0.08);
     transform: translateY(-2px);
   }
-  .card-base:hover::before { opacity: 1; }
+  .card-base:hover::before {
+    opacity: 1;
+  }
 
   /* --- Glass morphism (dark) --- */
   .glass {
@@ -214,74 +241,152 @@
 
   /* --- Pulse dot --- */
   .pulse-dot {
-    width: 8px; height: 8px; border-radius: 9999px; background: #4ade80;
+    width: 8px;
+    height: 8px;
+    border-radius: 9999px;
+    background: #4ade80;
     box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.5);
     animation: pulseDot 1.8s infinite;
     display: inline-block;
   }
   @keyframes pulseDot {
-    0% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.5); }
-    70% { box-shadow: 0 0 0 8px rgba(74, 222, 128, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); }
+    0% {
+      box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.5);
+    }
+    70% {
+      box-shadow: 0 0 0 8px rgba(74, 222, 128, 0);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(74, 222, 128, 0);
+    }
   }
 
   /* --- Dot indicator (Platform® pattern: active/inactive dots) --- */
   .dot-indicator {
-    width: 12px; height: 12px; border-radius: 50%;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
     background: var(--color-border);
     transition: background 300ms ease;
   }
-  .dot-indicator.active { background: var(--color-text-primary); }
-  .dot-active { background: var(--color-text-primary); }
-  .dot-inactive { background: var(--color-border); }
+  .dot-indicator.active {
+    background: var(--color-text-primary);
+  }
+  .dot-active {
+    background: var(--color-text-primary);
+  }
+  .dot-inactive {
+    background: var(--color-border);
+  }
 
   /* --- Pill badge (dark) --- */
   .pill {
-    font-size: 11px; font-weight: 600;
-    padding: 3px 10px; border-radius: 6px;
-    display: inline-flex; align-items: center;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
     background: var(--color-muted);
     color: var(--color-text-secondary);
     letter-spacing: -0.02em;
   }
-  .pill-orange { background: var(--color-orange-tint); color: var(--color-orange); }
-  .pill-red { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
-  .pill-green { background: rgba(74, 222, 128, 0.1); color: #4ade80; }
+  .pill-orange {
+    background: var(--color-orange-tint);
+    color: var(--color-orange);
+  }
+  .pill-red {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+  }
+  .pill-green {
+    background: rgba(74, 222, 128, 0.1);
+    color: #4ade80;
+  }
 
   /* --- Animations --- */
-  .fade-in { animation: fadeIn 400ms cubic-bezier(0.4, 0, 0.2, 1) both; }
+  .fade-in {
+    animation: fadeIn 400ms cubic-bezier(0.4, 0, 0.2, 1) both;
+  }
   @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: none; }
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
   }
-  .fade-up { animation: fadeUp 600ms cubic-bezier(0.4, 0, 0.2, 1) both; }
+  .fade-up {
+    animation: fadeUp 600ms cubic-bezier(0.4, 0, 0.2, 1) both;
+  }
   @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(24px); }
-    to { opacity: 1; transform: none; }
+    from {
+      opacity: 0;
+      transform: translateY(24px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
   }
-  .slide-up { animation: slideUp 700ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+  .slide-up {
+    animation: slideUp 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
   @keyframes slideUp {
-    from { opacity: 0; transform: translateY(40px); }
-    to { opacity: 1; transform: none; }
+    from {
+      opacity: 0;
+      transform: translateY(40px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
   }
 
   /* Scroll-triggered animation */
   .reveal {
-    opacity: 0; transform: translateY(32px);
-    transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    opacity: 0;
+    transform: translateY(32px);
+    transition:
+      opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+      transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
   }
-  .reveal.visible { opacity: 1; transform: none; }
-  .reveal-delay-1 { transition-delay: 0.1s; }
-  .reveal-delay-2 { transition-delay: 0.2s; }
-  .reveal-delay-3 { transition-delay: 0.3s; }
-  .reveal-delay-4 { transition-delay: 0.4s; }
+  .reveal.visible {
+    opacity: 1;
+    transform: none;
+  }
+  .reveal-delay-1 {
+    transition-delay: 0.1s;
+  }
+  .reveal-delay-2 {
+    transition-delay: 0.2s;
+  }
+  .reveal-delay-3 {
+    transition-delay: 0.3s;
+  }
+  .reveal-delay-4 {
+    transition-delay: 0.4s;
+  }
 
   /* --- Marquee --- */
-  .marquee { display: flex; overflow: hidden; white-space: nowrap; }
-  .marquee-track { display: inline-flex; animation: marquee 38s linear infinite; }
+  .marquee {
+    display: flex;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  .marquee-track {
+    display: inline-flex;
+    animation: marquee 38s linear infinite;
+  }
   @keyframes marquee {
-    from { transform: translateX(0); }
-    to   { transform: translateX(-50%); }
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
   }
 
   /* --- Gradient backgrounds (dark) --- */
@@ -304,13 +409,23 @@
 
   /* --- Buttons (dark theme) --- */
   .btn-primary {
-    display: inline-flex; align-items: center; justify-content: center;
-    height: 48px; padding: 0 24px; border-radius: 8px;
-    background: var(--color-orange); color: #fff;
-    font-size: 14px; font-weight: 600; letter-spacing: -0.02em;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 48px;
+    padding: 0 24px;
+    border-radius: 8px;
+    background: var(--color-orange);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
     transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 1px 2px rgba(250, 110, 67, 0.3), inset 0 1px 0 rgba(255,255,255,0.15);
-    cursor: pointer; border: none;
+    box-shadow:
+      0 1px 2px rgba(250, 110, 67, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    cursor: pointer;
+    border: none;
   }
   .btn-primary:hover {
     background: var(--color-orange-hover);
@@ -318,24 +433,41 @@
     transform: translateY(-1px);
   }
   .btn-secondary {
-    display: inline-flex; align-items: center; justify-content: center;
-    height: 48px; padding: 0 24px; border-radius: 8px;
-    background: transparent; color: var(--color-text-primary);
-    font-size: 14px; font-weight: 600; letter-spacing: -0.02em;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 48px;
+    padding: 0 24px;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--color-text-primary);
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
     border: 1px solid var(--color-border);
-    transition: all 200ms ease; cursor: pointer;
+    transition: all 200ms ease;
+    cursor: pointer;
   }
   .btn-secondary:hover {
     border-color: var(--color-text-secondary);
-    background: rgba(255,255,255,0.04);
+    background: rgba(255, 255, 255, 0.04);
   }
   .btn-ghost {
-    display: inline-flex; align-items: center;
-    font-size: 13px; font-weight: 500; letter-spacing: -0.02em;
-    color: var(--color-orange); cursor: pointer;
-    transition: color 200ms; border: none; background: none; padding: 0;
+    display: inline-flex;
+    align-items: center;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    color: var(--color-orange);
+    cursor: pointer;
+    transition: color 200ms;
+    border: none;
+    background: none;
+    padding: 0;
   }
-  .btn-ghost:hover { color: var(--color-orange-hover); }
+  .btn-ghost:hover {
+    color: var(--color-orange-hover);
+  }
 
   /* --- Bento Grid (Platform® core pattern) --- */
   .bento-grid {
@@ -345,12 +477,24 @@
     gap: 4px;
     width: 100%;
   }
-  .bento-span-1 { grid-column: span 1; }
-  .bento-span-2 { grid-column: span 2; }
-  .bento-span-3 { grid-column: span 3; }
-  .bento-span-4 { grid-column: span 4; }
-  .bento-span-5 { grid-column: span 5; }
-  .bento-span-full { grid-column: 1 / -1; }
+  .bento-span-1 {
+    grid-column: span 1;
+  }
+  .bento-span-2 {
+    grid-column: span 2;
+  }
+  .bento-span-3 {
+    grid-column: span 3;
+  }
+  .bento-span-4 {
+    grid-column: span 4;
+  }
+  .bento-span-5 {
+    grid-column: span 5;
+  }
+  .bento-span-full {
+    grid-column: 1 / -1;
+  }
 
   /* --- Dotted border separator (Platform® pattern) --- */
   .border-dotted-left {
@@ -380,11 +524,17 @@
     height: 100%;
   }
   .dot {
-    width: 12px; height: 12px; border-radius: 50%;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
     flex-shrink: 0;
   }
-  .dot-light { background: var(--color-text-primary); }
-  .dot-dark { background: var(--color-border); }
+  .dot-light {
+    background: var(--color-text-primary);
+  }
+  .dot-dark {
+    background: var(--color-border);
+  }
 
   /* --- Sticky scroll section (Platform® pattern) --- */
   .sticky-section {
@@ -408,19 +558,39 @@
     filter: blur(4px);
     z-index: 0;
   }
-  .glow-orb-sm { width: 102px; height: 102px; filter: blur(7px); }
-  .glow-orb-md { width: 174px; height: 174px; filter: blur(2px); }
-  .glow-orb-lg { width: 251px; height: 251px; }
+  .glow-orb-sm {
+    width: 102px;
+    height: 102px;
+    filter: blur(7px);
+  }
+  .glow-orb-md {
+    width: 174px;
+    height: 174px;
+    filter: blur(2px);
+  }
+  .glow-orb-lg {
+    width: 251px;
+    height: 251px;
+  }
 
   /* --- Number counter shimmer --- */
   .shimmer {
-    background: linear-gradient(110deg, transparent 33%, rgba(250, 110, 67, 0.08) 50%, transparent 67%);
+    background: linear-gradient(
+      110deg,
+      transparent 33%,
+      rgba(250, 110, 67, 0.08) 50%,
+      transparent 67%
+    );
     background-size: 300% 100%;
     animation: shimmer 2.5s ease-in-out infinite;
   }
   @keyframes shimmer {
-    0% { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
   }
 
   /* --- Text gradient fill (Platform® pattern) --- */
@@ -435,19 +605,36 @@
    MOBILE RESPONSIVE OVERRIDES
    ============================================================ */
 @media (max-width: 768px) {
-  html, body { font-size: 14px; }
-  h1 { font-size: clamp(32px, 8vw, 56px) !important; }
-  h2 { font-size: clamp(28px, 6vw, 44px) !important; }
-  .btn-primary, .btn-secondary { height: 44px; padding: 0 20px; font-size: 13px; }
+  html,
+  body {
+    font-size: 14px;
+  }
+  h1 {
+    font-size: clamp(32px, 8vw, 56px) !important;
+  }
+  h2 {
+    font-size: clamp(28px, 6vw, 44px) !important;
+  }
+  .btn-primary,
+  .btn-secondary {
+    height: 44px;
+    padding: 0 20px;
+    font-size: 13px;
+  }
 
   /* Bento grid collapses to 2 cols on mobile */
   .bento-grid {
     grid-template-columns: repeat(2, minmax(50px, 1fr));
   }
-  .bento-span-2, .bento-span-3, .bento-span-4, .bento-span-5 {
+  .bento-span-2,
+  .bento-span-3,
+  .bento-span-4,
+  .bento-span-5 {
     grid-column: 1 / -1;
   }
-  .dot-grid { display: none; }
+  .dot-grid {
+    display: none;
+  }
 }
 
 @media (min-width: 769px) and (max-width: 1199px) {
@@ -457,15 +644,22 @@
 }
 
 @media (max-width: 480px) {
-  .btn-primary, .btn-secondary { width: 100%; }
+  .btn-primary,
+  .btn-secondary {
+    width: 100%;
+  }
 }
 
 /* ============================================================
    PAGE TRANSITIONS (View Transition API)
    ============================================================ */
-@view-transition { navigation: auto; }
+@view-transition {
+  navigation: auto;
+}
 ::view-transition-old(root),
-::view-transition-new(root) { animation-duration: 250ms; }
+::view-transition-new(root) {
+  animation-duration: 250ms;
+}
 
 /* ============================================================
    FRAMER-STYLE ENHANCEMENTS
@@ -473,65 +667,120 @@
 
 /* Magnetic card hover — 3D tilt */
 .card-magnetic {
-  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-              box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  transition:
+    transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   will-change: transform;
 }
 .card-magnetic:hover {
   transform: translateY(-6px) rotateX(2deg) rotateY(-1deg);
-  box-shadow: 0 20px 60px -12px rgba(250, 110, 67, 0.15), 0 4px 20px rgba(0, 0, 0, 0.2);
+  box-shadow:
+    0 20px 60px -12px rgba(250, 110, 67, 0.15),
+    0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
 /* Highlight bar on hover */
-.highlight-bar { position: relative; }
+.highlight-bar {
+  position: relative;
+}
 .highlight-bar::after {
-  content: ""; position: absolute;
-  bottom: -4px; left: 0; width: 0; height: 3px;
+  content: "";
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 0;
+  height: 3px;
   background: linear-gradient(90deg, #fa6e43, #e85a30);
   border-radius: 2px;
   transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.highlight-bar:hover::after { width: 100%; }
+.highlight-bar:hover::after {
+  width: 100%;
+}
 
 /* Chess piece floating animation */
 @keyframes floatChess {
-  0%, 100% { transform: translateY(0) rotate(0deg); }
-  25% { transform: translateY(-12px) rotate(2deg); }
-  75% { transform: translateY(-6px) rotate(-1deg); }
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-12px) rotate(2deg);
+  }
+  75% {
+    transform: translateY(-6px) rotate(-1deg);
+  }
 }
-.float-chess { animation: floatChess 6s ease-in-out infinite; }
+.float-chess {
+  animation: floatChess 6s ease-in-out infinite;
+}
 
 /* Scroll progress bar */
 .scroll-progress {
-  position: fixed; top: 0; left: 0; height: 3px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
   background: linear-gradient(90deg, #fa6e43, #e85a30, #fa6e43);
-  z-index: 9999; transition: width 50ms linear;
+  z-index: 9999;
+  transition: width 50ms linear;
 }
 
 /* Grain texture overlay */
 .grain-overlay::after {
-  content: ""; position: absolute; inset: 0;
-  opacity: 0.025; pointer-events: none;
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.025;
+  pointer-events: none;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.7' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 /* Stagger children animation */
 .stagger-children > * {
-  opacity: 0; transform: translateY(20px);
+  opacity: 0;
+  transform: translateY(20px);
   animation: staggerIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
-.stagger-children > *:nth-child(1) { animation-delay: 0s; }
-.stagger-children > *:nth-child(2) { animation-delay: 0.08s; }
-.stagger-children > *:nth-child(3) { animation-delay: 0.16s; }
-.stagger-children > *:nth-child(4) { animation-delay: 0.24s; }
-.stagger-children > *:nth-child(5) { animation-delay: 0.32s; }
-.stagger-children > *:nth-child(6) { animation-delay: 0.4s; }
-@keyframes staggerIn { to { opacity: 1; transform: none; } }
+.stagger-children > *:nth-child(1) {
+  animation-delay: 0s;
+}
+.stagger-children > *:nth-child(2) {
+  animation-delay: 0.08s;
+}
+.stagger-children > *:nth-child(3) {
+  animation-delay: 0.16s;
+}
+.stagger-children > *:nth-child(4) {
+  animation-delay: 0.24s;
+}
+.stagger-children > *:nth-child(5) {
+  animation-delay: 0.32s;
+}
+.stagger-children > *:nth-child(6) {
+  animation-delay: 0.4s;
+}
+@keyframes staggerIn {
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
 
 /* Cursor modifications (Platform® pattern) */
-.cursor-none, .cursor-none * { cursor: none !important; }
-.pointer-events-none, .pointer-events-none * { pointer-events: none !important; }
+.cursor-none,
+.cursor-none * {
+  cursor: none !important;
+}
+.pointer-events-none,
+.pointer-events-none * {
+  pointer-events: none !important;
+}
 
 /* will-change optimizations (Platform® pattern) */
-.will-change-transform { will-change: transform; }
-.will-change-filter { will-change: filter; }
+.will-change-transform {
+  will-change: transform;
+}
+.will-change-filter {
+  will-change: filter;
+}

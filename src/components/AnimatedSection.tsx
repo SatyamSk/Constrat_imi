@@ -7,7 +7,12 @@ interface Props {
   className?: string;
 }
 
-export function AnimatedSection({ children, delay = 0, variant = "fade-up", className = "" }: Props) {
+export function AnimatedSection({
+  children,
+  delay = 0,
+  variant = "fade-up",
+  className = "",
+}: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
 
@@ -15,8 +20,13 @@ export function AnimatedSection({ children, delay = 0, variant = "fade-up", clas
     const el = ref.current;
     if (!el) return;
     const obs = new IntersectionObserver(
-      ([e]) => { if (e.isIntersecting) { setVisible(true); obs.disconnect(); } },
-      { threshold: 0.1, rootMargin: "0px 0px -40px 0px" }
+      ([e]) => {
+        if (e.isIntersecting) {
+          setVisible(true);
+          obs.disconnect();
+        }
+      },
+      { threshold: 0.1, rootMargin: "0px 0px -40px 0px" },
     );
     obs.observe(el);
     return () => obs.disconnect();
@@ -70,7 +80,17 @@ export function AnimatedSection({ children, delay = 0, variant = "fade-up", clas
 }
 
 /* Parallax background component */
-export function ParallaxBg({ src, speed = 0.3, opacity = 0.08, className = "" }: { src: string; speed?: number; opacity?: number; className?: string }) {
+export function ParallaxBg({
+  src,
+  speed = 0.3,
+  opacity = 0.08,
+  className = "",
+}: {
+  src: string;
+  speed?: number;
+  opacity?: number;
+  className?: string;
+}) {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -96,12 +116,25 @@ export function ParallaxBg({ src, speed = 0.3, opacity = 0.08, className = "" }:
 }
 
 /* Staggered text reveal */
-export function TextReveal({ text, className = "", delay = 0 }: { text: string; className?: string; delay?: number }) {
+export function TextReveal({
+  text,
+  className = "",
+  delay = 0,
+}: {
+  text: string;
+  className?: string;
+  delay?: number;
+}) {
   const words = text.split(" ");
   return (
     <span className={className}>
       {words.map((word, i) => (
-        <AnimatedSection key={i} variant="blur" delay={delay + i * 60} className="inline-block mr-[0.3em]">
+        <AnimatedSection
+          key={i}
+          variant="blur"
+          delay={delay + i * 60}
+          className="inline-block mr-[0.3em]"
+        >
           {word}
         </AnimatedSection>
       ))}
@@ -110,7 +143,15 @@ export function TextReveal({ text, className = "", delay = 0 }: { text: string; 
 }
 
 /* Smooth counter */
-export function SmoothCounter({ target, suffix = "", duration = 2000 }: { target: number; suffix?: string; duration?: number }) {
+export function SmoothCounter({
+  target,
+  suffix = "",
+  duration = 2000,
+}: {
+  target: number;
+  suffix?: string;
+  duration?: number;
+}) {
   const ref = useRef<HTMLSpanElement>(null);
   const [visible, setVisible] = useState(false);
   const [val, setVal] = useState(0);
@@ -118,7 +159,15 @@ export function SmoothCounter({ target, suffix = "", duration = 2000 }: { target
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setVisible(true); obs.disconnect(); } }, { threshold: 0.3 });
+    const obs = new IntersectionObserver(
+      ([e]) => {
+        if (e.isIntersecting) {
+          setVisible(true);
+          obs.disconnect();
+        }
+      },
+      { threshold: 0.3 },
+    );
     obs.observe(el);
     return () => obs.disconnect();
   }, []);
@@ -135,5 +184,10 @@ export function SmoothCounter({ target, suffix = "", duration = 2000 }: { target
     requestAnimationFrame(tick);
   }, [visible, target, duration]);
 
-  return <span ref={ref}>{val.toLocaleString()}{suffix}</span>;
+  return (
+    <span ref={ref}>
+      {val.toLocaleString()}
+      {suffix}
+    </span>
+  );
 }

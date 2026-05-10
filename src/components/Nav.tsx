@@ -24,15 +24,15 @@ export function Nav() {
   }, []);
 
   // Close mobile menu on route change
-  useEffect(() => { setOpen(false); }, [path]);
+  useEffect(() => {
+    setOpen(false);
+  }, [path]);
 
   return (
     <>
       <header
         className={`fixed top-0 inset-x-0 z-50 h-[70px] transition-all duration-300 ${
-          scrolled
-            ? "glass-dark shadow-lg"
-            : "bg-transparent"
+          scrolled ? "glass-dark shadow-lg" : "bg-transparent"
         }`}
       >
         <div className="mx-auto max-w-[1180px] h-full px-5 md:px-6 flex items-center justify-between">
@@ -81,13 +81,19 @@ export function Nav() {
             )}
             {user ? (
               <div className="flex items-center gap-2">
-                <div
-                  className="w-9 h-9 rounded-full flex items-center justify-center font-semibold text-[12px] cursor-pointer border-2 border-orange/30 hover:border-orange transition-colors"
+                <Link
+                  to="/account"
+                  className="w-9 h-9 rounded-full flex items-center justify-center font-semibold text-[12px] border-2 border-orange/30 hover:border-orange transition-colors"
                   style={{ background: "#FFF0EB", color: "#C03A08" }}
                   title={user.email || "Profile"}
                 >
-                  {(user.user_metadata?.full_name || user.email || "U").split(" ").map((s: string) => s[0]).join("").slice(0, 2).toUpperCase()}
-                </div>
+                  {(user.user_metadata?.full_name || user.email || "U")
+                    .split(" ")
+                    .map((s: string) => s[0])
+                    .join("")
+                    .slice(0, 2)
+                    .toUpperCase()}
+                </Link>
                 <button
                   onClick={() => signOut()}
                   className="h-8 px-3 inline-flex items-center text-[12px] border border-border rounded-lg text-text-secondary hover:text-text-primary hover:border-text-primary transition-colors"
@@ -120,7 +126,12 @@ export function Nav() {
             aria-label="Open menu"
           >
             <svg width="20" height="14" viewBox="0 0 20 14" fill="none">
-              <path d="M0 1h20M0 7h20M0 13h20" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+              <path
+                d="M0 1h20M0 7h20M0 13h20"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+              />
             </svg>
           </button>
         </div>
@@ -175,7 +186,10 @@ export function Nav() {
             <div className="p-5 border-t border-border space-y-2.5">
               {user ? (
                 <button
-                  onClick={() => { signOut(); setOpen(false); }}
+                  onClick={() => {
+                    signOut();
+                    setOpen(false);
+                  }}
                   className="w-full h-11 flex items-center justify-center border border-border rounded-lg text-[14px] font-medium hover:border-orange hover:text-orange transition-colors"
                 >
                   Logout

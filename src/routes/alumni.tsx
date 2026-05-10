@@ -49,7 +49,9 @@ function Alumni() {
       <div className="sticky top-16 z-30 glass border-b border-border">
         <div className="mx-auto max-w-[1180px] px-5 md:px-6 py-4 flex flex-col md:flex-row md:items-center gap-3 md:gap-4">
           <div className="flex items-center gap-2">
-            <span className="text-[11px] uppercase tracking-[0.08em] font-semibold text-text-muted">Batch:</span>
+            <span className="text-[11px] uppercase tracking-[0.08em] font-semibold text-text-muted">
+              Batch:
+            </span>
             <div className="flex gap-1.5 scroll-pills">
               {BATCHES.map((b) => (
                 <button
@@ -91,7 +93,11 @@ function Alumni() {
                           color: a.batch.includes("Current") ? "#C03A08" : "#5C5C5A",
                         }}
                       >
-                        {a.name.split(" ").map((s) => s[0]).join("").slice(0, 2)}
+                        {a.name
+                          .split(" ")
+                          .map((s) => s[0])
+                          .join("")
+                          .slice(0, 2)}
                       </div>
                       <div className="min-w-0">
                         <p className="text-[15px] font-semibold leading-tight truncate">{a.name}</p>

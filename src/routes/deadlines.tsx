@@ -9,11 +9,53 @@ export const Route = createFileRoute("/deadlines")({
 });
 
 const DEADLINES_DATA = [
-  { title: "Summer Internship Preference Form", deadline: "2026-05-12", source: "Placement", batch: "2027", relevance: "All Sections", urgency: "high", description: "Fill your SIP company preferences by priority. Late submissions will not be considered." },
-  { title: "Resume Review - Final Submission", deadline: "2026-05-15", source: "Placement", batch: "2027", relevance: "All Sections", urgency: "high", description: "Submit your final placement resume in the prescribed format. No extensions." },
-  { title: "Mock GD Registration", deadline: "2026-05-18", source: "Constrat", batch: "All", relevance: "All Sections", urgency: "medium", description: "Register for the Constrat Mock GD marathon. Slots are limited to 60." },
-  { title: "Corporate Presentation - Deloitte", deadline: "2026-05-20", source: "Placement", batch: "2026", relevance: "Consulting, Strategy", urgency: "low", description: "Attend the pre-placement talk by Deloitte S&O. Mandatory for shortlisted candidates." },
-  { title: "Elective Bidding Round 2", deadline: "2026-05-22", source: "Academics", batch: "2027", relevance: "All Sections", urgency: "medium", description: "Second round of elective bidding. Check registro for available credits." },
+  {
+    title: "Summer Internship Preference Form",
+    deadline: "2026-05-12",
+    source: "Placement",
+    batch: "2027",
+    relevance: "All Sections",
+    urgency: "high",
+    description:
+      "Fill your SIP company preferences by priority. Late submissions will not be considered.",
+  },
+  {
+    title: "Resume Review - Final Submission",
+    deadline: "2026-05-15",
+    source: "Placement",
+    batch: "2027",
+    relevance: "All Sections",
+    urgency: "high",
+    description: "Submit your final placement resume in the prescribed format. No extensions.",
+  },
+  {
+    title: "Mock GD Registration",
+    deadline: "2026-05-18",
+    source: "Constrat",
+    batch: "All",
+    relevance: "All Sections",
+    urgency: "medium",
+    description: "Register for the Constrat Mock GD marathon. Slots are limited to 60.",
+  },
+  {
+    title: "Corporate Presentation - Deloitte",
+    deadline: "2026-05-20",
+    source: "Placement",
+    batch: "2026",
+    relevance: "Consulting, Strategy",
+    urgency: "low",
+    description:
+      "Attend the pre-placement talk by Deloitte S&O. Mandatory for shortlisted candidates.",
+  },
+  {
+    title: "Elective Bidding Round 2",
+    deadline: "2026-05-22",
+    source: "Academics",
+    batch: "2027",
+    relevance: "All Sections",
+    urgency: "medium",
+    description: "Second round of elective bidding. Check registro for available credits.",
+  },
 ];
 
 function getDaysLeft(date: string) {
@@ -25,9 +67,9 @@ function Deadlines() {
   const [filter, setFilter] = useState("All");
   const filters = ["All", "Placement", "Constrat", "Academics"];
 
-  const filtered = DEADLINES_DATA.filter(
-    (d) => filter === "All" || d.source === filter,
-  ).sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime());
+  const filtered = DEADLINES_DATA.filter((d) => filter === "All" || d.source === filter).sort(
+    (a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime(),
+  );
 
   return (
     <PageShell>
@@ -76,9 +118,16 @@ function Deadlines() {
                   &#x1F525;
                 </div>
                 <div>
-                  <p className="text-[14px] font-semibold text-urgent">Urgent deadlines approaching</p>
+                  <p className="text-[14px] font-semibold text-urgent">
+                    Urgent deadlines approaching
+                  </p>
                   <p className="text-[13px] text-text-secondary mt-0.5">
-                    {filtered.filter((d) => getDaysLeft(d.deadline) <= 3 && getDaysLeft(d.deadline) >= 0).length} deadline(s) within the next 3 days.
+                    {
+                      filtered.filter(
+                        (d) => getDaysLeft(d.deadline) <= 3 && getDaysLeft(d.deadline) >= 0,
+                      ).length
+                    }{" "}
+                    deadline(s) within the next 3 days.
                   </p>
                 </div>
               </div>
@@ -94,8 +143,12 @@ function Deadlines() {
                 <AnimatedSection key={d.title} delay={i * 60}>
                   <GlowCard className={`p-5 md:p-6 ${isPast ? "opacity-50" : ""}`}>
                     <div className="relative z-10 flex flex-col md:flex-row md:items-center gap-4">
-                      <div className={`w-16 h-16 md:w-20 md:h-20 rounded-2xl flex flex-col items-center justify-center shrink-0 ${isPast ? "bg-muted" : isUrgent ? "bg-urgent-bg" : "bg-orange-tint"}`}>
-                        <span className={`text-[24px] md:text-[28px] font-serif font-bold leading-none ${isPast ? "text-text-muted" : isUrgent ? "text-urgent" : "text-orange"}`}>
+                      <div
+                        className={`w-16 h-16 md:w-20 md:h-20 rounded-2xl flex flex-col items-center justify-center shrink-0 ${isPast ? "bg-muted" : isUrgent ? "bg-urgent-bg" : "bg-orange-tint"}`}
+                      >
+                        <span
+                          className={`text-[24px] md:text-[28px] font-serif font-bold leading-none ${isPast ? "text-text-muted" : isUrgent ? "text-urgent" : "text-orange"}`}
+                        >
                           {isPast ? "\u2014" : daysLeft}
                         </span>
                         <span className="text-[10px] uppercase tracking-wider font-medium text-text-muted mt-0.5">
@@ -104,17 +157,32 @@ function Deadlines() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className={`pill ${d.source === "Placement" ? "pill-red" : d.source === "Constrat" ? "pill-orange" : "pill-blue"}`}>
+                          <span
+                            className={`pill ${d.source === "Placement" ? "pill-red" : d.source === "Constrat" ? "pill-orange" : "pill-blue"}`}
+                          >
                             {d.source}
                           </span>
-                          <span className="pill">{d.batch === "All" ? "All Batches" : `Batch ${d.batch}`}</span>
+                          <span className="pill">
+                            {d.batch === "All" ? "All Batches" : `Batch ${d.batch}`}
+                          </span>
                           {isUrgent && !isPast && <span className="pill pill-red">Urgent</span>}
                         </div>
-                        <h3 className="mt-2 text-[16px] md:text-[17px] font-semibold leading-tight">{d.title}</h3>
-                        <p className="mt-1.5 text-[13px] text-text-secondary leading-relaxed">{d.description}</p>
+                        <h3 className="mt-2 text-[16px] md:text-[17px] font-semibold leading-tight">
+                          {d.title}
+                        </h3>
+                        <p className="mt-1.5 text-[13px] text-text-secondary leading-relaxed">
+                          {d.description}
+                        </p>
                         <p className="mt-2 text-[12px] text-text-muted">
-                          Due: {new Date(d.deadline).toLocaleDateString("en-IN", { weekday: "short", month: "short", day: "numeric", year: "numeric" })}
-                          {" \u00b7 "}{d.relevance}
+                          Due:{" "}
+                          {new Date(d.deadline).toLocaleDateString("en-IN", {
+                            weekday: "short",
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })}
+                          {" \u00b7 "}
+                          {d.relevance}
                         </p>
                       </div>
                     </div>

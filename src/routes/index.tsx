@@ -10,17 +10,20 @@ function useCountUp(target: number, duration = 2000) {
   const [val, setVal] = useState(0);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    const obs = new IntersectionObserver(([e]) => {
-      if (!e.isIntersecting) return;
-      obs.disconnect();
-      const start = performance.now();
-      const step = (now: number) => {
-        const p = Math.min((now - start) / duration, 1);
-        setVal(Math.round(p * target));
-        if (p < 1) requestAnimationFrame(step);
-      };
-      requestAnimationFrame(step);
-    }, { threshold: 0.3 });
+    const obs = new IntersectionObserver(
+      ([e]) => {
+        if (!e.isIntersecting) return;
+        obs.disconnect();
+        const start = performance.now();
+        const step = (now: number) => {
+          const p = Math.min((now - start) / duration, 1);
+          setVal(Math.round(p * target));
+          if (p < 1) requestAnimationFrame(step);
+        };
+        requestAnimationFrame(step);
+      },
+      { threshold: 0.3 },
+    );
     if (ref.current) obs.observe(ref.current);
     return () => obs.disconnect();
   }, [target, duration]);
@@ -58,12 +61,28 @@ function Home() {
 /* ── HERO ── */
 function Hero() {
   return (
-    <section className="relative overflow-hidden grain-overlay" style={{ background: "radial-gradient(ellipse 80% 50% at 50% -20%, rgba(232,73,15,0.08), transparent), radial-gradient(ellipse 60% 40% at 100% 0%, rgba(232,73,15,0.05), transparent), #FAFAF8" }}>
+    <section
+      className="relative overflow-hidden grain-overlay"
+      style={{
+        background:
+          "radial-gradient(ellipse 80% 50% at 50% -20%, rgba(232,73,15,0.08), transparent), radial-gradient(ellipse 60% 40% at 100% 0%, rgba(232,73,15,0.05), transparent), #FAFAF8",
+      }}
+    >
       <ParallaxBg src="/images/chess-hero.png" speed={0.15} opacity={0.06} />
-      <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")" }} />
+      <div
+        className="absolute inset-0 opacity-[0.03]"
+        style={{
+          backgroundImage:
+            "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")",
+        }}
+      />
       {/* Floating chess knight accent */}
       <div className="absolute right-[8%] top-[18%] hidden lg:block float-chess opacity-[0.07] pointer-events-none">
-        <img src="/images/chess-knight.png" alt="" className="w-[180px] h-[180px] object-contain rounded-2xl" />
+        <img
+          src="/images/chess-knight.png"
+          alt=""
+          className="w-[180px] h-[180px] object-contain rounded-2xl"
+        />
       </div>
       <div className="mx-auto max-w-[1180px] px-5 md:px-6 pt-32 md:pt-[160px] pb-20 md:pb-28 relative z-10">
         <AnimatedSection variant="blur">
@@ -71,12 +90,20 @@ function Hero() {
             <h1 className="font-serif text-[44px] sm:text-[56px] md:text-[72px] leading-[1.1] tracking-[-0.02em] text-text-primary">
               The operating system for <span style={{ color: "#E8490F" }}>MBA placement.</span>
             </h1>
-            <p className="mt-6 text-[17px] md:text-[19px] text-text-secondary leading-[1.65] max-w-[560px]" style={{ fontFamily: "var(--font-sans)" }}>
-              Daily cases, guesstimates, company intel, and interview prep — built for students who are serious about where they land.
+            <p
+              className="mt-6 text-[17px] md:text-[19px] text-text-secondary leading-[1.65] max-w-[560px]"
+              style={{ fontFamily: "var(--font-sans)" }}
+            >
+              Daily cases, guesstimates, company intel, and interview prep — built for students who
+              are serious about where they land.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
-              <Link to="/join" className="btn-primary text-[15px] h-[52px] px-7">Start Preparing — It's Free</Link>
-              <a href="#how-it-works" className="btn-secondary text-[15px] h-[52px] px-7">See How It Works</a>
+              <Link to="/join" className="btn-primary text-[15px] h-[52px] px-7">
+                Start Preparing — It's Free
+              </Link>
+              <a href="#how-it-works" className="btn-secondary text-[15px] h-[52px] px-7">
+                See How It Works
+              </a>
             </div>
           </div>
         </AnimatedSection>
@@ -102,10 +129,19 @@ function StatsBar() {
       <div className="mx-auto max-w-[1180px] px-5 md:px-6 py-6 md:py-8 grid grid-cols-2 md:grid-cols-4 gap-6">
         {stats.map((s, i) => (
           <div key={i} ref={s.ref} className="text-center">
-            <p className="text-[32px] md:text-[40px] font-bold leading-none" style={{ fontFamily: "var(--font-mono)", color: "#E8490F" }}>
-              {s.val.toLocaleString()}{s.suffix}
+            <p
+              className="text-[32px] md:text-[40px] font-bold leading-none"
+              style={{ fontFamily: "var(--font-mono)", color: "#E8490F" }}
+            >
+              {s.val.toLocaleString()}
+              {s.suffix}
             </p>
-            <p className="mt-1 text-[12px] uppercase tracking-[0.1em] font-medium" style={{ fontFamily: "var(--font-sans)", color: "#888" }}>{s.label}</p>
+            <p
+              className="mt-1 text-[12px] uppercase tracking-[0.1em] font-medium"
+              style={{ fontFamily: "var(--font-sans)", color: "#888" }}
+            >
+              {s.label}
+            </p>
           </div>
         ))}
       </div>
@@ -116,9 +152,21 @@ function StatsBar() {
 /* ── FEATURES ── */
 function Features() {
   const cols = [
-    { title: "Daily Practice Loop", desc: "A new case and guesstimate every morning. Timed. Framework-guided. AI-evaluated. Build your streak or fall behind.", icon: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" },
-    { title: "Placement Intelligence", desc: "Company profiles, interview experiences, insider data on what each firm asks and what they look for. Know before you walk in.", icon: "M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" },
-    { title: "IMI-Specific Layer", desc: "Live timetable sync, batch leaderboard, Telegram alerts for schedule changes, placement deadlines, and club events.", icon: "M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" },
+    {
+      title: "Daily Practice Loop",
+      desc: "A new case and guesstimate every morning. Timed. Framework-guided. AI-evaluated. Build your streak or fall behind.",
+      icon: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4",
+    },
+    {
+      title: "Placement Intelligence",
+      desc: "Company profiles, interview experiences, insider data on what each firm asks and what they look for. Know before you walk in.",
+      icon: "M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
+    },
+    {
+      title: "IMI-Specific Layer",
+      desc: "Live timetable sync, batch leaderboard, Telegram alerts for schedule changes, placement deadlines, and club events.",
+      icon: "M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4",
+    },
   ];
   return (
     <section className="bg-background">
@@ -127,10 +175,26 @@ function Features() {
           {cols.map((c, i) => (
             <AnimatedSection key={i} delay={i * 100}>
               <div className="p-6">
-                <div className="w-11 h-11 rounded-lg flex items-center justify-center" style={{ background: "#FFF0EB" }}>
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="#E8490F" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d={c.icon} /></svg>
+                <div
+                  className="w-11 h-11 rounded-lg flex items-center justify-center"
+                  style={{ background: "#FFF0EB" }}
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="#E8490F"
+                    strokeWidth={2}
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d={c.icon} />
+                  </svg>
                 </div>
-                <h3 className="mt-5 text-[20px] font-semibold tracking-[-0.01em]" style={{ fontFamily: "var(--font-sans)" }}>{c.title}</h3>
+                <h3
+                  className="mt-5 text-[20px] font-semibold tracking-[-0.01em]"
+                  style={{ fontFamily: "var(--font-sans)" }}
+                >
+                  {c.title}
+                </h3>
                 <p className="mt-3 text-[14px] text-text-secondary leading-[1.65]">{c.desc}</p>
               </div>
             </AnimatedSection>
@@ -146,7 +210,17 @@ function CasePreview() {
   const [h, setH] = useState(23);
   const [m, setM] = useState(47);
   useEffect(() => {
-    const t = setInterval(() => setM(p => { if (p <= 0) { setH(q => Math.max(q - 1, 0)); return 59; } return p - 1; }), 60000);
+    const t = setInterval(
+      () =>
+        setM((p) => {
+          if (p <= 0) {
+            setH((q) => Math.max(q - 1, 0));
+            return 59;
+          }
+          return p - 1;
+        }),
+      60000,
+    );
     return () => clearInterval(t);
   }, []);
   return (
@@ -157,31 +231,60 @@ function CasePreview() {
           <div className="grid lg:grid-cols-[1fr_1.1fr] gap-10 items-center">
             <div>
               <span className="label-orange">Live Now</span>
-              <h2 className="mt-5 font-serif text-[34px] md:text-[44px] leading-[1.2] tracking-[-0.01em]">Today's Case is Live.</h2>
-              <p className="mt-4 text-[15px] text-text-secondary leading-[1.65] max-w-[440px]">A new case drops every morning. Solve it, get AI feedback, see your percentile. Miss it, and it locks at midnight.</p>
-              <Link to="/login" className="btn-primary mt-6">Solve It — Login to Continue</Link>
+              <h2 className="mt-5 font-serif text-[34px] md:text-[44px] leading-[1.2] tracking-[-0.01em]">
+                Today's Case is Live.
+              </h2>
+              <p className="mt-4 text-[15px] text-text-secondary leading-[1.65] max-w-[440px]">
+                A new case drops every morning. Solve it, get AI feedback, see your percentile. Miss
+                it, and it locks at midnight.
+              </p>
+              <Link to="/login" className="btn-primary mt-6">
+                Solve It — Login to Continue
+              </Link>
             </div>
             <AnimatedSection variant="scale" delay={200}>
               <GlowCard className="p-7 md:p-8 card-magnetic">
-              <div className="relative z-10">
-                <div className="flex items-center justify-between">
-                  <div className="flex gap-2">
-                    <span className="pill pill-orange">Market Entry</span>
-                    <span className="pill pill-red">Hard</span>
+                <div className="relative z-10">
+                  <div className="flex items-center justify-between">
+                    <div className="flex gap-2">
+                      <span className="pill pill-orange">Market Entry</span>
+                      <span className="pill pill-red">Hard</span>
+                    </div>
+                    <span
+                      className="text-[13px] font-semibold"
+                      style={{ fontFamily: "var(--font-mono)", color: "#E8490F" }}
+                    >
+                      {String(h).padStart(2, "0")}:{String(m).padStart(2, "0")} left
+                    </span>
                   </div>
-                  <span className="text-[13px] font-semibold" style={{ fontFamily: "var(--font-mono)", color: "#E8490F" }}>{String(h).padStart(2,"0")}:{String(m).padStart(2,"0")} left</span>
+                  <h3 className="mt-5 font-serif text-[22px] md:text-[26px] leading-[1.2]">
+                    A leading Indian FMCG company is considering entering the premium pet food
+                    market. Should they?
+                  </h3>
+                  <p className="mt-4 text-[14px] text-text-secondary leading-[1.6]">
+                    The client is a Rs 12,000 Cr FMCG conglomerate with strong rural distribution.
+                    They've noticed premium pet food growing at 28% CAGR in urban India...
+                  </p>
+                  <div
+                    className="mt-5 p-4 rounded-lg"
+                    style={{
+                      background: "#F3F2EF",
+                      filter: "blur(4px)",
+                      userSelect: "none",
+                      pointerEvents: "none",
+                    }}
+                  >
+                    <p className="text-[13px]">
+                      Framework: Start with market sizing → customer segmentation → competitive
+                      landscape → channel strategy → financial viability...
+                    </p>
+                  </div>
+                  <div className="mt-4 flex items-center justify-between text-[12px] text-text-muted">
+                    <span>Resembles: McKinsey Round 1</span>
+                    <span>143 solved today</span>
+                  </div>
                 </div>
-                <h3 className="mt-5 font-serif text-[22px] md:text-[26px] leading-[1.2]">A leading Indian FMCG company is considering entering the premium pet food market. Should they?</h3>
-                <p className="mt-4 text-[14px] text-text-secondary leading-[1.6]">The client is a Rs 12,000 Cr FMCG conglomerate with strong rural distribution. They've noticed premium pet food growing at 28% CAGR in urban India...</p>
-                <div className="mt-5 p-4 rounded-lg" style={{ background: "#F3F2EF", filter: "blur(4px)", userSelect: "none", pointerEvents: "none" }}>
-                  <p className="text-[13px]">Framework: Start with market sizing → customer segmentation → competitive landscape → channel strategy → financial viability...</p>
-                </div>
-                <div className="mt-4 flex items-center justify-between text-[12px] text-text-muted">
-                  <span>Resembles: McKinsey Round 1</span>
-                  <span>143 solved today</span>
-                </div>
-              </div>
-            </GlowCard>
+              </GlowCard>
             </AnimatedSection>
           </div>
         </AnimatedSection>
@@ -195,19 +298,38 @@ function CasePreview() {
 function ActivityGraph() {
   // Sample data: 4 weeks of daily practice counts
   const weeklyData = [12, 18, 24, 31, 28, 35, 42, 38, 45, 52, 48, 56];
-  const labels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const labels = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
   const maxVal = Math.max(...weeklyData);
-  const w = 560, h = 180, px = 40, py = 20;
-  const plotW = w - px * 2, plotH = h - py * 2;
+  const w = 560,
+    h = 180,
+    px = 40,
+    py = 20;
+  const plotW = w - px * 2,
+    plotH = h - py * 2;
   const points = weeklyData.map((v, i) => ({
     x: px + (i / (weeklyData.length - 1)) * plotW,
     y: py + plotH - (v / maxVal) * plotH,
   }));
   const linePath = points.map((p, i) => `${i === 0 ? "M" : "L"}${p.x},${p.y}`).join(" ");
-  const areaPath = `${linePath} L${points[points.length-1].x},${h - py} L${points[0].x},${h - py} Z`;
+  const areaPath = `${linePath} L${points[points.length - 1].x},${h - py} L${points[0].x},${h - py} Z`;
 
   // Heatmap: 12 weeks x 7 days
-  const heatmap: number[][] = Array.from({ length: 12 }, () => Array.from({ length: 7 }, () => Math.random()));
+  const heatmap: number[][] = Array.from({ length: 12 }, () =>
+    Array.from({ length: 7 }, () => Math.random()),
+  );
 
   return (
     <section className="bg-background">
@@ -220,22 +342,45 @@ function ActivityGraph() {
                 <div className="flex items-center justify-between mb-6">
                   <div>
                     <span className="label-orange">Platform Activity</span>
-                    <h3 className="mt-2 text-[22px] font-serif leading-[1.3]">Cases solved per month</h3>
+                    <h3 className="mt-2 text-[22px] font-serif leading-[1.3]">
+                      Cases solved per month
+                    </h3>
                   </div>
                   <div className="text-right">
-                    <p className="text-[28px] font-bold" style={{ fontFamily: "var(--font-mono)", color: "#E8490F" }}>56</p>
+                    <p
+                      className="text-[28px] font-bold"
+                      style={{ fontFamily: "var(--font-mono)", color: "#E8490F" }}
+                    >
+                      56
+                    </p>
                     <p className="text-[11px] text-text-muted">this month</p>
                   </div>
                 </div>
                 <svg viewBox={`0 0 ${w} ${h}`} className="w-full" style={{ overflow: "visible" }}>
                   {/* Grid lines */}
-                  {[0, 0.25, 0.5, 0.75, 1].map(f => (
-                    <line key={f} x1={px} x2={w-px} y1={py + plotH * (1-f)} y2={py + plotH * (1-f)} stroke="#E8E4DE" strokeWidth={0.5} strokeDasharray={f > 0 && f < 1 ? "4 4" : "0"} />
+                  {[0, 0.25, 0.5, 0.75, 1].map((f) => (
+                    <line
+                      key={f}
+                      x1={px}
+                      x2={w - px}
+                      y1={py + plotH * (1 - f)}
+                      y2={py + plotH * (1 - f)}
+                      stroke="#E8E4DE"
+                      strokeWidth={0.5}
+                      strokeDasharray={f > 0 && f < 1 ? "4 4" : "0"}
+                    />
                   ))}
                   {/* Area fill */}
                   <path d={areaPath} fill="url(#areaGrad)" opacity={0.3} />
                   {/* Line */}
-                  <path d={linePath} fill="none" stroke="#E8490F" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+                  <path
+                    d={linePath}
+                    fill="none"
+                    stroke="#E8490F"
+                    strokeWidth={2.5}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
                   {/* Dots */}
                   {points.map((p, i) => (
                     <g key={i}>
@@ -245,7 +390,17 @@ function ActivityGraph() {
                   ))}
                   {/* X labels */}
                   {points.map((p, i) => (
-                    <text key={i} x={p.x} y={h - 2} textAnchor="middle" fill="#9A9997" fontSize={10} fontFamily="var(--font-sans)">{labels[i]}</text>
+                    <text
+                      key={i}
+                      x={p.x}
+                      y={h - 2}
+                      textAnchor="middle"
+                      fill="#9A9997"
+                      fontSize={10}
+                      fontFamily="var(--font-sans)"
+                    >
+                      {labels[i]}
+                    </text>
                   ))}
                   <defs>
                     <linearGradient id="areaGrad" x1="0" x2="0" y1="0" y2="1">
@@ -261,7 +416,12 @@ function ActivityGraph() {
             <div className="space-y-5">
               <GlowCard className="p-6">
                 <div className="relative z-10">
-                  <h3 className="text-[16px] font-semibold mb-4" style={{ fontFamily: "var(--font-sans)" }}>Daily practice activity</h3>
+                  <h3
+                    className="text-[16px] font-semibold mb-4"
+                    style={{ fontFamily: "var(--font-sans)" }}
+                  >
+                    Daily practice activity
+                  </h3>
                   <div className="flex gap-[3px]">
                     {heatmap.map((week, wi) => (
                       <div key={wi} className="flex flex-col gap-[3px]">
@@ -269,7 +429,16 @@ function ActivityGraph() {
                           <div
                             key={di}
                             className="w-[14px] h-[14px] rounded-[3px] transition-colors"
-                            style={{ background: v > 0.7 ? "#E8490F" : v > 0.4 ? "#FFA064" : v > 0.15 ? "#FFD4B8" : "#F3F2EF" }}
+                            style={{
+                              background:
+                                v > 0.7
+                                  ? "#E8490F"
+                                  : v > 0.4
+                                    ? "#FFA064"
+                                    : v > 0.15
+                                      ? "#FFD4B8"
+                                      : "#F3F2EF",
+                            }}
                           />
                         ))}
                       </div>
@@ -277,7 +446,13 @@ function ActivityGraph() {
                   </div>
                   <div className="mt-3 flex items-center gap-2 text-[10px] text-text-muted">
                     <span>Less</span>
-                    {["#F3F2EF", "#FFD4B8", "#FFA064", "#E8490F"].map(c => <div key={c} className="w-[10px] h-[10px] rounded-[2px]" style={{ background: c }} />)}
+                    {["#F3F2EF", "#FFD4B8", "#FFA064", "#E8490F"].map((c) => (
+                      <div
+                        key={c}
+                        className="w-[10px] h-[10px] rounded-[2px]"
+                        style={{ background: c }}
+                      />
+                    ))}
                     <span>More</span>
                   </div>
                 </div>
@@ -288,7 +463,15 @@ function ActivityGraph() {
                   { n: "87%", l: "Completion rate", sub: "daily case attempts" },
                 ].map((s, i) => (
                   <div key={i} className="card-base p-4">
-                    <p className="text-[28px] font-bold leading-none" style={{ fontFamily: "var(--font-mono)", color: i === 0 ? "#E8490F" : "#22C55E" }}>{s.n}</p>
+                    <p
+                      className="text-[28px] font-bold leading-none"
+                      style={{
+                        fontFamily: "var(--font-mono)",
+                        color: i === 0 ? "#E8490F" : "#22C55E",
+                      }}
+                    >
+                      {s.n}
+                    </p>
                     <p className="text-[12px] font-semibold text-text-primary mt-2">{s.l}</p>
                     <p className="text-[11px] text-text-muted">{s.sub}</p>
                   </div>
@@ -304,23 +487,51 @@ function ActivityGraph() {
 
 function HowItWorks() {
   const steps = [
-    { n: "01", title: "Set your targets", desc: "Pick your target firms and domains. We personalize your daily prep." },
-    { n: "02", title: "Solve daily", desc: "Case + guesstimate + news brief. Timed. Scored. Tracked." },
-    { n: "03", title: "Track your streak", desc: "See where you rank among your batch. Don't break the chain." },
-    { n: "04", title: "Walk in prepared", desc: "Know what each firm asks, how they evaluate, what they want to hear." },
+    {
+      n: "01",
+      title: "Set your targets",
+      desc: "Pick your target firms and domains. We personalize your daily prep.",
+    },
+    {
+      n: "02",
+      title: "Solve daily",
+      desc: "Case + guesstimate + news brief. Timed. Scored. Tracked.",
+    },
+    {
+      n: "03",
+      title: "Track your streak",
+      desc: "See where you rank among your batch. Don't break the chain.",
+    },
+    {
+      n: "04",
+      title: "Walk in prepared",
+      desc: "Know what each firm asks, how they evaluate, what they want to hear.",
+    },
   ];
   return (
     <section id="how-it-works" className="bg-background">
       <div className="mx-auto max-w-[1180px] px-5 md:px-6 py-20 md:py-28">
         <AnimatedSection>
-          <h2 className="font-serif text-[34px] md:text-[44px] leading-[1.2] tracking-[-0.01em] text-center">How it works.</h2>
+          <h2 className="font-serif text-[34px] md:text-[44px] leading-[1.2] tracking-[-0.01em] text-center">
+            How it works.
+          </h2>
         </AnimatedSection>
         <div className="mt-14 grid md:grid-cols-4 gap-8">
           {steps.map((s, i) => (
             <AnimatedSection key={i} delay={i * 100}>
               <div className="text-center md:text-left">
-                <span className="text-[36px] font-bold leading-none" style={{ fontFamily: "var(--font-mono)", color: "#E8490F" }}>{s.n}</span>
-                <h3 className="mt-4 text-[17px] font-semibold" style={{ fontFamily: "var(--font-sans)" }}>{s.title}</h3>
+                <span
+                  className="text-[36px] font-bold leading-none"
+                  style={{ fontFamily: "var(--font-mono)", color: "#E8490F" }}
+                >
+                  {s.n}
+                </span>
+                <h3
+                  className="mt-4 text-[17px] font-semibold"
+                  style={{ fontFamily: "var(--font-sans)" }}
+                >
+                  {s.title}
+                </h3>
                 <p className="mt-2 text-[13px] text-text-secondary leading-[1.6]">{s.desc}</p>
               </div>
             </AnimatedSection>
@@ -334,102 +545,165 @@ function HowItWorks() {
 /* ── COMPANY INTEL ── */
 /* ── LIVE TERMINAL ── */
 function LiveTerminal() {
-  const [lines, setLines] = useState<{type: 'system'|'user'|'result'; text: string}[]>([
-    { type: 'system', text: '> constrat init --mode=case-solver' },
-    { type: 'system', text: '  Loading case engine...' },
-    { type: 'system', text: '  Connected to framework database' },
-    { type: 'system', text: '' },
+  const [lines, setLines] = useState<{ type: "system" | "user" | "result"; text: string }[]>([
+    { type: "system", text: "> constrat init --mode=case-solver" },
+    { type: "system", text: "  Loading case engine..." },
+    { type: "system", text: "  Connected to framework database" },
+    { type: "system", text: "" },
   ]);
   const [phase, setPhase] = useState(0);
-  const [typing, setTyping] = useState('');
+  const [typing, setTyping] = useState("");
   const [started, setStarted] = useState(false);
   const [timer, setTimer] = useState(0);
 
   const prompts = [
-    { q: '> CASE: Your client is a mid-size Indian airline losing Rs 400 Cr annually despite 85% load factor. The CEO wants to reach breakeven in 18 months. How would you approach this?', hint: 'Framework: Profitability = Revenue - Costs' },
-    { q: '> GUESSTIMATE: How many cups of chai are sold daily across all Indian railway stations?', hint: 'Decompose: stations × platforms × vendors × cups/day' },
-    { q: '> PI: Why consulting? Why not investment banking?', hint: 'Structure: passion + skills + impact + fit' },
+    {
+      q: "> CASE: Your client is a mid-size Indian airline losing Rs 400 Cr annually despite 85% load factor. The CEO wants to reach breakeven in 18 months. How would you approach this?",
+      hint: "Framework: Profitability = Revenue - Costs",
+    },
+    {
+      q: "> GUESSTIMATE: How many cups of chai are sold daily across all Indian railway stations?",
+      hint: "Decompose: stations × platforms × vendors × cups/day",
+    },
+    {
+      q: "> PI: Why consulting? Why not investment banking?",
+      hint: "Structure: passion + skills + impact + fit",
+    },
   ];
 
   useEffect(() => {
     if (!started) return;
-    const t = setInterval(() => setTimer(p => p + 1), 1000);
+    const t = setInterval(() => setTimer((p) => p + 1), 1000);
     return () => clearInterval(t);
   }, [started]);
 
   function handleStart() {
     setStarted(true);
-    setLines(prev => [...prev, { type: 'system', text: prompts[0].q }, { type: 'system', text: `  Hint: ${prompts[0].hint}` }, { type: 'system', text: '' }]);
+    setLines((prev) => [
+      ...prev,
+      { type: "system", text: prompts[0].q },
+      { type: "system", text: `  Hint: ${prompts[0].hint}` },
+      { type: "system", text: "" },
+    ]);
   }
 
   function handleSubmit() {
     if (!typing.trim()) return;
     const newLines = [
       ...lines,
-      { type: 'user' as const, text: `$ ${typing}` },
-      { type: 'result' as const, text: `  ✓ Answer recorded (${timer}s) — Framework detected: ${phase === 0 ? 'Profitability' : phase === 1 ? 'Decomposition' : 'Behavioral'}` },
-      { type: 'system' as const, text: '' },
+      { type: "user" as const, text: `$ ${typing}` },
+      {
+        type: "result" as const,
+        text: `  ✓ Answer recorded (${timer}s) — Framework detected: ${phase === 0 ? "Profitability" : phase === 1 ? "Decomposition" : "Behavioral"}`,
+      },
+      { type: "system" as const, text: "" },
     ];
-    setTyping('');
+    setTyping("");
     if (phase < 2) {
       newLines.push(
-        { type: 'system', text: prompts[phase + 1].q },
-        { type: 'system', text: `  Hint: ${prompts[phase + 1].hint}` },
-        { type: 'system', text: '' },
+        { type: "system", text: prompts[phase + 1].q },
+        { type: "system", text: `  Hint: ${prompts[phase + 1].hint}` },
+        { type: "system", text: "" },
       );
     } else {
       newLines.push(
-        { type: 'result', text: '  ═══════════════════════════════════════' },
-        { type: 'result', text: `  SESSION COMPLETE — Total time: ${timer}s` },
-        { type: 'result', text: '  Case: ██████████ scored' },
-        { type: 'result', text: '  Guesstimate: ██████████ scored' },
-        { type: 'result', text: '  PI: ██████████ scored' },
-        { type: 'result', text: '' },
-        { type: 'result', text: '  → Sign up to see your full score & percentile' },
+        { type: "result", text: "  ═══════════════════════════════════════" },
+        { type: "result", text: `  SESSION COMPLETE — Total time: ${timer}s` },
+        { type: "result", text: "  Case: ██████████ scored" },
+        { type: "result", text: "  Guesstimate: ██████████ scored" },
+        { type: "result", text: "  PI: ██████████ scored" },
+        { type: "result", text: "" },
+        { type: "result", text: "  → Sign up to see your full score & percentile" },
       );
     }
     setLines(newLines);
-    setPhase(p => Math.min(p + 1, 3));
+    setPhase((p) => Math.min(p + 1, 3));
   }
 
   return (
-    <section style={{ background: '#130F0A' }}>
+    <section style={{ background: "#130F0A" }}>
       <div className="mx-auto max-w-[1180px] px-5 md:px-6 py-20 md:py-28">
         <AnimatedSection>
           <div className="grid lg:grid-cols-[1fr_1.3fr] gap-10 items-center">
             <div>
-              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-semibold" style={{ background: 'rgba(232,73,15,0.15)', color: '#FF8C42' }}>
-                <span className="pulse-dot" style={{ background: '#FF8C42', boxShadow: '0 0 0 0 rgba(255,140,66,0.5)' }} /> Try it live
+              <span
+                className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-semibold"
+                style={{ background: "rgba(232,73,15,0.15)", color: "#FF8C42" }}
+              >
+                <span
+                  className="pulse-dot"
+                  style={{ background: "#FF8C42", boxShadow: "0 0 0 0 rgba(255,140,66,0.5)" }}
+                />{" "}
+                Try it live
               </span>
-              <h2 className="mt-5 font-serif text-[34px] md:text-[44px] leading-[1.2]" style={{ color: '#F4ECE2' }}>Case Solver Terminal.</h2>
-              <p className="mt-4 text-[15px] leading-[1.65]" style={{ color: '#888' }}>Practice a mini case interview right here. No signup needed. Case, guesstimate, and PI — timed, structured, evaluated.</p>
-              {!started && <button onClick={handleStart} className="btn-primary mt-6">Launch Session</button>}
+              <h2
+                className="mt-5 font-serif text-[34px] md:text-[44px] leading-[1.2]"
+                style={{ color: "#F4ECE2" }}
+              >
+                Case Solver Terminal.
+              </h2>
+              <p className="mt-4 text-[15px] leading-[1.65]" style={{ color: "#888" }}>
+                Practice a mini case interview right here. No signup needed. Case, guesstimate, and
+                PI — timed, structured, evaluated.
+              </p>
+              {!started && (
+                <button onClick={handleStart} className="btn-primary mt-6">
+                  Launch Session
+                </button>
+              )}
             </div>
-            <div className="rounded-xl overflow-hidden border" style={{ background: '#0D0D0D', borderColor: '#222' }}>
+            <div
+              className="rounded-xl overflow-hidden border"
+              style={{ background: "#0D0D0D", borderColor: "#222" }}
+            >
               {/* Terminal header */}
-              <div className="flex items-center gap-2 px-4 py-2.5 border-b" style={{ borderColor: '#222', background: '#111' }}>
-                <div className="w-3 h-3 rounded-full" style={{ background: '#EF4444' }} />
-                <div className="w-3 h-3 rounded-full" style={{ background: '#F59E0B' }} />
-                <div className="w-3 h-3 rounded-full" style={{ background: '#22C55E' }} />
-                <span className="ml-3 text-[11px]" style={{ fontFamily: 'var(--font-mono)', color: '#555' }}>constrat — case-solver v2.1</span>
-                {started && <span className="ml-auto text-[11px] font-bold" style={{ fontFamily: 'var(--font-mono)', color: '#E8490F' }}>{Math.floor(timer/60)}:{String(timer%60).padStart(2,'0')}</span>}
+              <div
+                className="flex items-center gap-2 px-4 py-2.5 border-b"
+                style={{ borderColor: "#222", background: "#111" }}
+              >
+                <div className="w-3 h-3 rounded-full" style={{ background: "#EF4444" }} />
+                <div className="w-3 h-3 rounded-full" style={{ background: "#F59E0B" }} />
+                <div className="w-3 h-3 rounded-full" style={{ background: "#22C55E" }} />
+                <span
+                  className="ml-3 text-[11px]"
+                  style={{ fontFamily: "var(--font-mono)", color: "#555" }}
+                >
+                  constrat — case-solver v2.1
+                </span>
+                {started && (
+                  <span
+                    className="ml-auto text-[11px] font-bold"
+                    style={{ fontFamily: "var(--font-mono)", color: "#E8490F" }}
+                  >
+                    {Math.floor(timer / 60)}:{String(timer % 60).padStart(2, "0")}
+                  </span>
+                )}
               </div>
               {/* Terminal body */}
-              <div className="p-4 h-[340px] overflow-y-auto" style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', lineHeight: '1.7' }}>
+              <div
+                className="p-4 h-[340px] overflow-y-auto"
+                style={{ fontFamily: "var(--font-mono)", fontSize: "12px", lineHeight: "1.7" }}
+              >
                 {lines.map((l, i) => (
-                  <div key={i} style={{ color: l.type === 'system' ? '#888' : l.type === 'user' ? '#22C55E' : '#E8490F' }}>
-                    {l.text || '\u00A0'}
+                  <div
+                    key={i}
+                    style={{
+                      color:
+                        l.type === "system" ? "#888" : l.type === "user" ? "#22C55E" : "#E8490F",
+                    }}
+                  >
+                    {l.text || "\u00A0"}
                   </div>
                 ))}
                 {started && phase < 3 && (
                   <div className="flex items-center gap-1 mt-1">
-                    <span style={{ color: '#22C55E' }}>$</span>
+                    <span style={{ color: "#22C55E" }}>$</span>
                     <input
                       value={typing}
-                      onChange={e => setTyping(e.target.value)}
-                      onKeyDown={e => e.key === 'Enter' && handleSubmit()}
+                      onChange={(e) => setTyping(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
                       className="flex-1 bg-transparent outline-none border-none"
-                      style={{ color: '#F4ECE2', fontFamily: 'var(--font-mono)', fontSize: '12px' }}
+                      style={{ color: "#F4ECE2", fontFamily: "var(--font-mono)", fontSize: "12px" }}
                       placeholder="Type your approach and press Enter..."
                       autoFocus
                     />
@@ -459,19 +733,34 @@ function CompanyIntel() {
       <div className="mx-auto max-w-[1180px] px-5 md:px-6 py-20 md:py-28 relative z-10">
         <AnimatedSection variant="blur">
           <span className="label-orange">Company Intelligence</span>
-          <h2 className="mt-5 font-serif text-[34px] md:text-[44px] leading-[1.2] tracking-[-0.01em]">Know what they want before you walk in.</h2>
-          <p className="mt-4 text-[15px] text-text-secondary max-w-[520px]">Interview style, case types, common PI questions, and insider data for 28+ firms.</p>
+          <h2 className="mt-5 font-serif text-[34px] md:text-[44px] leading-[1.2] tracking-[-0.01em]">
+            Know what they want before you walk in.
+          </h2>
+          <p className="mt-4 text-[15px] text-text-secondary max-w-[520px]">
+            Interview style, case types, common PI questions, and insider data for 28+ firms.
+          </p>
         </AnimatedSection>
         <div className="mt-10 grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {firms.map((f, i) => (
-            <AnimatedSection key={f.name} delay={i * 80} variant={i % 2 === 0 ? "slide-left" : "slide-right"}>
+            <AnimatedSection
+              key={f.name}
+              delay={i * 80}
+              variant={i % 2 === 0 ? "slide-left" : "slide-right"}
+            >
               <div className="card-base card-magnetic p-5">
                 <div className="flex items-center gap-3 mb-3">
                   <span className="text-[28px] opacity-20">{f.icon}</span>
-                  <h3 className="text-[16px] font-semibold highlight-bar" style={{ fontFamily: "var(--font-sans)" }}>{f.name}</h3>
+                  <h3
+                    className="text-[16px] font-semibold highlight-bar"
+                    style={{ fontFamily: "var(--font-sans)" }}
+                  >
+                    {f.name}
+                  </h3>
                 </div>
                 <p className="text-[13px] text-text-secondary leading-[1.55]">{f.style}</p>
-                <Link to="/cases" className="btn-ghost text-[12px] mt-3 inline-block">View Profile →</Link>
+                <Link to="/cases" className="btn-ghost text-[12px] mt-3 inline-block">
+                  View Profile →
+                </Link>
               </div>
             </AnimatedSection>
           ))}
@@ -484,15 +773,35 @@ function CompanyIntel() {
 /* ── SOCIAL PROOF ── */
 function SocialProof() {
   const quotes = [
-    { text: "Constrat's daily cases forced me into a routine. By the time interviews came, I'd solved 60+ cases. Got McKinsey shortlist.", name: "Ananya R.", info: "IMI Delhi, Batch 2025" },
-    { text: "The company profiles told me exactly what Deloitte asks in Round 2. Walked in knowing the framework they wanted.", name: "Karan M.", info: "IMI Delhi, Batch 2025" },
-    { text: "I was doing random prep before Constrat. The streak system and leaderboard made me consistent. 47-day streak and counting.", name: "Priya S.", info: "IMI Delhi, Batch 2026" },
-    { text: "The guesstimate practice alone was worth it. 100+ solved, and my speed went from 8 minutes to under 3.", name: "Arjun D.", info: "IMI Delhi, Batch 2025" },
+    {
+      text: "Constrat's daily cases forced me into a routine. By the time interviews came, I'd solved 60+ cases. Got McKinsey shortlist.",
+      name: "Ananya R.",
+      info: "IMI Delhi, Batch 2025",
+    },
+    {
+      text: "The company profiles told me exactly what Deloitte asks in Round 2. Walked in knowing the framework they wanted.",
+      name: "Karan M.",
+      info: "IMI Delhi, Batch 2025",
+    },
+    {
+      text: "I was doing random prep before Constrat. The streak system and leaderboard made me consistent. 47-day streak and counting.",
+      name: "Priya S.",
+      info: "IMI Delhi, Batch 2026",
+    },
+    {
+      text: "The guesstimate practice alone was worth it. 100+ solved, and my speed went from 8 minutes to under 3.",
+      name: "Arjun D.",
+      info: "IMI Delhi, Batch 2025",
+    },
   ];
   return (
     <section className="bg-background">
       <div className="mx-auto max-w-[1180px] px-5 md:px-6 py-20 md:py-28">
-        <AnimatedSection><h2 className="font-serif text-[34px] md:text-[44px] leading-[1.2] tracking-[-0.01em] text-center">What students say.</h2></AnimatedSection>
+        <AnimatedSection>
+          <h2 className="font-serif text-[34px] md:text-[44px] leading-[1.2] tracking-[-0.01em] text-center">
+            What students say.
+          </h2>
+        </AnimatedSection>
         <div className="mt-12 grid md:grid-cols-2 gap-6">
           {quotes.map((q, i) => (
             <AnimatedSection key={i} delay={i * 80}>
@@ -513,19 +822,50 @@ function SocialProof() {
 
 /* ── COLLEGE NETWORK ── */
 function CollegeNetwork() {
-  const colleges = ["IMI Delhi", "IIM Ahmedabad", "IIM Bangalore", "IIM Kozhikode", "XLRI", "FMS Delhi", "ISB Hyderabad", "MDI Gurgaon"];
+  const colleges = [
+    "IMI Delhi",
+    "IIM Ahmedabad",
+    "IIM Bangalore",
+    "IIM Kozhikode",
+    "XLRI",
+    "FMS Delhi",
+    "ISB Hyderabad",
+    "MDI Gurgaon",
+  ];
   return (
     <section style={{ background: "#FFF7F3" }}>
       <div className="mx-auto max-w-[1180px] px-5 md:px-6 py-20 md:py-28 text-center">
         <AnimatedSection>
           <span className="label-orange">College Network</span>
-          <h2 className="mt-5 font-serif text-[34px] md:text-[44px] leading-[1.2] tracking-[-0.01em]">Built for every B-school.</h2>
+          <h2 className="mt-5 font-serif text-[34px] md:text-[44px] leading-[1.2] tracking-[-0.01em]">
+            Built for every B-school.
+          </h2>
           <div className="mt-10 flex flex-wrap justify-center gap-3">
-            {colleges.map(c => (
-              <span key={c} className="px-5 py-2.5 rounded-lg border text-[13px] font-medium" style={{ borderColor: c === "IMI Delhi" ? "#E8490F" : "#E8E4DE", color: c === "IMI Delhi" ? "#E8490F" : "#5C5C5A", background: c === "IMI Delhi" ? "#FFF0EB" : "#fff" }}>{c}</span>
+            {colleges.map((c) => (
+              <span
+                key={c}
+                className="px-5 py-2.5 rounded-lg border text-[13px] font-medium"
+                style={{
+                  borderColor: c === "IMI Delhi" ? "#E8490F" : "#E8E4DE",
+                  color: c === "IMI Delhi" ? "#E8490F" : "#5C5C5A",
+                  background: c === "IMI Delhi" ? "#FFF0EB" : "#fff",
+                }}
+              >
+                {c}
+              </span>
             ))}
           </div>
-          <p className="mt-8 text-[14px] text-text-secondary">Your college isn't here yet? <a href="https://forms.gle/placeholder" target="_blank" rel="noopener noreferrer" className="text-orange font-semibold hover:underline">Bring Constrat to your campus.</a></p>
+          <p className="mt-8 text-[14px] text-text-secondary">
+            Your college isn't here yet?{" "}
+            <a
+              href="https://forms.gle/placeholder"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-orange font-semibold hover:underline"
+            >
+              Bring Constrat to your campus.
+            </a>
+          </p>
         </AnimatedSection>
       </div>
     </section>
@@ -538,10 +878,19 @@ function FinalCTA() {
     <section className="gradient-cta relative overflow-hidden">
       <div className="mx-auto max-w-[1180px] px-5 md:px-6 py-24 md:py-32 text-center relative z-10">
         <AnimatedSection>
-          <h2 className="font-serif text-[36px] sm:text-[48px] md:text-[56px] leading-[1.2] tracking-[-0.01em]" style={{ color: "#F4ECE2" }}>
-            Placement season doesn't wait.<br />Neither should you.
+          <h2
+            className="font-serif text-[36px] sm:text-[48px] md:text-[56px] leading-[1.2] tracking-[-0.01em]"
+            style={{ color: "#F4ECE2" }}
+          >
+            Placement season doesn't wait.
+            <br />
+            Neither should you.
           </h2>
-          <Link to="/join" className="inline-flex items-center justify-center h-[56px] px-8 rounded-[12px] bg-orange text-white font-semibold text-[16px] hover:bg-orange-hover transition-all hover:-translate-y-px shadow-lg shadow-orange/20 mt-10" style={{ fontFamily: "var(--font-sans)" }}>
+          <Link
+            to="/join"
+            className="inline-flex items-center justify-center h-[56px] px-8 rounded-[12px] bg-orange text-white font-semibold text-[16px] hover:bg-orange-hover transition-all hover:-translate-y-px shadow-lg shadow-orange/20 mt-10"
+            style={{ fontFamily: "var(--font-sans)" }}
+          >
             Start Preparing — It's Free
           </Link>
         </AnimatedSection>

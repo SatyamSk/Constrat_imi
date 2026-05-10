@@ -1,10 +1,4 @@
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-  type ReactNode,
-} from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { supabase, isSupabaseConfigured } from "./supabase";
 import type { User, Session } from "@supabase/supabase-js";
 
@@ -15,7 +9,12 @@ interface AuthContextType {
   isAdmin: boolean;
   isMember: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signUp: (email: string, password: string, metadata: Record<string, unknown>) => Promise<{ error: Error | null }>;
+  signUp: (
+    email: string,
+    password: string,
+    metadata: Record<string, unknown>,
+  ) => Promise<{ error: Error | null }>;
+  signInWithGoogle: () => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -27,6 +26,7 @@ const AuthContext = createContext<AuthContextType>({
   isMember: false,
   signIn: async () => ({ error: null }),
   signUp: async () => ({ error: null }),
+  signInWithGoogle: async () => ({ error: null }),
   signOut: async () => {},
 });
 
@@ -63,26 +63,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function fetchRole(userId: string) {
     if (!supabase) return;
-    const { data } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", userId)
-      .single();
+    const { data } = await supabase.from("profiles").select("role").eq("id", userId).single();
     if (data?.role) setRole(data.role);
   }
 
   const signIn = async (email: string, password: string) => {
-    if (!supabase) return { error: new Error("Supabase not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your environment.") };
+    if (!supabase)
+      return {
+        error: new Error(
+          "Supabase not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your environment.",
+        ),
+      };
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     return { error: error ? new Error(error.message) : null };
   };
 
-  const signUp = async (
-    email: string,
-    password: string,
-    metadata: Record<string, unknown>,
-  ) => {
-    if (!supabase) return { error: new Error("Supabase not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your environment.") };
+  const signUp = async (email: string, password: string, metadata: Record<string, unknown>) => {
+    if (!supabase)
+      return {
+        error: new Error(
+          "Supabase not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your environment.",
+        ),
+      };
 
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -104,14 +106,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Small delay to let the trigger create the profile first
       setTimeout(async () => {
         if (!supabase) return;
-        await supabase
-          .from("profiles")
-          .update(profileUpdate)
-          .eq("id", data.user!.id);
+        await supabase.from("profiles").update(profileUpdate).eq("id", data.user!.id);
       }, 1000);
     }
 
     return { error: null };
+  };
+
+  const signInWithGoogle = async () => {
+    if (!supabase) return { error: new Error("Supabase not configured") };
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: `${window.location.origin}/` },
+    });
+    return { error: error ? new Error(error.message) : null };
   };
 
   const signOut = async () => {
@@ -130,6 +138,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isMember: role === "member" || role === "admin",
         signIn,
         signUp,
+        signInWithGoogle,
         signOut,
       }}
     >
