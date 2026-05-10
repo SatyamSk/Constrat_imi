@@ -35,7 +35,7 @@ interface CaseRanking {
 }
 
 function SubmitCase() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [caseId, setCaseId] = useState<string | null>(null);
   const [title, setTitle] = useState("");
@@ -49,12 +49,13 @@ function SubmitCase() {
   const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
+    if (authLoading) return;
     if (!user) {
       navigate({ to: "/login" });
       return;
     }
     loadSubmissions();
-  }, [user]);
+  }, [user, authLoading]);
 
   const loadSubmissions = async () => {
     if (!isSupabaseConfigured || !supabase || !user) return;

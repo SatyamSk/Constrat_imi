@@ -5,10 +5,10 @@ import { useAuth } from "@/lib/auth";
 const links = [
   { label: "Practice", to: "/practice" },
   { label: "Cases", to: "/cases" },
+  { label: "Events", to: "/events" },
   { label: "News", to: "/news" },
   { label: "Leaderboard", to: "/leaderboard" },
   { label: "Timetable", to: "/timetable" },
-  { label: "Deadlines", to: "/deadlines" },
 ];
 
 export function Nav() {

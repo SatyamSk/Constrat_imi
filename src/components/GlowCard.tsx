@@ -1,11 +1,13 @@
-import { useRef, type ReactNode, type MouseEvent } from "react";
+import { useRef, type ReactNode, type MouseEvent, type CSSProperties } from "react";
 
 interface Props {
   children: ReactNode;
   className?: string;
+  style?: CSSProperties;
+  onClick?: () => void;
 }
 
-export function GlowCard({ children, className = "" }: Props) {
+export function GlowCard({ children, className = "", style, onClick }: Props) {
   const ref = useRef<HTMLDivElement>(null);
 
   const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
@@ -17,8 +19,9 @@ export function GlowCard({ children, className = "" }: Props) {
   };
 
   return (
-    <div ref={ref} onMouseMove={handleMouseMove} className={`card-base ${className}`}>
+    <div ref={ref} onMouseMove={handleMouseMove} onClick={onClick} className={`card-base ${className}`} style={style}>
       {children}
     </div>
   );
 }
+

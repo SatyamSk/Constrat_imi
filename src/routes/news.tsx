@@ -100,19 +100,9 @@ function News() {
       <div className="mx-auto max-w-[1180px] px-5 md:px-6 -mt-4 pb-20">
         {/* Today's featured + progress */}
         <div className="grid lg:grid-cols-[2fr_1fr] gap-5 mb-10">
-          <GlowCard className="p-0 overflow-hidden" style={{ background: "#130F0A" }}>
+          <GlowCard className="p-0 overflow-hidden" style={{ background: "#1A1A1A" }}>
             <div className="relative z-10">
-              <div className="absolute inset-0 z-0">
-                <img
-                  src="/images/news-bg.png"
-                  alt=""
-                  className="w-full h-full object-cover opacity-30"
-                />
-                <div
-                  className="absolute inset-0"
-                  style={{ background: "linear-gradient(to top, #130F0A 30%, transparent 100%)" }}
-                />
-              </div>
+              <div className="absolute inset-0 z-0" style={{ background: "radial-gradient(ellipse at 70% 20%, rgba(232,73,15,0.15), transparent 60%), #1A1A1A" }} />
               <div className="relative z-10 p-6 md:p-8 flex flex-col justify-end min-h-[260px]">
                 <span
                   className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-semibold w-fit"

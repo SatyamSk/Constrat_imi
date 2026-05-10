@@ -28,7 +28,7 @@ interface UserStats {
 }
 
 function Account() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [stats, setStats] = useState<UserStats>({
@@ -45,13 +45,14 @@ function Account() {
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
+    if (authLoading) return;
     if (!user) {
       navigate({ to: "/login" });
       return;
     }
     loadProfile();
     loadStats();
-  }, [user]);
+  }, [user, authLoading]);
 
   const loadProfile = async () => {
     if (!isSupabaseConfigured || !supabase || !user) return;
