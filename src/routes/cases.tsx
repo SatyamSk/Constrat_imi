@@ -171,6 +171,7 @@ function Cases() {
   const [cat, setCat] = useState("All");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
   useEffect(() => {
     if (!isSupabaseConfigured || !supabase) return;
@@ -248,7 +249,19 @@ function Cases() {
           {paged.map((d) => {
             const diff = difficultyMap[d.category] || { label: "Medium", color: "#F59E0B" };
             return (
-              <GlowCard key={d.id} className="p-5 flex flex-col">
+              <GlowCard
+                key={d.id}
+                className={`p-5 flex flex-col cursor-pointer transition-all hover:scale-[1.02] ${
+                  !(user && isMember) ? "hover:border-orange/50" : ""
+                }`}
+                onClick={() => {
+                  if (!(user && isMember)) {
+                    setShowLoginModal(true);
+                    return;
+                  }
+                  // Handle logged-in user actions here if needed
+                }}
+              >
                 <div className="relative z-10 flex flex-col h-full">
                   <div className="flex items-center justify-between mb-3">
                     <span className="pill pill-orange">{d.category}</span>
@@ -277,24 +290,23 @@ function Cases() {
                             target="_blank"
                             rel="noopener noreferrer"
                             className="btn-primary text-[12px] h-8 px-4"
+                            onClick={(e) => e.stopPropagation()}
                           >
                             Download
                           </a>
                         ) : (
                           <button
-                            onClick={() => navigate({ to: "/submit-case" })}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate({ to: "/submit-case" });
+                            }}
                             className="btn-primary text-[12px] h-8 px-4"
                           >
                             Submit
                           </button>
                         )
                       ) : (
-                        <button
-                          onClick={() => navigate({ to: "/login" })}
-                          className="btn-secondary text-[12px] h-8 px-4"
-                        >
-                          Login
-                        </button>
+                        <div className="text-[12px] text-text-muted">Login to access</div>
                       )}
                     </div>
                   </div>
@@ -350,6 +362,61 @@ function Cases() {
           </div>
         )}
       </div>
+
+      {/* Login Modal */}
+      {showLoginModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4">
+            <div className="text-center">
+              <div className="w-16 h-16 rounded-full bg-orange/10 flex items-center justify-center mx-auto mb-4">
+                <svg
+                  className="w-8 h-8 text-orange"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                  />
+                </svg>
+              </div>
+              <h2 className="text-[24px] font-semibold mb-2">Access Required</h2>
+              <p className="text-[14px] text-text-secondary mb-6 leading-[1.5]">
+                Join Constrat to access our case library, submit solutions, and track your progress.
+              </p>
+              <div className="space-y-3">
+                <button
+                  onClick={() => {
+                    setShowLoginModal(false);
+                    navigate({ to: "/join" });
+                  }}
+                  className="w-full h-11 flex items-center justify-center bg-orange text-white rounded-lg text-[14px] font-semibold hover:bg-orange-hover transition-colors"
+                >
+                  Join Constrat
+                </button>
+                <button
+                  onClick={() => {
+                    setShowLoginModal(false);
+                    navigate({ to: "/login" });
+                  }}
+                  className="w-full h-11 flex items-center justify-center border border-border rounded-lg text-[14px] font-medium hover:border-orange hover:text-orange transition-colors"
+                >
+                  Already have an account? Login
+                </button>
+              </div>
+              <button
+                onClick={() => setShowLoginModal(false)}
+                className="absolute top-4 right-4 text-text-muted hover:text-text-primary"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </PageShell>
   );
 }
