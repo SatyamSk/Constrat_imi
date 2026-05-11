@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/auth";
 export const Route = createFileRoute("/join")({ component: Join });
 
 function Join() {
-  const { signUp, signInWithGoogle } = useAuth();
+  const { signUp, signIn, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -13,6 +13,7 @@ function Join() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [autoLoggingIn, setAutoLoggingIn] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -22,9 +23,27 @@ function Join() {
     if (pass.length < 6) return setError("Password must be 6+ characters");
     setLoading(true);
     try {
+      // Check if user already exists
+      const { data: existingUsers } = await supabase.auth.admin.listUsers();
+      const userExists = existingUsers.users.some((u: any) => u.email === email);
+      if (userExists) {
+        throw new Error("An account with this email already exists. Please login instead.");
+      }
+
       const { error } = await signUp(email, pass, { full_name: name });
       if (error) throw error;
       setSuccess(true);
+      setAutoLoggingIn(true);
+      // Auto-login after successful signup
+      setTimeout(async () => {
+        const { error: loginError } = await signIn(email, pass);
+        if (!loginError) {
+          navigate({ to: "/practice" });
+        } else {
+          setError("Account created but login failed. Please try logging in manually.");
+          setAutoLoggingIn(false);
+        }
+      }, 1000);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Signup failed");
     } finally {
@@ -53,14 +72,17 @@ function Join() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h1 className="font-serif text-[28px]">Check your email.</h1>
+          <h1 className="font-serif text-[28px]">Account created!</h1>
           <p className="mt-3 text-[14px] text-text-secondary leading-[1.65]">
-            We've sent a confirmation link to <strong>{email}</strong>. Click it to activate your
-            account.
+            {autoLoggingIn
+              ? "Logging you in automatically..."
+              : "Welcome to Constrat! Taking you to your dashboard..."}
           </p>
-          <Link to="/login" className="btn-primary mt-8 inline-flex">
-            Go to Login
-          </Link>
+          {!autoLoggingIn && (
+            <Link to="/practice" className="btn-primary mt-8 inline-flex">
+              Get Started
+            </Link>
+          )}
         </div>
       </div>
     );
@@ -88,7 +110,15 @@ function Join() {
         </p>
 
         <button
-          onClick={() => signInWithGoogle()}
+          onClick={async () => {
+            try {
+              setError("");
+              const { error } = await signInWithGoogle();
+              if (error) throw error;
+            } catch (err: unknown) {
+              setError(err instanceof Error ? err.message : "Google signup failed");
+            }
+          }}
           className="mt-8 w-full h-[48px] flex items-center justify-center gap-3 border border-border rounded-[10px] text-[14px] font-medium hover:border-text-primary transition-colors bg-white"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24">

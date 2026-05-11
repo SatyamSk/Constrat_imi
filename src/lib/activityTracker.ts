@@ -163,7 +163,10 @@ export async function getActivityStats(userId: string): Promise<ActivityStats> {
       .limit(1);
 
     // Get total points
-    const { data: pointsData } = await supabase.from("user_activity").select("points").eq("user_id", userId);
+    const { data: pointsData } = await supabase
+      .from("user_activity")
+      .select("points")
+      .eq("user_id", userId);
 
     const totalPoints = pointsData?.reduce((sum, item) => sum + (item.points || 0), 0) || 0;
 

@@ -19,9 +19,14 @@ export function GlowCard({ children, className = "", style, onClick }: Props) {
   };
 
   return (
-    <div ref={ref} onMouseMove={handleMouseMove} onClick={onClick} className={`card-base ${className}`} style={style}>
+    <div
+      ref={ref}
+      onMouseMove={handleMouseMove}
+      onClick={onClick}
+      className={`card-base ${className}`}
+      style={style}
+    >
       {children}
     </div>
   );
 }
-

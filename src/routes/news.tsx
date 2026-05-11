@@ -102,7 +102,13 @@ function News() {
         <div className="grid lg:grid-cols-[2fr_1fr] gap-5 mb-10">
           <GlowCard className="p-0 overflow-hidden" style={{ background: "#1A1A1A" }}>
             <div className="relative z-10">
-              <div className="absolute inset-0 z-0" style={{ background: "radial-gradient(ellipse at 70% 20%, rgba(232,73,15,0.15), transparent 60%), #1A1A1A" }} />
+              <div
+                className="absolute inset-0 z-0"
+                style={{
+                  background:
+                    "radial-gradient(ellipse at 70% 20%, rgba(232,73,15,0.15), transparent 60%), #1A1A1A",
+                }}
+              />
               <div className="relative z-10 p-6 md:p-8 flex flex-col justify-end min-h-[260px]">
                 <span
                   className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-semibold w-fit"

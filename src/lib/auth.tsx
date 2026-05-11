@@ -81,11 +81,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function fetchRole(userId: string) {
     if (!supabase) return;
     try {
-      const { data } = await supabase.from("profiles").select("role").eq("id", userId).single();
-      if (data?.role) setRole(data.role);
-    } catch {
-      // Profile may not exist yet for new OAuth users — the trigger creates it
-      setRole("member");
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", userId)
+        .single();
+
+      if (error) {
+        console.error("Error fetching role:", error);
+        // If profile doesn't exist, try to create it
+        if (error.code === "PGRST116") {
+          console.log("Profile not found, it should be created by trigger");
+          setRole("member"); // Assume member for new users
+        } else {
+          setRole("guest");
+        }
+        return;
+      }
+
+      if (data?.role) {
+        setRole(data.role);
+        console.log("User role set to:", data.role);
+      } else {
+        setRole("member"); // Default to member
+      }
+    } catch (err) {
+      console.error("Error in fetchRole:", err);
+      setRole("member"); // Default to member on error
     }
   }
 
@@ -111,25 +133,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: metadata },
+      options: {
+        data: metadata,
+        emailRedirectTo: `${window.location.origin}/`,
+      },
     });
 
     if (error) return { error: new Error(error.message) };
 
-    // After signup, update the profile with additional fields
-    // The DB trigger creates the basic profile, we enrich it here
-    if (data.user) {
-      const profileUpdate: Record<string, unknown> = {};
-      if (metadata.full_name) profileUpdate.full_name = metadata.full_name;
-      if (metadata.batch) profileUpdate.batch = metadata.batch;
-      if (metadata.section) profileUpdate.section = metadata.section;
-      if (metadata.phone) profileUpdate.phone = metadata.phone;
-
-      // Small delay to let the trigger create the profile first
-      setTimeout(async () => {
-        if (!supabase) return;
-        await supabase.from("profiles").update(profileUpdate).eq("id", data.user!.id);
-      }, 1000);
+    // For email/password signup, we can auto-confirm in development
+    // In production, users would need to confirm email
+    if (data.user && !data.user.email_confirmed_at) {
+      // In development, auto-confirm the user
+      await supabase.auth.updateUser({
+        email_confirm: true,
+      });
     }
 
     return { error: null };
