@@ -1,11 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/join")({ component: Join });
 
 function Join() {
-  const { signUp, signIn, signInWithGoogle } = useAuth();
+  const { signUp, signInWithGoogle, user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -13,7 +13,13 @@ function Join() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [autoLoggingIn, setAutoLoggingIn] = useState(false);
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (!authLoading && user) {
+      navigate({ to: "/practice" });
+    }
+  }, [user, authLoading]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -23,29 +29,23 @@ function Join() {
     if (pass.length < 6) return setError("Password must be 6+ characters");
     setLoading(true);
     try {
-      // Check if user already exists
-      const { data: existingUsers } = await supabase.auth.admin.listUsers();
-      const userExists = existingUsers.users.some((u: any) => u.email === email);
-      if (userExists) {
-        throw new Error("An account with this email already exists. Please login instead.");
-      }
-
       const { error } = await signUp(email, pass, { full_name: name });
       if (error) throw error;
       setSuccess(true);
-      setAutoLoggingIn(true);
-      // Auto-login after successful signup
-      setTimeout(async () => {
-        const { error: loginError } = await signIn(email, pass);
-        if (!loginError) {
-          navigate({ to: "/practice" });
-        } else {
-          setError("Account created but login failed. Please try logging in manually.");
-          setAutoLoggingIn(false);
-        }
-      }, 1000);
+      // Auth state listener in AuthProvider will detect the new session.
+      // The useEffect above will redirect once user is set.
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Signup failed");
+      if (err instanceof Error) {
+        // Supabase returns specific messages for existing users
+        if (err.message.toLowerCase().includes("already registered") ||
+            err.message.toLowerCase().includes("already been registered")) {
+          setError("An account with this email already exists. Please login instead.");
+        } else {
+          setError(err.message);
+        }
+      } else {
+        setError("Signup failed. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -74,15 +74,11 @@ function Join() {
           </div>
           <h1 className="font-serif text-[28px]">Account created!</h1>
           <p className="mt-3 text-[14px] text-text-secondary leading-[1.65]">
-            {autoLoggingIn
-              ? "Logging you in automatically..."
-              : "Welcome to Constrat! Taking you to your dashboard..."}
+            Welcome to Constrat! Taking you to your dashboard...
           </p>
-          {!autoLoggingIn && (
-            <Link to="/practice" className="btn-primary mt-8 inline-flex">
-              Get Started
-            </Link>
-          )}
+          <Link to="/practice" className="btn-primary mt-8 inline-flex">
+            Get Started
+          </Link>
         </div>
       </div>
     );

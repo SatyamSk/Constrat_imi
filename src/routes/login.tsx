@@ -1,7 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth";
-import { supabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/login")({ component: Login });
 
@@ -22,25 +21,23 @@ function Login() {
     e.preventDefault();
     setError("");
     if (!email.includes("@")) return setError("Enter a valid email");
+    if (!pass) return setError("Enter your password");
     setLoading(true);
     try {
-      // First check if user exists (has a profile)
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("email", email)
-        .single();
-
-      if (!profile) {
-        throw new Error("No account found with this email. Please join first.");
-      }
-
       const { error } = await signIn(email, pass);
       if (error) throw error;
-      // Wait a moment for auth state to update
-      setTimeout(() => navigate({ to: "/practice" }), 500);
+      // Auth state listener will detect SIGNED_IN and update user state.
+      // The useEffect above will redirect once user is set.
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Login failed");
+      if (err instanceof Error) {
+        if (err.message.toLowerCase().includes("invalid login")) {
+          setError("Invalid email or password. Please check your credentials.");
+        } else {
+          setError(err.message);
+        }
+      } else {
+        setError("Login failed");
+      }
     } finally {
       setLoading(false);
     }

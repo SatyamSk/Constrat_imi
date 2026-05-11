@@ -1,5 +1,6 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useRef, type ReactNode } from "react";
 import { supabase, isSupabaseConfigured } from "./supabase";
+import { trackActivity } from "./activityTracker";
 import type { User, Session } from "@supabase/supabase-js";
 
 interface AuthContextType {
@@ -35,6 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [role, setRole] = useState<string>("guest");
+  const hasTrackedLogin = useRef(false);
 
   useEffect(() => {
     if (!supabase || !isSupabaseConfigured) {
@@ -53,8 +55,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (s?.user) {
         // Use setTimeout to avoid Supabase deadlock on concurrent requests
         setTimeout(() => fetchRole(s.user.id), 0);
+
+        // Track login activity once per session
+        if (
+          (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") &&
+          !hasTrackedLogin.current
+        ) {
+          hasTrackedLogin.current = true;
+          // Fire-and-forget: don't block auth flow
+          trackActivity({
+            type: "LOGGED_IN",
+            userId: s.user.id,
+          }).catch(() => {
+            // Silently ignore — missing tables or RLS issues shouldn't break login
+          });
+        }
       } else {
         setRole("guest");
+        hasTrackedLogin.current = false;
       }
       setLoading(false);
     });
@@ -130,7 +148,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         ),
       };
 
-    const { data, error } = await supabase.auth.signUp({
+    const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -140,16 +158,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     if (error) return { error: new Error(error.message) };
-
-    // For email/password signup, we can auto-confirm in development
-    // In production, users would need to confirm email
-    if (data.user && !data.user.email_confirmed_at) {
-      // In development, auto-confirm the user
-      await supabase.auth.updateUser({
-        email_confirm: true,
-      });
-    }
-
     return { error: null };
   };
 
@@ -168,6 +176,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!supabase) return;
     await supabase.auth.signOut();
     setRole("guest");
+    hasTrackedLogin.current = false;
   };
 
   return (
