@@ -159,11 +159,11 @@ def _insert_submission(user_id: str, body: dict, analysis: dict):
     if not (SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY):
         raise RuntimeError("Supabase service role not configured")
 
+    case_id = body.get("case_id") or None
     payload = {
         "user_id": user_id,
-        "case_id": body.get("case_id"),
         "title": body.get("title")
-        or f"Case Submission ({body.get('case_id') or 'freeform'})",
+        or f"Case Submission ({case_id or 'freeform'})",
         "answer": body.get("answer_text") or "(submitted as image)",
         "image_url": body.get("image_url") or "",
         "score": int(analysis.get("overall_score", 0)),
@@ -178,6 +178,8 @@ def _insert_submission(user_id: str, body: dict, analysis: dict):
             "improvements": analysis.get("improvements", []),
         },
     }
+    if case_id:
+        payload["case_id"] = case_id
 
     req = Request(
         f"{SUPABASE_URL}/rest/v1/case_submissions",
@@ -273,10 +275,11 @@ class handler(BaseHTTPRequestHandler):
                 },
             )
         except HTTPError as e:
+            detail = e.read().decode("utf-8", "replace")[:500]
             return _json_response(
                 self,
                 502,
-                {"error": f"Upstream HTTP error: {e.code}", "detail": e.read().decode("utf-8", "replace")[:500]},
+                {"error": f"Upstream error ({e.code}): {detail}"},
             )
         except Exception as e:
             return _json_response(self, 500, {"error": str(e)})
