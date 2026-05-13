@@ -46,4 +46,8 @@ __pycache__
 *.pyc
 .venv
 
+# Temp
+temp-changes/
+
 .vercel
+.env*.local

@@ -23,6 +23,8 @@ import { Route as AlumniRouteImport } from "./routes/alumni"
 import { Route as AdminRouteImport } from "./routes/admin"
 import { Route as AccountRouteImport } from "./routes/account"
 import { Route as IndexRouteImport } from "./routes/index"
+import { Route as CaseCaseIdRouteImport } from "./routes/case.$caseId"
+import { Route as AuthCallbackRouteImport } from "./routes/auth.callback"
 
 const TimetableRoute = TimetableRouteImport.update({
   id: "/timetable",
@@ -94,6 +96,16 @@ const IndexRoute = IndexRouteImport.update({
   path: "/",
   getParentRoute: () => rootRouteImport,
 } as any)
+const CaseCaseIdRoute = CaseCaseIdRouteImport.update({
+  id: "/case/$caseId",
+  path: "/case/$caseId",
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: "/auth/callback",
+  path: "/auth/callback",
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   "/": typeof IndexRoute
@@ -110,6 +122,8 @@ export interface FileRoutesByFullPath {
   "/practice": typeof PracticeRoute
   "/submit-case": typeof SubmitCaseRoute
   "/timetable": typeof TimetableRoute
+  "/auth/callback": typeof AuthCallbackRoute
+  "/case/$caseId": typeof CaseCaseIdRoute
 }
 export interface FileRoutesByTo {
   "/": typeof IndexRoute
@@ -126,6 +140,8 @@ export interface FileRoutesByTo {
   "/practice": typeof PracticeRoute
   "/submit-case": typeof SubmitCaseRoute
   "/timetable": typeof TimetableRoute
+  "/auth/callback": typeof AuthCallbackRoute
+  "/case/$caseId": typeof CaseCaseIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -143,6 +159,8 @@ export interface FileRoutesById {
   "/practice": typeof PracticeRoute
   "/submit-case": typeof SubmitCaseRoute
   "/timetable": typeof TimetableRoute
+  "/auth/callback": typeof AuthCallbackRoute
+  "/case/$caseId": typeof CaseCaseIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -161,6 +179,8 @@ export interface FileRouteTypes {
     | "/practice"
     | "/submit-case"
     | "/timetable"
+    | "/auth/callback"
+    | "/case/$caseId"
   fileRoutesByTo: FileRoutesByTo
   to:
     | "/"
@@ -177,6 +197,8 @@ export interface FileRouteTypes {
     | "/practice"
     | "/submit-case"
     | "/timetable"
+    | "/auth/callback"
+    | "/case/$caseId"
   id:
     | "__root__"
     | "/"
@@ -193,6 +215,8 @@ export interface FileRouteTypes {
     | "/practice"
     | "/submit-case"
     | "/timetable"
+    | "/auth/callback"
+    | "/case/$caseId"
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -210,6 +234,8 @@ export interface RootRouteChildren {
   PracticeRoute: typeof PracticeRoute
   SubmitCaseRoute: typeof SubmitCaseRoute
   TimetableRoute: typeof TimetableRoute
+  AuthCallbackRoute: typeof AuthCallbackRoute
+  CaseCaseIdRoute: typeof CaseCaseIdRoute
 }
 
 declare module "@tanstack/react-router" {
@@ -312,6 +338,20 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    "/case/$caseId": {
+      id: "/case/$caseId"
+      path: "/case/$caseId"
+      fullPath: "/case/$caseId"
+      preLoaderRoute: typeof CaseCaseIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    "/auth/callback": {
+      id: "/auth/callback"
+      path: "/auth/callback"
+      fullPath: "/auth/callback"
+      preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -330,6 +370,8 @@ const rootRouteChildren: RootRouteChildren = {
   PracticeRoute: PracticeRoute,
   SubmitCaseRoute: SubmitCaseRoute,
   TimetableRoute: TimetableRoute,
+  AuthCallbackRoute: AuthCallbackRoute,
+  CaseCaseIdRoute: CaseCaseIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

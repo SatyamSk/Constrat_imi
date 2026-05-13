@@ -2,8 +2,10 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import { getMyGlobalRank } from "@/lib/caseAnalysis";
 import { PageShell, PageHeader } from "@/components/PageShell";
 import { GlowCard } from "@/components/GlowCard";
+import { Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/account")({ component: Account });
 
@@ -43,6 +45,13 @@ function Account() {
   const [editing, setEditing] = useState(false);
   const [formData, setFormData] = useState<Profile | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [globalRank, setGlobalRank] = useState<{
+    rank: number;
+    total_score: number;
+    cases_solved: number;
+    guesstimates_completed: number;
+    current_streak: number;
+  } | null>(null);
 
   useEffect(() => {
     if (authLoading) return;
@@ -52,6 +61,7 @@ function Account() {
     }
     loadProfile();
     loadStats();
+    getMyGlobalRank(user.id).then((r) => setGlobalRank(r as any));
   }, [user, authLoading]);
 
   const loadProfile = async () => {
@@ -375,6 +385,52 @@ function Account() {
 
           {/* Stats Card */}
           <div className="space-y-4">
+            {globalRank && (
+              <GlowCard className="p-6">
+                <div className="relative z-10">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-[14px] font-semibold">Your Global Rank</h3>
+                    <Link to="/leaderboard" className="text-[11px] text-orange hover:underline">
+                      View all →
+                    </Link>
+                  </div>
+                  <div className="flex items-end gap-2">
+                    <p
+                      className="font-serif text-[48px] leading-none"
+                      style={{ color: "#E8490F" }}
+                    >
+                      #{globalRank.rank}
+                    </p>
+                    <p className="text-[13px] text-text-muted pb-2">
+                      of all members
+                    </p>
+                  </div>
+                  <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+                    <div>
+                      <p className="text-[16px] font-bold">{globalRank.total_score}</p>
+                      <p className="text-[10px] text-text-muted uppercase tracking-[0.06em]">
+                        Points
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[16px] font-bold">{globalRank.cases_solved}</p>
+                      <p className="text-[10px] text-text-muted uppercase tracking-[0.06em]">
+                        Cases
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[16px] font-bold">
+                        {globalRank.guesstimates_completed}
+                      </p>
+                      <p className="text-[10px] text-text-muted uppercase tracking-[0.06em]">
+                        Guess.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </GlowCard>
+            )}
+
             <GlowCard className="p-6">
               <div className="relative z-10">
                 <h3 className="text-[14px] font-semibold mb-4">Your Stats</h3>

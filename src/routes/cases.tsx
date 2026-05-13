@@ -259,7 +259,7 @@ function Cases() {
                     setShowLoginModal(true);
                     return;
                   }
-                  // Handle logged-in user actions here if needed
+                  navigate({ to: "/case/$caseId", params: { caseId: d.id } });
                 }}
               >
                 <div className="relative z-10 flex flex-col h-full">
@@ -298,11 +298,11 @@ function Cases() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              navigate({ to: "/submit-case" });
+                              navigate({ to: "/case/$caseId", params: { caseId: d.id } });
                             }}
                             className="btn-primary text-[12px] h-8 px-4"
                           >
-                            Submit
+                            Solve
                           </button>
                         )
                       ) : (

@@ -14,8 +14,10 @@ function Login() {
 
   // Redirect if already logged in
   useEffect(() => {
-    if (!authLoading && user) navigate({ to: "/practice" });
-  }, [user, authLoading]);
+    if (!authLoading && user) {
+      navigate({ to: "/practice", replace: true });
+    }
+  }, [user, authLoading, navigate]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -24,21 +26,25 @@ function Login() {
     if (!pass) return setError("Enter your password");
     setLoading(true);
     try {
-      const { error } = await signIn(email, pass);
+      const { error } = await signIn(email.trim(), pass);
       if (error) throw error;
-      // Auth state listener will detect SIGNED_IN and update user state.
-      // The useEffect above will redirect once user is set.
+      // onAuthStateChange will fire SIGNED_IN; the useEffect above redirects.
     } catch (err: unknown) {
-      if (err instanceof Error) {
-        if (err.message.toLowerCase().includes("invalid login")) {
-          setError("Invalid email or password. Please check your credentials.");
-        } else {
-          setError(err.message);
-        }
-      } else {
-        setError("Login failed");
-      }
+      setError(err instanceof Error ? err.message : "Login failed");
     } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleGoogle() {
+    setError("");
+    setLoading(true);
+    try {
+      const { error } = await signInWithGoogle();
+      if (error) throw error;
+      // Browser will navigate to Google; nothing else to do here.
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Google sign-in failed");
       setLoading(false);
     }
   }
@@ -65,10 +71,12 @@ function Login() {
         </p>
 
         <button
-          onClick={() => signInWithGoogle()}
-          className="mt-8 w-full h-[48px] flex items-center justify-center gap-3 border border-border rounded-[10px] text-[14px] font-medium hover:border-text-primary transition-colors bg-white"
+          type="button"
+          onClick={handleGoogle}
+          disabled={loading}
+          className="mt-8 w-full h-[48px] flex items-center justify-center gap-3 border border-border rounded-[10px] text-[14px] font-medium hover:border-text-primary transition-colors bg-white disabled:opacity-50"
         >
-          <svg className="w-5 h-5" viewBox="0 0 24 24">
+          <svg className="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true">
             <path
               d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"
               fill="#4285F4"
@@ -95,9 +103,10 @@ function Login() {
           <div className="flex-1 h-px bg-border" />
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           <input
             type="email"
+            autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="Email address"
@@ -105,12 +114,17 @@ function Login() {
           />
           <input
             type="password"
+            autoComplete="current-password"
             value={pass}
             onChange={(e) => setPass(e.target.value)}
             placeholder="Password"
             className="input-base w-full"
           />
-          {error && <p className="text-[13px] text-urgent">{error}</p>}
+          {error && (
+            <p className="text-[13px] text-urgent" role="alert">
+              {error}
+            </p>
+          )}
           <button type="submit" disabled={loading} className="btn-primary w-full">
             {loading ? "Logging in..." : "Login"}
           </button>

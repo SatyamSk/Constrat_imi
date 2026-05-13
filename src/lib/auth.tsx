@@ -1,7 +1,23 @@
-import { createContext, useContext, useEffect, useState, useRef, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useRef,
+  type ReactNode,
+} from "react";
 import { supabase, isSupabaseConfigured } from "./supabase";
 import { trackActivity } from "./activityTracker";
 import type { User, Session } from "@supabase/supabase-js";
+
+type SignUpResult = {
+  error: Error | null;
+  /**
+   * True when Supabase returned a user but no session.
+   * That means email confirmation is enabled and we should NOT redirect to the dashboard.
+   */
+  needsEmailConfirmation: boolean;
+};
 
 interface AuthContextType {
   user: User | null;
@@ -14,7 +30,7 @@ interface AuthContextType {
     email: string,
     password: string,
     metadata: Record<string, unknown>,
-  ) => Promise<{ error: Error | null }>;
+  ) => Promise<SignUpResult>;
   signInWithGoogle: () => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
 }
@@ -26,7 +42,7 @@ const AuthContext = createContext<AuthContextType>({
   isAdmin: false,
   isMember: false,
   signIn: async () => ({ error: null }),
-  signUp: async () => ({ error: null }),
+  signUp: async () => ({ error: null, needsEmailConfirmation: false }),
   signInWithGoogle: async () => ({ error: null }),
   signOut: async () => {},
 });
@@ -44,121 +60,167 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // 1. Set up the auth state listener FIRST — this catches OAuth callbacks
-    //    where the hash fragment contains the access token (implicit flow)
+    let mounted = true;
+
+    // 1. Subscribe to auth changes (catches SIGNED_IN after OAuth callback exchange).
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, s) => {
-      console.log("[Auth] State change:", event, s?.user?.email);
+      if (!mounted) return;
+      // eslint-disable-next-line no-console
+      console.log("[Auth] state change:", event, s?.user?.email ?? "(none)");
       setSession(s);
       setUser(s?.user ?? null);
-      if (s?.user) {
-        // Use setTimeout to avoid Supabase deadlock on concurrent requests
-        setTimeout(() => fetchRole(s.user.id), 0);
+      setLoading(false);
 
-        // Track login activity once per session
+      if (s?.user) {
+        // setTimeout avoids a Supabase deadlock when calling .from() inside the listener.
+        setTimeout(() => ensureProfile(s.user), 0);
+
         if (
           (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") &&
           !hasTrackedLogin.current
         ) {
           hasTrackedLogin.current = true;
-          // Fire-and-forget: don't block auth flow
-          trackActivity({
-            type: "LOGGED_IN",
-            userId: s.user.id,
-          }).catch(() => {
-            // Silently ignore — missing tables or RLS issues shouldn't break login
+          trackActivity({ type: "LOGGED_IN", userId: s.user.id }).catch(() => {
+            // Activity tracking is best-effort; never block login.
           });
         }
       } else {
         setRole("guest");
         hasTrackedLogin.current = false;
       }
-      setLoading(false);
     });
 
-    // 2. Then check for an existing session in storage
-    supabase.auth.getSession().then(({ data: { session: s } }) => {
-      setSession(s);
-      setUser(s?.user ?? null);
-      if (s?.user) {
-        fetchRole(s.user.id);
-      }
-      // Only stop loading if there's no OAuth callback in progress
-      // The hash fragment (#access_token=...) signals an implicit flow callback
-      const hasAuthCallback = window.location.hash.includes("access_token");
-      if (!hasAuthCallback) {
+    // 2. Load the initial session. The PKCE listener above also fires SIGNED_IN
+    //    on first successful exchange, but we still want to populate state ASAP
+    //    on a normal page load with an existing session.
+    supabase.auth
+      .getSession()
+      .then(({ data: { session: s } }) => {
+        if (!mounted) return;
+        setSession(s);
+        setUser(s?.user ?? null);
+        if (s?.user) {
+          ensureProfile(s.user);
+        }
         setLoading(false);
-      }
-      // If hasAuthCallback is true, onAuthStateChange will fire and set loading=false
-    });
+      })
+      .catch((err) => {
+        // eslint-disable-next-line no-console
+        console.error("[Auth] getSession failed:", err);
+        if (mounted) setLoading(false);
+      });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
-  async function fetchRole(userId: string) {
+  /**
+   * Make sure a row exists in `profiles` for this user.
+   *
+   * The `handle_new_user` trigger in migration 001 should create one automatically,
+   * but if it fails (e.g. Google sign-in before the trigger was deployed, or a
+   * service-role issue) we self-heal here so the rest of the app doesn't break.
+   */
+  async function ensureProfile(u: User) {
     if (!supabase) return;
     try {
       const { data, error } = await supabase
         .from("profiles")
         .select("role")
-        .eq("id", userId)
-        .single();
+        .eq("id", u.id)
+        .maybeSingle();
 
-      if (error) {
-        console.error("Error fetching role:", error);
-        // If profile doesn't exist, try to create it
-        if (error.code === "PGRST116") {
-          console.log("Profile not found, it should be created by trigger");
-          setRole("member"); // Assume member for new users
-        } else {
-          setRole("guest");
+      if (error && error.code !== "PGRST116") {
+        // eslint-disable-next-line no-console
+        console.error("[Auth] profile fetch error:", error);
+      }
+
+      if (!data) {
+        const { error: insertError } = await supabase.from("profiles").insert({
+          id: u.id,
+          email: u.email ?? "",
+          full_name:
+            (u.user_metadata?.full_name as string) ??
+            (u.user_metadata?.name as string) ??
+            "",
+          avatar_url: (u.user_metadata?.avatar_url as string) ?? "",
+          role: "member",
+        });
+
+        if (insertError) {
+          // eslint-disable-next-line no-console
+          console.error("[Auth] failed to self-heal profile:", insertError);
+          setRole("member"); // optimistic; UI will recover on next refresh
+          return;
         }
+        setRole("member");
         return;
       }
 
-      if (data?.role) {
-        setRole(data.role);
-        console.log("User role set to:", data.role);
-      } else {
-        setRole("member"); // Default to member
-      }
+      setRole(data.role ?? "member");
     } catch (err) {
-      console.error("Error in fetchRole:", err);
-      setRole("member"); // Default to member on error
+      // eslint-disable-next-line no-console
+      console.error("[Auth] ensureProfile crashed:", err);
+      setRole("member");
     }
   }
 
   const signIn = async (email: string, password: string) => {
-    if (!supabase)
+    if (!supabase) {
       return {
         error: new Error(
-          "Supabase not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your environment.",
+          "Supabase not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your .env.",
         ),
       };
+    }
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error: error ? new Error(error.message) : null };
+    if (!error) return { error: null };
+
+    // Map common Supabase error codes to friendlier strings (the UI also wraps these).
+    const msg = error.message.toLowerCase();
+    if (msg.includes("email not confirmed")) {
+      return { error: new Error("Please confirm your email before logging in. Check your inbox.") };
+    }
+    if (msg.includes("invalid login")) {
+      return { error: new Error("Invalid email or password.") };
+    }
+    return { error: new Error(error.message) };
   };
 
-  const signUp = async (email: string, password: string, metadata: Record<string, unknown>) => {
-    if (!supabase)
+  const signUp = async (
+    email: string,
+    password: string,
+    metadata: Record<string, unknown>,
+  ): Promise<SignUpResult> => {
+    if (!supabase) {
       return {
         error: new Error(
-          "Supabase not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your environment.",
+          "Supabase not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your .env.",
         ),
+        needsEmailConfirmation: false,
       };
+    }
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: metadata,
-        emailRedirectTo: `${window.location.origin}/`,
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
     });
 
-    if (error) return { error: new Error(error.message) };
-    return { error: null };
+    if (error) {
+      return { error: new Error(error.message), needsEmailConfirmation: false };
+    }
+
+    // If Supabase returned a user but no session, "Confirm email" is enabled.
+    const needsEmailConfirmation = !!data.user && !data.session;
+    return { error: null, needsEmailConfirmation };
   };
 
   const signInWithGoogle = async () => {
@@ -166,7 +228,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/`,
+        redirectTo: `${window.location.origin}/auth/callback`,
+        queryParams: {
+          access_type: "offline",
+          prompt: "consent",
+        },
       },
     });
     return { error: error ? new Error(error.message) : null };

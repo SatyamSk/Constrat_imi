@@ -1,5 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { PageShell, PageHeader } from "@/components/PageShell";
 
 export const Route = createFileRoute("/practice")({
@@ -35,7 +36,15 @@ const FUNCTIONS = [
 const DIFFS = ["All", "Easy", "Medium", "Hard"];
 const SOURCES = ["All", "Competition", "Interview Reported", "Custom"];
 
-const QUESTIONS = [
+interface Question {
+  type: string;
+  q: string;
+  fn: string;
+  diff: string;
+  src: string;
+}
+
+const FALLBACK_QUESTIONS: Question[] = [
   {
     type: "GUESTIMATE",
     q: "Estimate the daily revenue of all auto-rickshaws in Bengaluru.",
@@ -125,6 +134,7 @@ const QUESTIONS = [
 const PER_PAGE = 6;
 
 function Practice() {
+  const navigate = useNavigate();
   const [tab, setTab] = useState("All");
   const [fn, setFn] = useState("All");
   const [diff, setDiff] = useState("All");
@@ -132,10 +142,49 @@ function Practice() {
   const [q, setQ] = useState("");
   const [page, setPage] = useState(1);
   const [bookmarks, setBookmarks] = useState<Set<number>>(new Set());
-  const [attemptIdx, setAttemptIdx] = useState<number | null>(null);
-  const [attemptText, setAttemptText] = useState("");
+  const [questions, setQuestions] = useState<Question[]>(FALLBACK_QUESTIONS);
+  const [todaysCase, setTodaysCase] = useState<Question | null>(null);
 
-  const filtered = QUESTIONS.filter((x) => {
+  // Pull live questions from Supabase if available (populated by daily_question.py cron)
+  useEffect(() => {
+    if (!isSupabaseConfigured || !supabase) return;
+    let cancelled = false;
+    (async () => {
+      const today = new Date().toISOString().slice(0, 10);
+      const { data } = await supabase
+        .from("practice_questions")
+        .select("type, question, function, difficulty, source, date_assigned")
+        .order("date_assigned", { ascending: false })
+        .limit(60);
+
+      if (cancelled || !data) return;
+      const mapped: Question[] = data.map((row: any) => ({
+        type: row.type,
+        q: row.question,
+        fn: row.function ?? "General Mgmt",
+        diff: row.difficulty ?? "Medium",
+        src: row.source ?? "AI Generated",
+      }));
+      if (mapped.length > 0) {
+        setQuestions(mapped);
+        const todays = data.find((r: any) => r.date_assigned === today);
+        if (todays) {
+          setTodaysCase({
+            type: todays.type,
+            q: todays.question,
+            fn: todays.function ?? "General Mgmt",
+            diff: todays.difficulty ?? "Medium",
+            src: todays.source ?? "AI Generated",
+          });
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const filtered = questions.filter((x) => {
     if (tab !== "All" && !x.type.toLowerCase().includes(tab.toLowerCase().split(" ")[0]))
       return false;
     if (fn !== "All" && x.fn !== fn) return false;
@@ -177,7 +226,7 @@ function Practice() {
               {t}
               <span className="ml-2 inline-block px-1.5 py-0.5 rounded bg-muted text-[10px] text-text-secondary">
                 {
-                  QUESTIONS.filter(
+                  questions.filter(
                     (x) =>
                       t === "All" || x.type.toLowerCase().includes(t.toLowerCase().split(" ")[0]),
                   ).length
@@ -215,39 +264,38 @@ function Practice() {
               style={{ background: "#FFF0EB", border: "1px solid #E8C4B0" }}
             >
               <div className="flex items-center gap-3">
-                <span className="label-orange">Today's Guestimate</span>
-                <span className="text-[12px] text-text-muted">Updated daily</span>
+                <span className="label-orange">
+                  {todaysCase
+                    ? `Today's ${todaysCase.type.charAt(0) + todaysCase.type.slice(1).toLowerCase()}`
+                    : "Today's Question"}
+                </span>
+                <span className="text-[12px] text-text-muted">Updated daily by AI</span>
               </div>
               <h2 className="mt-4 font-serif text-[28px] leading-[1.2] text-text-primary">
-                Estimate the number of coffee cups consumed in Delhi in a single day.
+                {todaysCase
+                  ? todaysCase.q
+                  : "Estimate the number of coffee cups consumed in Delhi in a single day."}
               </h2>
               <div className="mt-4 flex gap-2 flex-wrap">
-                <span className="pill pill-orange">Medium</span>
-                <span className="pill">Operations</span>
-                <span className="pill">Reported · MBB</span>
+                <span className="pill pill-orange">{todaysCase?.diff ?? "Medium"}</span>
+                <span className="pill">{todaysCase?.fn ?? "Operations"}</span>
+                <span className="pill">{todaysCase?.src ?? "Reported · MBB"}</span>
               </div>
               <div className="mt-6 flex flex-wrap gap-3">
                 <button
                   className="btn-primary"
                   onClick={() => {
-                    setAttemptIdx(-1);
-                    setAttemptText("");
+                    const prompt = todaysCase?.q ?? "";
+                    sessionStorage.setItem("constrat:prefill_prompt", prompt);
+                    navigate({ to: "/submit-case" });
                   }}
                 >
                   Attempt & Submit Answer
                 </button>
-                <button
-                  className="btn-secondary"
-                  onClick={() =>
-                    alert(
-                      "Framework: Start with population of Delhi → coffee-drinking % → cups per day per drinker → adjust for chai preference. Use top-down approach.",
-                    )
-                  }
-                >
-                  See Framework Hint
-                </button>
+                <Link to="/cases" className="btn-secondary">
+                  Browse all cases →
+                </Link>
               </div>
-              <p className="mt-4 text-[13px] text-text-secondary">87 members attempted today</p>
             </div>
 
             {/* Grid */}
@@ -275,55 +323,24 @@ function Practice() {
                     <p className="mt-3 text-[15px] font-semibold leading-[1.45] text-text-primary line-clamp-3">
                       {x.q}
                     </p>
-                    {attemptIdx === gi ? (
-                      <div className="mt-3 space-y-2">
-                        <textarea
-                          value={attemptText}
-                          onChange={(e) => setAttemptText(e.target.value)}
-                          placeholder="Type your approach..."
-                          className="input-base w-full h-20 resize-none text-[13px]"
-                        />
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => {
-                              alert("Answer saved! Keep practicing.");
-                              setAttemptIdx(null);
-                              setAttemptText("");
-                            }}
-                            className="btn-primary text-[12px] h-8 px-3"
-                          >
-                            Submit
-                          </button>
-                          <button
-                            onClick={() => setAttemptIdx(null)}
-                            className="btn-secondary text-[12px] h-8 px-3"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="mt-4 flex gap-2 flex-wrap">
-                          <span className="pill">{x.fn}</span>
-                          <span className="pill pill-orange">{x.diff}</span>
-                        </div>
-                        <div className="mt-5 flex items-center justify-between">
-                          <span className="text-[12px] text-text-muted truncate max-w-[160px]">
-                            {x.src}
-                          </span>
-                          <button
-                            onClick={() => {
-                              setAttemptIdx(gi);
-                              setAttemptText("");
-                            }}
-                            className="btn-ghost text-[13px]"
-                          >
-                            Attempt →
-                          </button>
-                        </div>
-                      </>
-                    )}
+                    <div className="mt-4 flex gap-2 flex-wrap">
+                      <span className="pill">{x.fn}</span>
+                      <span className="pill pill-orange">{x.diff}</span>
+                    </div>
+                    <div className="mt-5 flex items-center justify-between">
+                      <span className="text-[12px] text-text-muted truncate max-w-[160px]">
+                        {x.src}
+                      </span>
+                      <button
+                        onClick={() => {
+                          sessionStorage.setItem("constrat:prefill_prompt", x.q);
+                          navigate({ to: "/submit-case" });
+                        }}
+                        className="btn-ghost text-[13px]"
+                      >
+                        Attempt →
+                      </button>
+                    </div>
                   </article>
                 );
               })}
