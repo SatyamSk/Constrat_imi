@@ -11,6 +11,7 @@ export const Route = createFileRoute("/cases")({ component: Cases });
 interface CaseDeck {
   id: string;
   name: string;
+  description?: string;
   category: string;
   source: string;
   file_type: string;
@@ -259,6 +260,7 @@ function Cases() {
                     setShowLoginModal(true);
                     return;
                   }
+                  sessionStorage.setItem(`constrat:case:${d.id}`, JSON.stringify({ name: d.name, description: d.description || d.name, category: d.category, source: d.source }));
                   navigate({ to: "/case/$caseId", params: { caseId: d.id } });
                 }}
               >
@@ -298,6 +300,7 @@ function Cases() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
+                              sessionStorage.setItem(`constrat:case:${d.id}`, JSON.stringify({ name: d.name, description: d.description || d.name, category: d.category, source: d.source }));
                               navigate({ to: "/case/$caseId", params: { caseId: d.id } });
                             }}
                             className="btn-primary text-[12px] h-8 px-4"

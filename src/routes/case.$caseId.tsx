@@ -54,23 +54,33 @@ function CaseDetail() {
 
   // Load case row + leaderboard
   useEffect(() => {
-    if (!isSupabaseConfigured || !supabase || !caseId) {
-      setLoadingCase(false);
-      return;
-    }
     let cancelled = false;
     (async () => {
-      const { data } = await supabase
-        .from("case_decks")
-        .select("id, name, description, category, source")
-        .eq("id", caseId)
-        .maybeSingle();
-      if (cancelled) return;
-      setCaseRow((data as CaseRow) ?? null);
-      setLoadingCase(false);
-
-      const lb = await getCaseLeaderboard(caseId, 20);
-      if (!cancelled) setLeaderboard(lb as LeaderboardRow[]);
+      // Try database first
+      if (isSupabaseConfigured && supabase && caseId) {
+        const { data } = await supabase
+          .from("case_decks")
+          .select("id, name, description, category, source")
+          .eq("id", caseId)
+          .maybeSingle();
+        if (cancelled) return;
+        if (data) {
+          setCaseRow(data as CaseRow);
+          setLoadingCase(false);
+          const lb = await getCaseLeaderboard(caseId, 20);
+          if (!cancelled) setLeaderboard(lb as LeaderboardRow[]);
+          return;
+        }
+      }
+      // Fallback: read from sessionStorage (set by cases.tsx for non-UUID IDs)
+      const cached = sessionStorage.getItem(`constrat:case:${caseId}`);
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          if (!cancelled) setCaseRow({ id: caseId, name: parsed.name, description: parsed.description, category: parsed.category, source: parsed.source });
+        } catch { /* ignore */ }
+      }
+      if (!cancelled) setLoadingCase(false);
     })();
     return () => {
       cancelled = true;
