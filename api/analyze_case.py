@@ -36,6 +36,7 @@ Env required:
 """
 import os
 import json
+import re
 from http.server import BaseHTTPRequestHandler
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError, URLError
@@ -159,7 +160,9 @@ def _insert_submission(user_id: str, body: dict, analysis: dict):
     if not (SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY):
         raise RuntimeError("Supabase service role not configured")
 
-    case_id = body.get("case_id") or None
+    raw_case_id = body.get("case_id") or ""
+    # Only accept valid UUIDs — fallback data uses "1", "2" etc. which aren't UUIDs
+    case_id = raw_case_id if re.match(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', raw_case_id, re.I) else None
     payload = {
         "user_id": user_id,
         "title": body.get("title")
