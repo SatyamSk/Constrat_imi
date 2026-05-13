@@ -113,6 +113,40 @@ def _verify_user(jwt: str):
         return None
 
 
+def _ensure_profile(user: dict):
+    """
+    Upsert a profile row for the authenticated user. Uses the service role
+    key so it bypasses RLS. This handles the case where auth.users exists
+    but public.profiles was wiped (e.g. nuclear reset).
+    """
+    if not (SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY):
+        return
+    uid = user.get("id", "")
+    email = user.get("email", "")
+    name = (user.get("user_metadata") or {}).get("full_name", "")
+    payload = {
+        "id": uid,
+        "email": email,
+        "full_name": name or email.split("@")[0],
+        "role": "member",
+    }
+    try:
+        req = Request(
+            f"{SUPABASE_URL}/rest/v1/profiles",
+            data=json.dumps(payload).encode("utf-8"),
+            method="POST",
+            headers={
+                "apikey": SUPABASE_SERVICE_ROLE_KEY,
+                "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}",
+                "Content-Type": "application/json",
+                "Prefer": "resolution=merge-duplicates",
+            },
+        )
+        urlopen(req, timeout=10)
+    except Exception:
+        pass  # best-effort; profile may already exist
+
+
 def _call_openai(case_prompt: str, answer_text: str, image_url: str):
     if not OPENAI_KEY:
         raise RuntimeError("OPENAI_API_KEY not configured")
@@ -244,6 +278,9 @@ class handler(BaseHTTPRequestHandler):
             user = _verify_user(jwt)
             if not user or "id" not in user:
                 return _json_response(self, 401, {"error": "Invalid or expired session"})
+
+            # Ensure profile exists (handles nuclear reset / first-time edge case)
+            _ensure_profile(user)
 
             length = int(self.headers.get("Content-Length", "0"))
             raw = self.rfile.read(length) if length else b"{}"
