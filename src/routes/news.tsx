@@ -1,257 +1,644 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
 import { PageShell } from "@/components/PageShell";
 import { PageHeader } from "@/components/PageHeader";
-import { GlowCard } from "@/components/GlowCard";
 import { AnimatedSection } from "@/components/AnimatedSection";
-import { useState } from "react";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 
 export const Route = createFileRoute("/news")({ component: News });
 
-const BRIEFS = [
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+interface Stakeholder {
+  name: string;
+  impact: string;
+}
+
+interface GDAnalysis {
+  topic?: string;
+  ai_summary?: string;
+  macro_angle?: string;
+  micro_angle?: string;
+  arguments_for?: string[];
+  arguments_against?: string[];
+  stakeholders?: Stakeholder[];
+  frameworks?: string[];
+  key_stats?: string[];
+  related_concepts?: string[];
+}
+
+interface NewsRow {
+  id: string;
+  title: string;
+  source: string;
+  topic: string;
+  url: string;
+  image_url: string;
+  ai_summary: string;
+  country: string;
+  read_time: string;
+  published_at: string;
+  gd_analysis: GDAnalysis | null;
+}
+
+// ---------------------------------------------------------------------------
+// Static fallback (used only when Supabase is empty/unconfigured)
+// ---------------------------------------------------------------------------
+
+const FALLBACK: NewsRow[] = [
   {
-    id: 1,
+    id: "f1",
     title:
       "Reliance Retail posts 18% revenue growth in Q3, signals aggressive expansion in quick commerce",
-    domain: "Retail",
-    source: "ET",
-    why: "Retail growth cases and market entry questions frequently draw from Reliance's distribution moat.",
-  },
-  {
-    id: 2,
-    title: "Crude oil falls below $75 as OPEC+ signals production increase in Q2",
-    domain: "Macro",
-    source: "Reuters",
-    why: "Crude directly impacts India's CAD and inflation — a staple macro question in GD/PI rounds.",
-  },
-  {
-    id: 3,
-    title: "Swiggy's food delivery losses narrow to Rs 625 Cr, Instamart GMV up 40%",
-    domain: "Startup",
-    source: "Mint",
-    why: "Unit economics turnaround makes this a strong profitability case study.",
-  },
-  {
-    id: 4,
-    title: "RBI holds repo rate at 6.5% for eighth consecutive meeting, signals rate cut in June",
-    domain: "Policy",
-    source: "Bloomberg",
-    why: "Monetary policy transmission is a core macroeconomics concept tested in PI.",
-  },
-  {
-    id: 5,
-    title: "Tata Motors demerger: CV and PV businesses to be separate listed entities",
-    domain: "M&A",
-    source: "Moneycontrol",
-    why: "Corporate restructuring and demerger logic — frequently asked in strategy cases.",
-  },
-  {
-    id: 6,
-    title: "Zomato acquires Paytm's events business for Rs 2,048 Cr",
-    domain: "M&A",
-    source: "TechCrunch",
-    why: "Platform adjacency and acquisition strategy — a BCG/Bain interview favorite.",
-  },
-  {
-    id: 7,
-    title: "India's services PMI hits 14-month high at 61.7, manufacturing PMI at 56.5",
-    domain: "Macro",
-    source: "Reuters",
-    why: "PMI data interpretation is a common GD topic and PI question.",
-  },
-  {
-    id: 8,
-    title: "Hindustan Unilever launches direct-to-consumer brands, bypasses traditional retail",
-    domain: "Strategy",
-    source: "ET",
-    why: "Channel disruption and DTC strategy — relevant for marketing and market entry cases.",
+    source: "Economic Times",
+    topic: "FMCG & Retail",
+    url: "https://economictimes.indiatimes.com",
+    image_url: "",
+    ai_summary:
+      "Reliance Retail accelerated revenue growth on the back of quick commerce and a wider store footprint.",
+    country: "IN",
+    read_time: "2 min",
+    published_at: new Date().toISOString(),
+    gd_analysis: {
+      topic: "FMCG & Retail",
+      macro_angle:
+        "Quick commerce is reshaping Indian retail's last-mile economics and pulling consumption away from kirana stores.",
+      micro_angle:
+        "Reliance's scale advantage in supply chain and store density lets it cross-subsidise 10-minute delivery longer than DTC challengers.",
+      arguments_for: [
+        "Quick commerce solves real time-poverty in urban India.",
+        "Scale players can hit unit-economics breakeven faster.",
+        "Drives formalisation of an unorganised retail base.",
+      ],
+      arguments_against: [
+        "Unit economics still negative for most players.",
+        "Threatens 12 million-odd kirana livelihoods.",
+        "Encourages overconsumption and packaging waste.",
+      ],
+      stakeholders: [
+        { name: "Reliance Retail", impact: "Wins from scale and exclusive brand portfolio." },
+        { name: "Kirana stores", impact: "Lose share in metros; viable only in long-tail SKUs." },
+        { name: "Gig workers", impact: "More gigs at thin per-order margins." },
+      ],
+      frameworks: ["Porter's 5 Forces", "Value Chain"],
+      key_stats: ["18% YoY revenue growth"],
+      related_concepts: ["Quick commerce", "Channel disruption", "Network effects"],
+    },
   },
 ];
 
-const DOMAIN_COLORS: Record<string, string> = {
-  Macro: "#3B82F6",
-  "M&A": "#8B5CF6",
-  Startup: "#22C55E",
-  Policy: "#F59E0B",
-  Retail: "#E8490F",
-  Strategy: "#EC4899",
-  Markets: "#06B6D4",
+const TOPIC_COLORS: Record<string, string> = {
+  "Markets & Economy": "#3B82F6",
+  "Policy & Regulation": "#F59E0B",
+  "Startups & VC": "#22C55E",
+  "FMCG & Retail": "#E8490F",
+  "Consulting Industry": "#8B5CF6",
+  "Global Business": "#06B6D4",
+  "India Focus": "#EC4899",
+  Technology: "#0EA5E9",
 };
-const DOMAINS = ["All", ...Object.keys(DOMAIN_COLORS)];
+
+const topicColor = (t: string) => TOPIC_COLORS[t] || "#E8490F";
+
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
 
 function News() {
-  const [domain, setDomain] = useState("All");
-  const [readSet, setReadSet] = useState<Set<number>>(new Set());
-  const filtered = BRIEFS.filter((b) => domain === "All" || b.domain === domain);
-  const readCount = filtered.filter((b) => readSet.has(b.id)).length;
-  const toggleRead = (id: number) =>
-    setReadSet((prev) => {
+  const [items, setItems] = useState<NewsRow[]>(FALLBACK);
+  const [loading, setLoading] = useState(true);
+  const [topic, setTopic] = useState<string>("All");
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!isSupabaseConfigured || !supabase) {
+      setLoading(false);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from("news")
+        .select(
+          "id, title, source, topic, url, image_url, ai_summary, country, read_time, published_at, gd_analysis",
+        )
+        .order("published_at", { ascending: false })
+        .limit(60);
+      if (cancelled) return;
+      if (error) {
+        // eslint-disable-next-line no-console
+        console.error("[news] fetch error:", error);
+      } else if (data && data.length > 0) {
+        setItems(data as NewsRow[]);
+      }
+      setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const topics = useMemo(() => {
+    const set = new Set<string>(items.map((n) => n.topic).filter(Boolean));
+    return ["All", ...Array.from(set)];
+  }, [items]);
+
+  const filtered = useMemo(
+    () => (topic === "All" ? items : items.filter((n) => n.topic === topic)),
+    [items, topic],
+  );
+
+  const featured = filtered[0];
+  const rest = filtered.slice(1);
+
+  function toggle(id: string) {
+    setExpanded((prev) => {
       const s = new Set(prev);
-      s.has(id) ? s.delete(id) : s.add(id);
+      if (s.has(id)) s.delete(id);
+      else s.add(id);
       return s;
     });
+  }
 
   return (
     <PageShell>
       <PageHeader
         eyebrow="Daily Brief"
         title="Today's business intelligence."
-        subtitle="Curated stories annotated with why they matter for your MBA interviews."
+        subtitle="Updated daily by AI. Tap any headline to read at the source. Expand the GD brief for macro/micro angles, stakeholders, and arguments."
       />
-      <div className="mx-auto max-w-[1180px] px-5 md:px-6 -mt-4 pb-20">
-        {/* Today's featured + progress */}
-        <div className="grid lg:grid-cols-[2fr_1fr] gap-5 mb-10">
-          <GlowCard className="p-0 overflow-hidden" style={{ background: "#1A1A1A" }}>
-            <div className="relative z-10">
-              <div
-                className="absolute inset-0 z-0"
-                style={{
-                  background:
-                    "radial-gradient(ellipse at 70% 20%, rgba(232,73,15,0.15), transparent 60%), #1A1A1A",
-                }}
-              />
-              <div className="relative z-10 p-6 md:p-8 flex flex-col justify-end min-h-[260px]">
-                <span
-                  className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-semibold w-fit"
-                  style={{ background: "rgba(232,73,15,0.15)", color: "#FF8C42" }}
-                >
-                  <span
-                    className="pulse-dot"
-                    style={{ background: "#FF8C42", boxShadow: "0 0 0 0 rgba(255,140,66,0.5)" }}
-                  />{" "}
-                  Featured Story
-                </span>
-                <h3
-                  className="mt-4 text-[22px] md:text-[26px] font-serif leading-[1.3]"
-                  style={{ color: "#F4ECE2" }}
-                >
-                  {BRIEFS[0].title}
-                </h3>
-                <p className="mt-3 text-[13px] leading-[1.65]" style={{ color: "#999" }}>
-                  {BRIEFS[0].why}
-                </p>
-                <div className="mt-5 flex items-center gap-3">
-                  <span
-                    className="pill"
-                    style={{
-                      background: `${DOMAIN_COLORS[BRIEFS[0].domain]}20`,
-                      color: DOMAIN_COLORS[BRIEFS[0].domain],
-                    }}
-                  >
-                    {BRIEFS[0].domain}
-                  </span>
-                  <span className="text-[11px]" style={{ color: "#666" }}>
-                    Source: {BRIEFS[0].source}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </GlowCard>
-          <div
-            className="card-base p-6 flex flex-col justify-between"
-            style={{ background: "#FFF7F3" }}
-          >
-            <div>
-              <p className="text-[11px] uppercase tracking-[0.08em] font-semibold text-text-muted mb-3">
-                Today's Progress
-              </p>
-              <p
-                className="text-[48px] font-bold leading-none"
-                style={{ fontFamily: "var(--font-mono)", color: "#E8490F" }}
-              >
-                {readCount}
-                <span className="text-[20px] text-text-muted">/{filtered.length}</span>
-              </p>
-              <p className="text-[13px] text-text-secondary mt-1">articles read</p>
-            </div>
-            <div className="mt-4">
-              <div className="w-full h-2.5 rounded-full bg-border overflow-hidden">
-                <div
-                  className="h-full rounded-full transition-all duration-500"
-                  style={{
-                    width: `${(readCount / Math.max(filtered.length, 1)) * 100}%`,
-                    background: "linear-gradient(90deg, #E8490F, #FF8C42)",
-                  }}
-                />
-              </div>
-              <p className="text-[11px] text-text-muted mt-2">
-                {readCount === filtered.length
-                  ? "All done! Great prep today."
-                  : `${filtered.length - readCount} more to complete today's brief`}
-              </p>
-            </div>
-          </div>
-        </div>
 
-        {/* Domain pills */}
+      <div className="mx-auto max-w-[1180px] px-5 md:px-6 -mt-4 pb-20">
+        {/* Topic filter */}
         <div className="flex flex-wrap gap-2 mb-8">
-          {DOMAINS.map((d) => (
+          {topics.map((t) => (
             <button
-              key={d}
-              onClick={() => setDomain(d)}
-              className={`px-3.5 py-1.5 rounded-full text-[12px] font-medium transition-all ${domain === d ? "bg-orange text-white" : "bg-muted/40 text-text-muted hover:text-text-primary"}`}
+              key={t}
+              onClick={() => setTopic(t)}
+              className={`px-3.5 py-1.5 rounded-full text-[12px] font-medium transition-all ${
+                topic === t
+                  ? "bg-orange text-white"
+                  : "bg-muted/40 text-text-muted hover:text-text-primary"
+              }`}
             >
-              {d}
+              {t}
             </button>
           ))}
         </div>
 
-        {/* Article cards */}
-        <div className="space-y-4">
-          {filtered.map((b, i) => (
-            <AnimatedSection key={b.id} delay={i * 50}>
-              <div
-                className={`card-base p-5 md:p-6 flex gap-5 transition-all ${readSet.has(b.id) ? "opacity-50" : ""}`}
-              >
-                <div
-                  className="shrink-0 w-1 rounded-full"
-                  style={{ background: DOMAIN_COLORS[b.domain] || "#E8490F" }}
+        {loading && (
+          <div className="card-base p-12 text-center mb-8">
+            <div className="w-8 h-8 mx-auto rounded-full border-2 border-orange border-t-transparent animate-spin" />
+            <p className="mt-4 text-[13px] text-text-muted">Loading today's brief…</p>
+          </div>
+        )}
+
+        {!loading && featured && (
+          <FeaturedTile
+            item={featured}
+            isOpen={expanded.has(featured.id)}
+            onToggle={() => toggle(featured.id)}
+          />
+        )}
+
+        {!loading && rest.length > 0 && (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5 mt-8">
+            {rest.map((n, i) => (
+              <AnimatedSection key={n.id} delay={i * 40}>
+                <NewsTile
+                  item={n}
+                  isOpen={expanded.has(n.id)}
+                  onToggle={() => toggle(n.id)}
                 />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span
-                      className="pill"
-                      style={{
-                        background: `${DOMAIN_COLORS[b.domain] || "#E8490F"}12`,
-                        color: DOMAIN_COLORS[b.domain] || "#E8490F",
-                      }}
-                    >
-                      {b.domain}
-                    </span>
-                    <span className="text-[11px] text-text-muted">{b.source}</span>
-                  </div>
-                  <h3 className="text-[15px] font-semibold leading-[1.45] text-text-primary">
-                    {b.title}
-                  </h3>
-                  <div className="mt-3 p-3 rounded-lg" style={{ background: "#FFF7F3" }}>
-                    <p className="text-[12px] text-text-secondary leading-[1.6]">
-                      <span className="font-semibold" style={{ color: "#E8490F" }}>
-                        Why it matters:{" "}
-                      </span>
-                      {b.why}
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => toggleRead(b.id)}
-                  className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center border-2 transition-all self-start mt-1 ${readSet.has(b.id) ? "bg-orange border-orange text-white" : "border-border text-text-muted hover:border-orange hover:text-orange"}`}
-                >
-                  {readSet.has(b.id) && (
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={3}
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                  )}
-                </button>
-              </div>
-            </AnimatedSection>
-          ))}
-        </div>
+              </AnimatedSection>
+            ))}
+          </div>
+        )}
+
+        {!loading && filtered.length === 0 && (
+          <p className="text-center text-text-muted py-16 text-[14px]">
+            No stories yet for this topic. Check back after the next refresh.
+          </p>
+        )}
       </div>
     </PageShell>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Featured (top story, wide hero layout)
+// ---------------------------------------------------------------------------
+
+function FeaturedTile({
+  item,
+  isOpen,
+  onToggle,
+}: {
+  item: NewsRow;
+  isOpen: boolean;
+  onToggle: () => void;
+}) {
+  const color = topicColor(item.topic);
+  return (
+    <article className="rounded-[16px] overflow-hidden border border-border bg-white shadow-sm">
+      <div className="grid md:grid-cols-[1.2fr_1fr] gap-0">
+        <NewsImage url={item.image_url} fallbackColor={color} className="md:h-full md:min-h-[280px] h-[200px]" />
+        <div className="p-6 md:p-8 flex flex-col">
+          <div className="flex items-center gap-2 mb-3">
+            <span
+              className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold"
+              style={{ background: `${color}18`, color }}
+            >
+              <span
+                className="w-1.5 h-1.5 rounded-full"
+                style={{ background: color }}
+              />
+              {item.topic}
+            </span>
+            <span className="text-[11px] text-text-muted">{item.source}</span>
+            <span className="text-[11px] text-text-muted">·</span>
+            <span className="text-[11px] text-text-muted">
+              {formatDate(item.published_at)}
+            </span>
+          </div>
+
+          <SourceLink url={item.url} className="block">
+            <h2 className="font-serif text-[22px] md:text-[26px] leading-[1.3] text-text-primary hover:text-orange transition-colors">
+              {item.title}
+            </h2>
+          </SourceLink>
+
+          {item.ai_summary && (
+            <p className="mt-3 text-[14px] leading-[1.65] text-text-secondary">
+              {item.ai_summary}
+            </p>
+          )}
+
+          <div className="mt-auto pt-5 flex items-center gap-3">
+            <SourceLink url={item.url}>
+              <span className="btn-primary text-[13px] h-9 px-4 inline-flex items-center">
+                Read at source →
+              </span>
+            </SourceLink>
+            {item.gd_analysis && hasGDContent(item.gd_analysis) && (
+              <button
+                onClick={onToggle}
+                className="btn-secondary text-[13px] h-9 px-4 inline-flex items-center"
+                aria-expanded={isOpen}
+              >
+                {isOpen ? "Hide GD brief" : "GD brief"}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {isOpen && item.gd_analysis && (
+        <GDDrawer analysis={item.gd_analysis} accent={color} />
+      )}
+    </article>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Grid tile
+// ---------------------------------------------------------------------------
+
+function NewsTile({
+  item,
+  isOpen,
+  onToggle,
+}: {
+  item: NewsRow;
+  isOpen: boolean;
+  onToggle: () => void;
+}) {
+  const color = topicColor(item.topic);
+  const hasGD = item.gd_analysis && hasGDContent(item.gd_analysis);
+
+  return (
+    <article className="card-base overflow-hidden flex flex-col h-full">
+      <SourceLink url={item.url}>
+        <NewsImage url={item.image_url} fallbackColor={color} className="h-[160px]" />
+      </SourceLink>
+
+      <div className="p-5 flex flex-col flex-1">
+        <div className="flex items-center gap-2 mb-2">
+          <span
+            className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold"
+            style={{ background: `${color}18`, color }}
+          >
+            {item.topic}
+          </span>
+          <span className="text-[11px] text-text-muted truncate">{item.source}</span>
+        </div>
+
+        <SourceLink url={item.url} className="block">
+          <h3 className="text-[15px] font-semibold leading-[1.4] text-text-primary line-clamp-3 hover:text-orange transition-colors">
+            {item.title}
+          </h3>
+        </SourceLink>
+
+        {item.ai_summary && (
+          <p className="mt-2 text-[12px] leading-[1.55] text-text-secondary line-clamp-3">
+            {item.ai_summary}
+          </p>
+        )}
+
+        <div className="mt-auto pt-4 flex items-center justify-between">
+          <span className="text-[11px] text-text-muted">
+            {formatDate(item.published_at)}
+          </span>
+          {hasGD && (
+            <button
+              onClick={onToggle}
+              className="text-[12px] font-semibold text-orange hover:underline"
+              aria-expanded={isOpen}
+            >
+              {isOpen ? "Hide GD brief −" : "GD brief +"}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {isOpen && item.gd_analysis && (
+        <GDDrawer analysis={item.gd_analysis} accent={color} compact />
+      )}
+    </article>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// GD-prep drawer (the Ground.news-inspired bit)
+// ---------------------------------------------------------------------------
+
+function GDDrawer({
+  analysis,
+  accent,
+  compact = false,
+}: {
+  analysis: GDAnalysis;
+  accent: string;
+  compact?: boolean;
+}) {
+  return (
+    <div
+      className="border-t border-border"
+      style={{ background: "#FAFAF6" }}
+    >
+      <div className={compact ? "p-5 space-y-4" : "p-6 md:p-8 space-y-5"}>
+        {/* Macro / Micro split */}
+        <div className="grid md:grid-cols-2 gap-3">
+          {analysis.macro_angle && (
+            <Frame title="Macro angle" accent={accent}>
+              {analysis.macro_angle}
+            </Frame>
+          )}
+          {analysis.micro_angle && (
+            <Frame title="Micro angle" accent={accent}>
+              {analysis.micro_angle}
+            </Frame>
+          )}
+        </div>
+
+        {/* For / Against — ground.news-style two-sided bar */}
+        {(analysis.arguments_for?.length || analysis.arguments_against?.length) ? (
+          <div className="grid md:grid-cols-2 gap-3">
+            <SideBox
+              label="Arguments For"
+              items={analysis.arguments_for ?? []}
+              color="#16A34A"
+              icon="+"
+            />
+            <SideBox
+              label="Arguments Against"
+              items={analysis.arguments_against ?? []}
+              color="#DC2626"
+              icon="−"
+            />
+          </div>
+        ) : null}
+
+        {/* Stakeholders */}
+        {analysis.stakeholders && analysis.stakeholders.length > 0 && (
+          <div>
+            <SectionLabel>Stakeholders</SectionLabel>
+            <div className="grid sm:grid-cols-3 gap-2">
+              {analysis.stakeholders.map((s, i) => (
+                <div
+                  key={i}
+                  className="rounded-lg border border-border bg-white p-3"
+                >
+                  <p className="text-[12px] font-semibold text-text-primary">
+                    {s.name}
+                  </p>
+                  <p className="text-[12px] text-text-secondary leading-[1.5] mt-1">
+                    {s.impact}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Pill rows */}
+        <div className="flex flex-wrap gap-x-6 gap-y-3">
+          <PillRow label="Frameworks" items={analysis.frameworks ?? []} accent={accent} />
+          <PillRow label="Key stats" items={analysis.key_stats ?? []} mono />
+          <PillRow label="Related" items={analysis.related_concepts ?? []} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Frame({
+  title,
+  accent,
+  children,
+}: {
+  title: string;
+  accent: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-lg bg-white border border-border p-4">
+      <p
+        className="text-[10px] uppercase tracking-[0.1em] font-bold mb-1.5"
+        style={{ color: accent }}
+      >
+        {title}
+      </p>
+      <p className="text-[13px] leading-[1.6] text-text-primary">{children}</p>
+    </div>
+  );
+}
+
+function SideBox({
+  label,
+  items,
+  color,
+  icon,
+}: {
+  label: string;
+  items: string[];
+  color: string;
+  icon: string;
+}) {
+  if (items.length === 0) return null;
+  return (
+    <div className="rounded-lg bg-white border border-border p-4">
+      <p
+        className="text-[10px] uppercase tracking-[0.1em] font-bold mb-2"
+        style={{ color }}
+      >
+        {label}
+      </p>
+      <ul className="space-y-1.5">
+        {items.map((it, i) => (
+          <li
+            key={i}
+            className="text-[12px] leading-[1.55] text-text-primary flex gap-2"
+          >
+            <span className="font-bold shrink-0" style={{ color }}>
+              {icon}
+            </span>
+            <span>{it}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="text-[10px] uppercase tracking-[0.1em] font-bold text-text-muted mb-2">
+      {children}
+    </p>
+  );
+}
+
+function PillRow({
+  label,
+  items,
+  accent,
+  mono = false,
+}: {
+  label: string;
+  items: string[];
+  accent?: string;
+  mono?: boolean;
+}) {
+  if (items.length === 0) return null;
+  return (
+    <div className="flex items-center gap-2 flex-wrap">
+      <span className="text-[10px] uppercase tracking-[0.1em] font-bold text-text-muted">
+        {label}:
+      </span>
+      {items.map((it, i) => (
+        <span
+          key={i}
+          className="px-2 py-0.5 rounded-full text-[11px] border"
+          style={{
+            background: accent ? `${accent}10` : "#FFFFFF",
+            color: accent || "#3F3F3F",
+            borderColor: accent ? `${accent}30` : "var(--border, #E8E4DE)",
+            fontFamily: mono ? "var(--font-mono)" : undefined,
+          }}
+        >
+          {it}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Bits
+// ---------------------------------------------------------------------------
+
+function NewsImage({
+  url,
+  fallbackColor,
+  className = "",
+}: {
+  url?: string;
+  fallbackColor: string;
+  className?: string;
+}) {
+  const [errored, setErrored] = useState(false);
+  if (!url || errored) {
+    return (
+      <div
+        className={`w-full ${className}`}
+        style={{
+          background: `linear-gradient(135deg, ${fallbackColor}, ${fallbackColor}80)`,
+        }}
+        aria-hidden
+      />
+    );
+  }
+  return (
+    <img
+      src={url}
+      alt=""
+      loading="lazy"
+      onError={() => setErrored(true)}
+      className={`w-full object-cover ${className}`}
+    />
+  );
+}
+
+function SourceLink({
+  url,
+  children,
+  className = "",
+}: {
+  url: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  if (!url || url === "#") return <>{children}</>;
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={className}
+    >
+      {children}
+    </a>
+  );
+}
+
+function formatDate(iso: string) {
+  if (!iso) return "";
+  try {
+    const d = new Date(iso);
+    const now = new Date();
+    const diffMs = now.getTime() - d.getTime();
+    const diffHr = diffMs / (1000 * 60 * 60);
+    if (diffHr < 1) return `${Math.max(1, Math.floor(diffMs / 60000))}m ago`;
+    if (diffHr < 24) return `${Math.floor(diffHr)}h ago`;
+    if (diffHr < 48) return "Yesterday";
+    return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  } catch {
+    return "";
+  }
+}
+
+function hasGDContent(g: GDAnalysis) {
+  return !!(
+    g.macro_angle ||
+    g.micro_angle ||
+    g.arguments_for?.length ||
+    g.arguments_against?.length ||
+    g.stakeholders?.length ||
+    g.frameworks?.length ||
+    g.key_stats?.length ||
+    g.related_concepts?.length
   );
 }
