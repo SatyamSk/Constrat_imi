@@ -1,6 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
 
 const PUBLIC_LINKS = [
   { label: "Practice", to: "/practice" },
@@ -18,10 +19,39 @@ const ADMIN_LINKS = [
 export function Nav() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string>("");
+  const [displayName, setDisplayName] = useState<string>("");
   const path = useRouterState({ select: (s) => s.location.pathname });
   const { user, isAdmin, signOut } = useAuth();
 
   const links = isAdmin ? [...PUBLIC_LINKS, ...ADMIN_LINKS] : PUBLIC_LINKS;
+
+  // Pull the user's avatar + name from profiles (cached for the session).
+  useEffect(() => {
+    if (!user || !supabase) {
+      setAvatarUrl("");
+      setDisplayName("");
+      return;
+    }
+    let cancelled = false;
+    supabase
+      .from("profiles")
+      .select("full_name, avatar_url")
+      .eq("id", user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (cancelled || !data) return;
+        setAvatarUrl(data.avatar_url || "");
+        setDisplayName(
+          (data.full_name || "").trim() ||
+            user.email?.split("@")[0] ||
+            "Profile",
+        );
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
@@ -43,7 +73,10 @@ export function Nav() {
       >
         <div className="mx-auto max-w-[1180px] h-full px-5 md:px-6 flex items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2.5 group">
+          <Link
+            to={user ? "/dashboard" : "/"}
+            className="flex items-center gap-2.5 group"
+          >
             <div className="w-8 h-8 rounded-lg bg-orange flex items-center justify-center text-white font-serif font-bold text-sm transition-transform group-hover:scale-105">
               C
             </div>
@@ -89,16 +122,22 @@ export function Nav() {
               <div className="flex items-center gap-2">
                 <Link
                   to="/account"
-                  className="w-9 h-9 rounded-full flex items-center justify-center font-semibold text-[12px] border-2 border-orange/30 hover:border-orange transition-colors"
+                  className="w-9 h-9 rounded-full overflow-hidden flex items-center justify-center font-semibold text-[12px] border-2 border-orange/30 hover:border-orange transition-colors"
                   style={{ background: "#FFF0EB", color: "#C03A08" }}
-                  title={user.email || "Profile"}
+                  title={displayName || user.email || "Profile"}
                 >
-                  {(user.user_metadata?.full_name || user.email || "U")
-                    .split(" ")
-                    .map((s: string) => s[0])
-                    .join("")
-                    .slice(0, 2)
-                    .toUpperCase()}
+                  {avatarUrl ? (
+                    <img
+                      src={avatarUrl}
+                      alt={displayName || "Profile"}
+                      className="w-full h-full object-cover"
+                      onError={() => setAvatarUrl("")}
+                    />
+                  ) : (
+                    <span>
+                      {initials(displayName || user.email || "U")}
+                    </span>
+                  )}
                 </Link>
                 <button
                   onClick={() => signOut()}
@@ -238,4 +277,14 @@ export function Nav() {
       `}</style>
     </>
   );
+}
+
+function initials(name: string): string {
+  return (name || "U")
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((s) => s[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 }

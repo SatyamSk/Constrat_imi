@@ -75,6 +75,25 @@ function Account() {
 
       if (error) throw error;
       if (data) {
+        // Self-heal: if profile name is empty but the user's auth metadata has
+        // one (e.g. Google sign-in supplies `name` / `full_name`), copy it in.
+        const metaName =
+          (user.user_metadata?.full_name as string) ||
+          (user.user_metadata?.name as string) ||
+          "";
+        if (!data.full_name?.trim() && metaName) {
+          const { data: updated } = await supabase
+            .from("profiles")
+            .update({ full_name: metaName })
+            .eq("id", user.id)
+            .select()
+            .maybeSingle();
+          if (updated) {
+            setProfile(updated as Profile);
+            setFormData(updated as Profile);
+            return;
+          }
+        }
         setProfile(data as Profile);
         setFormData(data as Profile);
       }
@@ -261,7 +280,13 @@ function Account() {
                     )}
                   </div>
                   <div>
-                    <h2 className="text-[24px] font-semibold">{profile?.full_name || "User"}</h2>
+                    <h2 className="text-[24px] font-semibold">
+                      {profile?.full_name?.trim() ||
+                        (profile?.email
+                          ? profile.email.split("@")[0]
+                          : user?.email?.split("@")[0]) ||
+                        "Member"}
+                    </h2>
                     <p className="text-[13px] text-text-muted">{profile?.email}</p>
                   </div>
                 </div>

@@ -20,7 +20,7 @@ function Join() {
   // bounce to the dashboard.
   useEffect(() => {
     if (!authLoading && user && success !== "needs_confirmation") {
-      navigate({ to: "/practice", replace: true });
+      navigate({ to: "/dashboard", replace: true });
     }
   }, [user, authLoading, navigate, success]);
 

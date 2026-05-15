@@ -15,7 +15,7 @@ function Login() {
   // Redirect if already logged in
   useEffect(() => {
     if (!authLoading && user) {
-      navigate({ to: "/practice", replace: true });
+      navigate({ to: "/dashboard", replace: true });
     }
   }, [user, authLoading, navigate]);
 
@@ -129,6 +129,12 @@ function Login() {
             {loading ? "Logging in..." : "Login"}
           </button>
         </form>
+
+        <p className="mt-4 text-center text-[12px]">
+          <Link to="/forgot-password" className="text-text-muted hover:text-orange">
+            Forgot password?
+          </Link>
+        </p>
 
         <p className="mt-6 text-center text-[13px] text-text-muted">
           Don't have an account?{" "}

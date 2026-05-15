@@ -11,14 +11,17 @@
 import { Route as rootRouteImport } from "./routes/__root"
 import { Route as TimetableRouteImport } from "./routes/timetable"
 import { Route as SubmitCaseRouteImport } from "./routes/submit-case"
+import { Route as ResetPasswordRouteImport } from "./routes/reset-password"
 import { Route as PracticeRouteImport } from "./routes/practice"
 import { Route as PaymentRouteImport } from "./routes/payment"
 import { Route as NewsRouteImport } from "./routes/news"
 import { Route as LoginRouteImport } from "./routes/login"
 import { Route as LeaderboardRouteImport } from "./routes/leaderboard"
 import { Route as JoinRouteImport } from "./routes/join"
+import { Route as ForgotPasswordRouteImport } from "./routes/forgot-password"
 import { Route as EventsRouteImport } from "./routes/events"
 import { Route as DeadlinesRouteImport } from "./routes/deadlines"
+import { Route as DashboardRouteImport } from "./routes/dashboard"
 import { Route as CasesRouteImport } from "./routes/cases"
 import { Route as AlumniRouteImport } from "./routes/alumni"
 import { Route as AdminRouteImport } from "./routes/admin"
@@ -35,6 +38,11 @@ const TimetableRoute = TimetableRouteImport.update({
 const SubmitCaseRoute = SubmitCaseRouteImport.update({
   id: "/submit-case",
   path: "/submit-case",
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: "/reset-password",
+  path: "/reset-password",
   getParentRoute: () => rootRouteImport,
 } as any)
 const PracticeRoute = PracticeRouteImport.update({
@@ -67,6 +75,11 @@ const JoinRoute = JoinRouteImport.update({
   path: "/join",
   getParentRoute: () => rootRouteImport,
 } as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: "/forgot-password",
+  path: "/forgot-password",
+  getParentRoute: () => rootRouteImport,
+} as any)
 const EventsRoute = EventsRouteImport.update({
   id: "/events",
   path: "/events",
@@ -75,6 +88,11 @@ const EventsRoute = EventsRouteImport.update({
 const DeadlinesRoute = DeadlinesRouteImport.update({
   id: "/deadlines",
   path: "/deadlines",
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: "/dashboard",
+  path: "/dashboard",
   getParentRoute: () => rootRouteImport,
 } as any)
 const CasesRoute = CasesRouteImport.update({
@@ -119,14 +137,17 @@ export interface FileRoutesByFullPath {
   "/admin": typeof AdminRoute
   "/alumni": typeof AlumniRoute
   "/cases": typeof CasesRoute
+  "/dashboard": typeof DashboardRoute
   "/deadlines": typeof DeadlinesRoute
   "/events": typeof EventsRoute
+  "/forgot-password": typeof ForgotPasswordRoute
   "/join": typeof JoinRoute
   "/leaderboard": typeof LeaderboardRoute
   "/login": typeof LoginRoute
   "/news": typeof NewsRoute
   "/payment": typeof PaymentRoute
   "/practice": typeof PracticeRoute
+  "/reset-password": typeof ResetPasswordRoute
   "/submit-case": typeof SubmitCaseRoute
   "/timetable": typeof TimetableRoute
   "/auth/callback": typeof AuthCallbackRoute
@@ -138,14 +159,17 @@ export interface FileRoutesByTo {
   "/admin": typeof AdminRoute
   "/alumni": typeof AlumniRoute
   "/cases": typeof CasesRoute
+  "/dashboard": typeof DashboardRoute
   "/deadlines": typeof DeadlinesRoute
   "/events": typeof EventsRoute
+  "/forgot-password": typeof ForgotPasswordRoute
   "/join": typeof JoinRoute
   "/leaderboard": typeof LeaderboardRoute
   "/login": typeof LoginRoute
   "/news": typeof NewsRoute
   "/payment": typeof PaymentRoute
   "/practice": typeof PracticeRoute
+  "/reset-password": typeof ResetPasswordRoute
   "/submit-case": typeof SubmitCaseRoute
   "/timetable": typeof TimetableRoute
   "/auth/callback": typeof AuthCallbackRoute
@@ -158,14 +182,17 @@ export interface FileRoutesById {
   "/admin": typeof AdminRoute
   "/alumni": typeof AlumniRoute
   "/cases": typeof CasesRoute
+  "/dashboard": typeof DashboardRoute
   "/deadlines": typeof DeadlinesRoute
   "/events": typeof EventsRoute
+  "/forgot-password": typeof ForgotPasswordRoute
   "/join": typeof JoinRoute
   "/leaderboard": typeof LeaderboardRoute
   "/login": typeof LoginRoute
   "/news": typeof NewsRoute
   "/payment": typeof PaymentRoute
   "/practice": typeof PracticeRoute
+  "/reset-password": typeof ResetPasswordRoute
   "/submit-case": typeof SubmitCaseRoute
   "/timetable": typeof TimetableRoute
   "/auth/callback": typeof AuthCallbackRoute
@@ -179,14 +206,17 @@ export interface FileRouteTypes {
     | "/admin"
     | "/alumni"
     | "/cases"
+    | "/dashboard"
     | "/deadlines"
     | "/events"
+    | "/forgot-password"
     | "/join"
     | "/leaderboard"
     | "/login"
     | "/news"
     | "/payment"
     | "/practice"
+    | "/reset-password"
     | "/submit-case"
     | "/timetable"
     | "/auth/callback"
@@ -198,14 +228,17 @@ export interface FileRouteTypes {
     | "/admin"
     | "/alumni"
     | "/cases"
+    | "/dashboard"
     | "/deadlines"
     | "/events"
+    | "/forgot-password"
     | "/join"
     | "/leaderboard"
     | "/login"
     | "/news"
     | "/payment"
     | "/practice"
+    | "/reset-password"
     | "/submit-case"
     | "/timetable"
     | "/auth/callback"
@@ -217,14 +250,17 @@ export interface FileRouteTypes {
     | "/admin"
     | "/alumni"
     | "/cases"
+    | "/dashboard"
     | "/deadlines"
     | "/events"
+    | "/forgot-password"
     | "/join"
     | "/leaderboard"
     | "/login"
     | "/news"
     | "/payment"
     | "/practice"
+    | "/reset-password"
     | "/submit-case"
     | "/timetable"
     | "/auth/callback"
@@ -237,14 +273,17 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   AlumniRoute: typeof AlumniRoute
   CasesRoute: typeof CasesRoute
+  DashboardRoute: typeof DashboardRoute
   DeadlinesRoute: typeof DeadlinesRoute
   EventsRoute: typeof EventsRoute
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
   JoinRoute: typeof JoinRoute
   LeaderboardRoute: typeof LeaderboardRoute
   LoginRoute: typeof LoginRoute
   NewsRoute: typeof NewsRoute
   PaymentRoute: typeof PaymentRoute
   PracticeRoute: typeof PracticeRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   SubmitCaseRoute: typeof SubmitCaseRoute
   TimetableRoute: typeof TimetableRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
@@ -265,6 +304,13 @@ declare module "@tanstack/react-router" {
       path: "/submit-case"
       fullPath: "/submit-case"
       preLoaderRoute: typeof SubmitCaseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    "/reset-password": {
+      id: "/reset-password"
+      path: "/reset-password"
+      fullPath: "/reset-password"
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     "/practice": {
@@ -309,6 +355,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof JoinRouteImport
       parentRoute: typeof rootRouteImport
     }
+    "/forgot-password": {
+      id: "/forgot-password"
+      path: "/forgot-password"
+      fullPath: "/forgot-password"
+      preLoaderRoute: typeof ForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     "/events": {
       id: "/events"
       path: "/events"
@@ -321,6 +374,13 @@ declare module "@tanstack/react-router" {
       path: "/deadlines"
       fullPath: "/deadlines"
       preLoaderRoute: typeof DeadlinesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    "/dashboard": {
+      id: "/dashboard"
+      path: "/dashboard"
+      fullPath: "/dashboard"
+      preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     "/cases": {
@@ -381,14 +441,17 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   AlumniRoute: AlumniRoute,
   CasesRoute: CasesRoute,
+  DashboardRoute: DashboardRoute,
   DeadlinesRoute: DeadlinesRoute,
   EventsRoute: EventsRoute,
+  ForgotPasswordRoute: ForgotPasswordRoute,
   JoinRoute: JoinRoute,
   LeaderboardRoute: LeaderboardRoute,
   LoginRoute: LoginRoute,
   NewsRoute: NewsRoute,
   PaymentRoute: PaymentRoute,
   PracticeRoute: PracticeRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   SubmitCaseRoute: SubmitCaseRoute,
   TimetableRoute: TimetableRoute,
   AuthCallbackRoute: AuthCallbackRoute,
