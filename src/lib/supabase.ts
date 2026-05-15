@@ -11,10 +11,11 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 /**
- * PKCE is the recommended flow for SPAs:
- *  - More secure than implicit (no access_token in URL fragment).
- *  - Returns `?code=...` to /auth/callback which we exchange for a session.
- *  - Works cleanly with refresh tokens.
+ * Implicit flow for SPAs:
+ *  - Returns `#access_token=...` directly to /auth/callback.
+ *  - Supabase JS auto-detects the hash via `detectSessionInUrl`.
+ *  - No code exchange step → avoids the common "code verifier expired" error
+ *    that plagues PKCE when browsers clear localStorage mid-redirect.
  *
  * In Supabase Dashboard → Authentication → URL Configuration:
  *   Site URL:               https://yourdomain.com
@@ -30,7 +31,7 @@ export const supabase =
   supabaseUrl && supabaseAnonKey
     ? createClient(supabaseUrl, supabaseAnonKey, {
         auth: {
-          flowType: "pkce",
+          flowType: "implicit",
           detectSessionInUrl: true,
           autoRefreshToken: true,
           persistSession: true,

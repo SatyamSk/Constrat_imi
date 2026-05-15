@@ -7,24 +7,16 @@ export const Route = createFileRoute("/auth/callback")({
 });
 
 /**
- * Single landing page for every Supabase auth redirect:
- *   - Google OAuth:           ?code=<pkce-code>
- *   - Email confirmation:     ?code=<pkce-code>
- *   - Password recovery:      ?code=<pkce-code>&type=recovery
- *   - Magic link:             ?code=<pkce-code>
- *   - Errors:                 ?error=...&error_description=...
+ * Landing page for every Supabase auth redirect.
  *
- * The Supabase JS client doesn't auto-exchange `?code=` for us — we have to
- * call `exchangeCodeForSession` explicitly. (It DOES auto-detect the legacy
- * `#access_token=...` hash, but PKCE never produces that.)
+ * With the **implicit** flow Supabase returns an `#access_token=...` hash.
+ * The Supabase JS client auto-detects it via `detectSessionInUrl: true` and
+ * fires an `onAuthStateChange(SIGNED_IN, session)` event.
  *
- * Common failure: "Unable to exchange external code". Causes:
- *  1. The PKCE verifier in localStorage was cleared between sign-in
- *     and callback (private mode, third-party cookie reset).
- *  2. The user clicked sign-in twice and the second flow's verifier
- *     overwrote the first.
- *  3. The callback domain doesn't match the Site URL or Redirect URLs
- *     configured in Supabase Dashboard → Authentication → URL Configuration.
+ * All we need to do here is:
+ *  1. Wait for the session to appear.
+ *  2. If there's an `?error=...` query param (provider error), show it.
+ *  3. Redirect to /dashboard (or /reset-password for recovery flows).
  */
 function AuthCallback() {
   const navigate = useNavigate();
@@ -50,69 +42,79 @@ function AuthCallback() {
       return;
     }
 
-    const code = params.get("code");
-    const recoveryFlow = params.get("type") === "recovery";
-
-    async function doExchange() {
-      if (!supabase) return;
-
-      // If there's no code, maybe the session was already exchanged by the
-      // client (back button, etc). Check getSession.
-      if (!code) {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-          finish(session, recoveryFlow);
-          return;
-        }
-        setError("No sign-in code in this URL. Please try again.");
-        setStatus("error");
-        return;
-      }
-
-      try {
-        const { data, error: exchErr } =
-          await supabase.auth.exchangeCodeForSession(code);
-
-        if (cancelled) return;
-
-        if (exchErr) {
-          // Most often: PKCE verifier missing/mismatched. Tell the user
-          // exactly what to do.
-          setError(prettyError(exchErr.message));
-          setStatus("error");
-          return;
-        }
-
-        if (data.session) {
-          finish(data.session, recoveryFlow);
-        } else {
-          setError("Sign-in completed but no session was returned. Try again.");
-          setStatus("error");
-        }
-      } catch (e) {
-        if (cancelled) return;
-        setError(
-          e instanceof Error
-            ? prettyError(e.message)
-            : "Unexpected error while completing sign-in.",
-        );
-        setStatus("error");
-      }
+    // Also check the hash for errors (some providers put them there).
+    const hash = window.location.hash.substring(1);
+    const hashParams = new URLSearchParams(hash);
+    const hashError =
+      hashParams.get("error_description") || hashParams.get("error");
+    if (hashError) {
+      setError(prettyError(decodeURIComponent(hashError)));
+      setStatus("error");
+      return;
     }
 
-    function finish(_session: unknown, isRecovery: boolean) {
+    const recoveryFlow =
+      params.get("type") === "recovery" ||
+      hashParams.get("type") === "recovery";
+
+    // For PKCE legacy: if there's a ?code= param, try to exchange it.
+    const code = params.get("code");
+
+    async function handleCallback() {
+      if (!supabase) return;
+
+      // If we have a PKCE code, exchange it (backwards compat).
+      if (code) {
+        try {
+          const { data, error: exchErr } =
+            await supabase.auth.exchangeCodeForSession(code);
+          if (cancelled) return;
+          if (exchErr) {
+            setError(prettyError(exchErr.message));
+            setStatus("error");
+            return;
+          }
+          if (data.session) {
+            finish(recoveryFlow);
+            return;
+          }
+        } catch {
+          // Fall through to the session-poll below.
+        }
+      }
+
+      // For implicit flow the Supabase client auto-parses the hash.
+      // Give it a moment, then check for the session.
+      // We poll briefly because onAuthStateChange fires asynchronously.
+      for (let attempt = 0; attempt < 20; attempt++) {
+        if (cancelled) return;
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (session) {
+          finish(recoveryFlow);
+          return;
+        }
+        await new Promise((r) => setTimeout(r, 250));
+      }
+
+      if (cancelled) return;
+      setError("No session found after sign-in. Please try again.");
+      setStatus("error");
+    }
+
+    function finish(isRecovery: boolean) {
       if (cancelled) return;
       // Strip the OAuth params so a back-navigation doesn't re-trigger.
       window.history.replaceState({}, document.title, "/auth/callback");
       setStatus("done");
-      // Recovery flow → reset password page. Otherwise → dashboard.
       navigate({
         to: isRecovery ? "/reset-password" : "/dashboard",
         replace: true,
       });
     }
 
-    doExchange();
+    handleCallback();
 
     return () => {
       cancelled = true;
@@ -164,7 +166,10 @@ function Center({ children }: { children: React.ReactNode }) {
 
 function prettyError(msg: string): string {
   const lower = msg.toLowerCase();
-  if (lower.includes("exchange external code") || lower.includes("code verifier")) {
+  if (
+    lower.includes("exchange external code") ||
+    lower.includes("code verifier")
+  ) {
     return (
       "Your sign-in token expired before we could complete it. This usually means " +
       "the page was reloaded or browser storage was cleared during sign-in. " +
