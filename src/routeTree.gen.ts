@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from "./routes/__root"
 import { Route as TimetableRouteImport } from "./routes/timetable"
 import { Route as SubmitCaseRouteImport } from "./routes/submit-case"
 import { Route as PracticeRouteImport } from "./routes/practice"
+import { Route as PaymentRouteImport } from "./routes/payment"
 import { Route as NewsRouteImport } from "./routes/news"
 import { Route as LoginRouteImport } from "./routes/login"
 import { Route as LeaderboardRouteImport } from "./routes/leaderboard"
@@ -39,6 +40,11 @@ const SubmitCaseRoute = SubmitCaseRouteImport.update({
 const PracticeRoute = PracticeRouteImport.update({
   id: "/practice",
   path: "/practice",
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PaymentRoute = PaymentRouteImport.update({
+  id: "/payment",
+  path: "/payment",
   getParentRoute: () => rootRouteImport,
 } as any)
 const NewsRoute = NewsRouteImport.update({
@@ -119,6 +125,7 @@ export interface FileRoutesByFullPath {
   "/leaderboard": typeof LeaderboardRoute
   "/login": typeof LoginRoute
   "/news": typeof NewsRoute
+  "/payment": typeof PaymentRoute
   "/practice": typeof PracticeRoute
   "/submit-case": typeof SubmitCaseRoute
   "/timetable": typeof TimetableRoute
@@ -137,6 +144,7 @@ export interface FileRoutesByTo {
   "/leaderboard": typeof LeaderboardRoute
   "/login": typeof LoginRoute
   "/news": typeof NewsRoute
+  "/payment": typeof PaymentRoute
   "/practice": typeof PracticeRoute
   "/submit-case": typeof SubmitCaseRoute
   "/timetable": typeof TimetableRoute
@@ -156,6 +164,7 @@ export interface FileRoutesById {
   "/leaderboard": typeof LeaderboardRoute
   "/login": typeof LoginRoute
   "/news": typeof NewsRoute
+  "/payment": typeof PaymentRoute
   "/practice": typeof PracticeRoute
   "/submit-case": typeof SubmitCaseRoute
   "/timetable": typeof TimetableRoute
@@ -176,6 +185,7 @@ export interface FileRouteTypes {
     | "/leaderboard"
     | "/login"
     | "/news"
+    | "/payment"
     | "/practice"
     | "/submit-case"
     | "/timetable"
@@ -194,6 +204,7 @@ export interface FileRouteTypes {
     | "/leaderboard"
     | "/login"
     | "/news"
+    | "/payment"
     | "/practice"
     | "/submit-case"
     | "/timetable"
@@ -212,6 +223,7 @@ export interface FileRouteTypes {
     | "/leaderboard"
     | "/login"
     | "/news"
+    | "/payment"
     | "/practice"
     | "/submit-case"
     | "/timetable"
@@ -231,6 +243,7 @@ export interface RootRouteChildren {
   LeaderboardRoute: typeof LeaderboardRoute
   LoginRoute: typeof LoginRoute
   NewsRoute: typeof NewsRoute
+  PaymentRoute: typeof PaymentRoute
   PracticeRoute: typeof PracticeRoute
   SubmitCaseRoute: typeof SubmitCaseRoute
   TimetableRoute: typeof TimetableRoute
@@ -259,6 +272,13 @@ declare module "@tanstack/react-router" {
       path: "/practice"
       fullPath: "/practice"
       preLoaderRoute: typeof PracticeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    "/payment": {
+      id: "/payment"
+      path: "/payment"
+      fullPath: "/payment"
+      preLoaderRoute: typeof PaymentRouteImport
       parentRoute: typeof rootRouteImport
     }
     "/news": {
@@ -367,6 +387,7 @@ const rootRouteChildren: RootRouteChildren = {
   LeaderboardRoute: LeaderboardRoute,
   LoginRoute: LoginRoute,
   NewsRoute: NewsRoute,
+  PaymentRoute: PaymentRoute,
   PracticeRoute: PracticeRoute,
   SubmitCaseRoute: SubmitCaseRoute,
   TimetableRoute: TimetableRoute,

@@ -2,20 +2,26 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth";
 
-const links = [
+const PUBLIC_LINKS = [
   { label: "Practice", to: "/practice" },
-  { label: "Cases", to: "/cases" },
   { label: "Events", to: "/events" },
   { label: "News", to: "/news" },
   { label: "Leaderboard", to: "/leaderboard" },
+];
+
+const ADMIN_LINKS = [
   { label: "Timetable", to: "/timetable" },
+  { label: "Deadlines", to: "/deadlines" },
+  { label: "Alumni", to: "/alumni" },
 ];
 
 export function Nav() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const path = useRouterState({ select: (s) => s.location.pathname });
-  const { user, isMember, isAdmin, signOut } = useAuth();
+  const { user, isAdmin, signOut } = useAuth();
+
+  const links = isAdmin ? [...PUBLIC_LINKS, ...ADMIN_LINKS] : PUBLIC_LINKS;
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);

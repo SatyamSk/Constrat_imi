@@ -1,14 +1,15 @@
 """
-News Aggregator — Vercel Python Serverless Function
-Fetches RSS feeds, extracts thumbnails, generates GD-prep macro/micro analysis
-with GPT, inserts to Supabase.
+News Aggregator — fetches articles + thumbnails. No images = no article.
 
-Cron schedule (see vercel.json):  0 5 * * *   (05:00 UTC ≈ 10:30 IST)
+GD briefs are NOT generated here anymore — they're generated on-demand by
+/api/generate_brief when a user clicks "Generate GD brief" (quota-gated).
+
+Cron: vercel.json runs /api/news_aggregator daily at 05:00 UTC.
 
 Env required:
-  OPENAI_API_KEY                  Server-side OpenAI key
   SUPABASE_URL or VITE_SUPABASE_URL
-  SUPABASE_SERVICE_ROLE_KEY       Bypasses RLS for inserts
+  SUPABASE_SERVICE_ROLE_KEY
+  CRON_SECRET                     (optional, recommended)
 """
 from __future__ import annotations
 
@@ -21,15 +22,14 @@ from http.server import BaseHTTPRequestHandler
 from urllib.parse import urljoin
 from urllib.request import Request, urlopen
 
-OPENAI_KEY = os.environ.get("OPENAI_API_KEY", "")
 SUPABASE_URL = (
     os.environ.get("SUPABASE_URL")
     or os.environ.get("VITE_SUPABASE_URL")
     or ""
 ).rstrip("/")
 SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
+CRON_SECRET = os.environ.get("CRON_SECRET", "")
 
-# Business-relevant RSS feeds
 RSS_FEEDS = [
     {"url": "https://economictimes.indiatimes.com/rssfeedstopstories.cms",
      "source": "Economic Times", "country": "IN"},
@@ -39,120 +39,209 @@ RSS_FEEDS = [
      "source": "Business Standard", "country": "IN"},
     {"url": "https://feeds.reuters.com/reuters/businessNews",
      "source": "Reuters", "country": "GLOBAL"},
+    {"url": "https://www.thehindubusinessline.com/feeder/default.rss",
+     "source": "Hindu Business Line", "country": "IN"},
 ]
 
-TOPICS = [
-    "Markets & Economy",
-    "Policy & Regulation",
-    "Startups & VC",
-    "FMCG & Retail",
-    "Consulting Industry",
-    "Global Business",
-    "India Focus",
-    "Technology",
-]
-
-# Per-feed item cap (keeps cron cheap)
-MAX_ITEMS_PER_FEED = 6
+MAX_ITEMS_PER_FEED = 8
 
 UA_HEADERS = {
-    "User-Agent": (
-        "Mozilla/5.0 (compatible; ConstratBot/1.0; +https://constrat.app)"
-    )
+    "User-Agent": "Mozilla/5.0 (compatible; ConstratBot/1.0; +https://constrat.app)"
 }
 
-# Namespaces commonly used in RSS for media
 NS = {
-    "media": "http://search.yahoo.com/mrss/",
+    "media":   "http://search.yahoo.com/mrss/",
     "content": "http://purl.org/rss/1.0/modules/content/",
+    "dc":      "http://purl.org/dc/elements/1.1/",
 }
+
+IMG_TAG_RE = re.compile(r'<img[^>]+src=[\'"]([^\'"]+)[\'"]', re.IGNORECASE)
+OG_IMAGE_RES = [
+    re.compile(r'<meta[^>]+property=[\'"]og:image[\'"][^>]+content=[\'"]([^\'"]+)[\'"]', re.I),
+    re.compile(r'<meta[^>]+content=[\'"]([^\'"]+)[\'"][^>]+property=[\'"]og:image[\'"]', re.I),
+    re.compile(r'<meta[^>]+name=[\'"]twitter:image[\'"][^>]+content=[\'"]([^\'"]+)[\'"]', re.I),
+    re.compile(r'<meta[^>]+content=[\'"]([^\'"]+)[\'"][^>]+name=[\'"]twitter:image[\'"]', re.I),
+]
 
 
 # ---------------------------------------------------------------------------
 # Image extraction
 # ---------------------------------------------------------------------------
 
-IMG_TAG_RE = re.compile(r'<img[^>]+src=[\'"]([^\'"]+)[\'"]', re.IGNORECASE)
-OG_IMAGE_RE = re.compile(
-    r'<meta[^>]+property=[\'"]og:image[\'"][^>]+content=[\'"]([^\'"]+)[\'"]',
-    re.IGNORECASE,
-)
-OG_IMAGE_RE_ALT = re.compile(
-    r'<meta[^>]+content=[\'"]([^\'"]+)[\'"][^>]+property=[\'"]og:image[\'"]',
-    re.IGNORECASE,
-)
-TWITTER_IMAGE_RE = re.compile(
-    r'<meta[^>]+name=[\'"]twitter:image[\'"][^>]+content=[\'"]([^\'"]+)[\'"]',
-    re.IGNORECASE,
-)
+def _normalise(url: str, base: str = "") -> str:
+    url = (url or "").strip()
+    if not url:
+        return ""
+    if url.startswith("//"):
+        return "https:" + url
+    if url.startswith("/") and base:
+        return urljoin(base, url)
+    return url
 
 
 def _image_from_item(item) -> str:
-    """Pull a thumbnail URL out of an RSS <item>, trying common patterns."""
     # <enclosure url="..." type="image/*"/>
     enc = item.find("enclosure")
     if enc is not None:
         url = enc.attrib.get("url", "")
         if url and "image" in enc.attrib.get("type", "image/jpeg"):
-            return url
+            return _normalise(url)
 
     # <media:thumbnail url="..."/>
     thumb = item.find("media:thumbnail", NS)
-    if thumb is not None:
-        url = thumb.attrib.get("url", "")
-        if url:
-            return url
+    if thumb is not None and thumb.attrib.get("url"):
+        return _normalise(thumb.attrib["url"])
 
     # <media:content url="..." medium="image"/>
     for mc in item.findall("media:content", NS):
-        if mc.attrib.get("medium", "image") == "image":
-            url = mc.attrib.get("url", "")
-            if url:
-                return url
+        if mc.attrib.get("medium", "image") == "image" and mc.attrib.get("url"):
+            return _normalise(mc.attrib["url"])
 
-    # First <img> tucked inside the description HTML
-    desc_el = item.find("description")
-    if desc_el is not None and desc_el.text:
-        m = IMG_TAG_RE.search(desc_el.text)
-        if m:
-            return m.group(1)
+    # <itunes:image>, <image>, etc. — first <img> in description / content
+    for tag in ("description",):
+        el = item.find(tag)
+        if el is not None and el.text:
+            m = IMG_TAG_RE.search(el.text)
+            if m:
+                return _normalise(m.group(1))
 
-    # <content:encoded> HTML body
     content_el = item.find("content:encoded", NS)
     if content_el is not None and content_el.text:
         m = IMG_TAG_RE.search(content_el.text)
         if m:
-            return m.group(1)
+            return _normalise(m.group(1))
 
     return ""
 
 
 def _image_from_og(article_url: str) -> str:
-    """Fallback: fetch the article and grab og:image / twitter:image."""
     if not article_url:
         return ""
     try:
         req = Request(article_url, headers=UA_HEADERS)
-        # Limit body read to ~256KB — og tags are always in <head>.
         with urlopen(req, timeout=10) as resp:
-            head = resp.read(262144).decode("utf-8", errors="ignore")
-        for rx in (OG_IMAGE_RE, OG_IMAGE_RE_ALT, TWITTER_IMAGE_RE):
-            m = rx.search(head)
-            if m:
-                url = m.group(1).strip()
-                # Resolve relative URLs
-                if url.startswith("//"):
-                    return "https:" + url
-                if url.startswith("/"):
-                    return urljoin(article_url, url)
-                return url
+            head = resp.read(262_144).decode("utf-8", errors="ignore")
     except Exception:
         return ""
+    for rx in OG_IMAGE_RES:
+        m = rx.search(head)
+        if m:
+            return _normalise(m.group(1), article_url)
     return ""
 
 
 # ---------------------------------------------------------------------------
-# RSS fetch
+# Last-resort fallback: search the web for the article's title and pick an
+# image from another news site that's covering the same story.
+#
+# Strategy: query Bing's image-search HTML SERP (no API key). We pull the
+# first few `mediaurl=...` hits, validate each is a working image URL, and
+# return the first valid one. If Bing rate-limits, DuckDuckGo is the backup.
+# ---------------------------------------------------------------------------
+
+BING_IMG_RE = re.compile(r'mediaurl=([^"&]+)', re.IGNORECASE)
+DDG_IMG_RE  = re.compile(r'"image":"(https?://[^"]+\.(?:jpg|jpeg|png|webp)[^"]*)"', re.IGNORECASE)
+
+
+def _validate_image_url(url: str) -> bool:
+    """HEAD the URL to confirm it returns an image content-type, max 3s."""
+    if not url or len(url) > 1000:
+        return False
+    if not url.lower().startswith(("http://", "https://")):
+        return False
+    try:
+        req = Request(url, headers=UA_HEADERS, method="HEAD")
+        with urlopen(req, timeout=3) as r:
+            ct = (r.headers.get("Content-Type") or "").lower()
+            return ct.startswith("image/")
+    except Exception:
+        # Some CDNs reject HEAD. As long as it ends in an image extension,
+        # accept it — broken URLs will fall through to the gradient on the UI.
+        return url.lower().rsplit("?", 1)[0].endswith(
+            (".jpg", ".jpeg", ".png", ".webp", ".gif")
+        )
+
+
+def _search_image_bing(query: str) -> str:
+    """Bing image search SERP scrape. Returns a hot-linkable image URL or ''."""
+    if not query:
+        return ""
+    try:
+        from urllib.parse import quote_plus
+        url = f"https://www.bing.com/images/search?q={quote_plus(query)}&form=HDRSC2&safesearch=strict"
+        req = Request(url, headers=UA_HEADERS)
+        with urlopen(req, timeout=8) as resp:
+            html = resp.read(524_288).decode("utf-8", errors="ignore")
+    except Exception as e:
+        print(f"[news] Bing image search error: {e}")
+        return ""
+
+    # First few mediaurl hits are usually the most relevant; try in order.
+    from urllib.parse import unquote
+    seen = set()
+    for m in BING_IMG_RE.finditer(html):
+        candidate = unquote(m.group(1))
+        if candidate in seen:
+            continue
+        seen.add(candidate)
+        # Skip favicon-y or tracking pixels
+        low = candidate.lower()
+        if any(x in low for x in ("favicon", "logo", "sprite", "pixel.gif", "1x1.gif")):
+            continue
+        if _validate_image_url(candidate):
+            return candidate
+        if len(seen) >= 8:
+            break
+    return ""
+
+
+def _search_image_ddg(query: str) -> str:
+    """DuckDuckGo image search backup. Two-step (token + JSON endpoint)."""
+    if not query:
+        return ""
+    try:
+        from urllib.parse import quote_plus
+        # Step 1: get the vqd token
+        token_req = Request(
+            f"https://duckduckgo.com/?q={quote_plus(query)}&iax=images&ia=images",
+            headers=UA_HEADERS,
+        )
+        with urlopen(token_req, timeout=6) as r:
+            token_html = r.read(131_072).decode("utf-8", errors="ignore")
+        vqd_m = re.search(r'vqd=([\d-]+)', token_html) or re.search(r'vqd="([\d-]+)"', token_html)
+        if not vqd_m:
+            return ""
+        vqd = vqd_m.group(1)
+        # Step 2: image JSON
+        json_req = Request(
+            f"https://duckduckgo.com/i.js?l=us-en&o=json&q={quote_plus(query)}&vqd={vqd}&f=,,,&p=1",
+            headers={**UA_HEADERS, "Referer": "https://duckduckgo.com/"},
+        )
+        with urlopen(json_req, timeout=6) as r:
+            data = json.loads(r.read().decode("utf-8", errors="ignore"))
+        for result in (data.get("results") or [])[:8]:
+            candidate = result.get("image") or ""
+            if _validate_image_url(candidate):
+                return candidate
+    except Exception as e:
+        print(f"[news] DDG image search error: {e}")
+    return ""
+
+
+def _search_web_image(title: str, source: str = "") -> str:
+    """Tries Bing → DuckDuckGo. Adds the source name to bias toward relevant hits."""
+    if not title:
+        return ""
+    # Short titles get garbage results; include the source for context.
+    query = f"{title} {source}".strip()[:200]
+    img = _search_image_bing(query)
+    if img:
+        return img
+    return _search_image_ddg(query)
+
+
+# ---------------------------------------------------------------------------
+# Fetch RSS
 # ---------------------------------------------------------------------------
 
 def fetch_rss(feed_url: str):
@@ -162,136 +251,55 @@ def fetch_rss(feed_url: str):
             xml_text = resp.read().decode("utf-8", errors="ignore")
         root = ET.fromstring(xml_text)
     except Exception as e:
-        print(f"[news] RSS fetch error for {feed_url}: {e}")
+        print(f"[news] RSS error {feed_url}: {e}")
         return []
 
     items = []
     for item in root.iter("item"):
         title_el = item.find("title")
-        link_el = item.find("link")
-        desc_el = item.find("description")
-        pub_el = item.find("pubDate")
-
+        link_el  = item.find("link")
+        desc_el  = item.find("description")
+        pub_el   = item.find("pubDate")
         if title_el is None or not title_el.text:
             continue
 
-        url = (link_el.text or "").strip() if link_el is not None else ""
-        image_url = _image_from_item(item)
-
         items.append({
-            "title": title_el.text.strip(),
-            "url": url,
+            "title": title_el.text.strip()[:500],
+            "url": (link_el.text or "").strip() if link_el is not None else "",
             "description": (
-                (desc_el.text or "").strip()[:500]
+                (desc_el.text or "").strip()[:600]
                 if desc_el is not None and desc_el.text else ""
             ),
             "published": (pub_el.text or "").strip() if pub_el is not None else "",
-            "image_url": image_url,
+            "image_url": _image_from_item(item),
         })
-
     return items[:MAX_ITEMS_PER_FEED]
 
 
 # ---------------------------------------------------------------------------
-# GPT analysis: GD-prep macro/micro framing
-# ---------------------------------------------------------------------------
-
-GD_SYSTEM_PROMPT = """You are a senior B-school case-prep coach. Given one news
-headline + 1-paragraph context, produce a tight Group Discussion / Personal
-Interview prep brief.
-
-Return STRICT JSON with this exact schema:
-{
-  "topic":            "<one of: Markets & Economy | Policy & Regulation | Startups & VC | FMCG & Retail | Consulting Industry | Global Business | India Focus | Technology>",
-  "ai_summary":       "<2-line summary aimed at MBA students, plain text, no markdown>",
-  "macro_angle":      "<1-2 sentences: economy-wide / policy / global implication>",
-  "micro_angle":      "<1-2 sentences: impact on a specific company, sector or consumer>",
-  "arguments_for":    ["<short, GD-ready bullet>", "<...>", "<...>"],
-  "arguments_against":["<short, GD-ready bullet>", "<...>", "<...>"],
-  "stakeholders": [
-    {"name":"<entity>", "impact":"<benefits|hurts and why, 1 line>"},
-    {"name":"<entity>", "impact":"<...>"},
-    {"name":"<entity>", "impact":"<...>"}
-  ],
-  "frameworks":       ["<applicable consulting framework>", "<...>"],
-  "key_stats":        ["<concrete number with unit/context>", "<...>"],
-  "related_concepts": ["<economic/business concept>", "<...>"]
-}
-
-Rules:
-- Lists must each have 2-4 items. Stakeholders must have exactly 3.
-- Never invent statistics you didn't see in the headline/context. If unsure, leave key_stats empty.
-- Be concrete and India-aware where the story is Indian.
-- Output ONLY the JSON object, no commentary."""
-
-
-def gd_brief_for(article) -> dict:
-    """One GPT call per article → rich GD-prep JSON."""
-    if not OPENAI_KEY:
-        return {}
-
-    user_prompt = (
-        f"Headline: {article['title']}\n\n"
-        f"Context (from RSS description, may be partial): "
-        f"{article.get('description', '') or '(none)'}"
-    )
-
-    payload = {
-        "model": "gpt-4o-mini",
-        "messages": [
-            {"role": "system", "content": GD_SYSTEM_PROMPT},
-            {"role": "user", "content": user_prompt},
-        ],
-        "response_format": {"type": "json_object"},
-        "temperature": 0.3,
-        "max_tokens": 900,
-    }
-
-    try:
-        req = Request(
-            "https://api.openai.com/v1/chat/completions",
-            data=json.dumps(payload).encode("utf-8"),
-            headers={
-                "Authorization": f"Bearer {OPENAI_KEY}",
-                "Content-Type": "application/json",
-            },
-        )
-        with urlopen(req, timeout=30) as resp:
-            completion = json.loads(resp.read().decode("utf-8"))
-        return json.loads(completion["choices"][0]["message"]["content"])
-    except Exception as e:
-        print(f"[news] GPT brief error for '{article['title'][:60]}': {e}")
-        return {}
-
-
-# ---------------------------------------------------------------------------
-# Supabase write (upsert by URL — see migration 006 unique index)
+# Upsert (image is mandatory: rows without one are dropped)
 # ---------------------------------------------------------------------------
 
 def upsert_news(article, source, country):
     if not (SUPABASE_URL and SUPABASE_KEY):
-        return
-    if not article.get("url"):
-        # Without a URL we can't dedupe; skip to avoid duplicate rows.
-        return
-
-    brief = article.get("gd_analysis") or {}
+        return False
+    if not article.get("url") or not article.get("image_url"):
+        return False
 
     payload = {
         "title": article["title"][:500],
         "source": source,
-        "topic": brief.get("topic") or "India Focus",
-        "summary_points": brief.get("arguments_for", []),
+        "topic": "India Focus",                # AI will reclassify on-demand
+        "summary_points": [],
         "url": article["url"],
-        "ai_summary": brief.get("ai_summary", "") or article.get("description", "")[:300],
+        "ai_summary": _strip_html(article.get("description", ""))[:300],
         "country": country,
         "read_time": "2 min",
         "published_at": datetime.now(timezone.utc).isoformat(),
-        "image_url": article.get("image_url", ""),
-        "gd_analysis": brief,
+        "image_url": article["image_url"],
+        "gd_analysis": {},
     }
 
-    # PostgREST upsert on the unique (url) index.
     req = Request(
         f"{SUPABASE_URL}/rest/v1/news?on_conflict=url",
         data=json.dumps(payload).encode("utf-8"),
@@ -305,55 +313,65 @@ def upsert_news(article, source, country):
     )
     try:
         urlopen(req, timeout=15)
+        return True
     except Exception as e:
         print(f"[news] upsert error: {e}")
+        return False
+
+
+_HTML_RE = re.compile(r"<[^>]+>")
+def _strip_html(s: str) -> str:
+    return _HTML_RE.sub("", s or "").strip()
 
 
 # ---------------------------------------------------------------------------
-# HTTP handler
+# Handler
 # ---------------------------------------------------------------------------
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
-        # Optional: if CRON_SECRET is set, require it as a bearer token.
-        # Vercel cron sends `Authorization: Bearer $CRON_SECRET` automatically
-        # when the env var exists on the project.
-        cron_secret = os.environ.get("CRON_SECRET", "")
-        if cron_secret:
+        if CRON_SECRET:
             auth = self.headers.get("Authorization", "")
-            if auth != f"Bearer {cron_secret}":
+            if auth != f"Bearer {CRON_SECRET}":
                 self.send_response(401)
                 self.send_header("Content-Type", "application/json")
                 self.end_headers()
                 self.wfile.write(json.dumps({"error": "unauthorized"}).encode())
                 return
 
-        total = 0
-        seen_urls = set()
+        seen, kept, web_searched = set(), 0, 0
         try:
             for feed in RSS_FEEDS:
-                items = fetch_rss(feed["url"])
-                for it in items:
-                    if not it.get("url") or it["url"] in seen_urls:
+                for it in fetch_rss(feed["url"]):
+                    if not it.get("url") or it["url"] in seen:
                         continue
-                    seen_urls.add(it["url"])
+                    seen.add(it["url"])
 
-                    # Image fallback to OG if RSS didn't carry one
+                    # Image fallback waterfall:
+                    #   1. RSS metadata (already in it["image_url"] from fetch_rss)
+                    #   2. OG-image scrape of the article URL
+                    #   3. Web image search by article title → pull from another site
                     if not it.get("image_url"):
                         it["image_url"] = _image_from_og(it["url"])
 
-                    # GD brief
-                    it["gd_analysis"] = gd_brief_for(it)
+                    if not it.get("image_url"):
+                        it["image_url"] = _search_web_image(it["title"], feed["source"])
+                        if it["image_url"]:
+                            web_searched += 1
 
-                    upsert_news(it, feed["source"], feed["country"])
-                    total += 1
+                    # Save the article either way — the UI shows a gradient
+                    # placeholder when image_url is empty, so we never drop
+                    # a story just because we couldn't find a picture.
+                    if upsert_news(it, feed["source"], feed["country"]):
+                        kept += 1
 
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
             self.end_headers()
             self.wfile.write(json.dumps({
                 "success": True,
-                "articles_processed": total,
+                "articles_kept": kept,
+                "images_via_web_search": web_searched,
                 "timestamp": datetime.now(timezone.utc).isoformat(),
             }).encode())
         except Exception as e:

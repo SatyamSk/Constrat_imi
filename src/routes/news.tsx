@@ -1,9 +1,12 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { PageShell } from "@/components/PageShell";
 import { PageHeader } from "@/components/PageHeader";
 import { AnimatedSection } from "@/components/AnimatedSection";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import { useAuth } from "@/lib/auth";
+import { generateBrief } from "@/lib/billing";
+import { PaywallModal } from "@/components/PaywallModal";
 
 export const Route = createFileRoute("/news")({ component: News });
 
@@ -392,10 +395,15 @@ const topicColor = (t: string) => TOPIC_COLORS[t] || "#E8490F";
 // ---------------------------------------------------------------------------
 
 function News() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [items, setItems] = useState<NewsRow[]>(FALLBACK);
   const [loading, setLoading] = useState(true);
   const [topic, setTopic] = useState<string>("All");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [generating, setGenerating] = useState<Set<string>>(new Set());
+  const [genError, setGenError] = useState<Record<string, string>>({});
+  const [paywall, setPaywall] = useState<{ used: number; limit: number; tier: string } | null>(null);
 
   useEffect(() => {
     if (!isSupabaseConfigured || !supabase) {
@@ -438,13 +446,70 @@ function News() {
   const featured = filtered[0];
   const rest = filtered.slice(1);
 
-  function toggle(id: string) {
-    setExpanded((prev) => {
-      const s = new Set(prev);
-      if (s.has(id)) s.delete(id);
-      else s.add(id);
-      return s;
+  /**
+   * Smart toggle: if the brief already exists, just expand. Otherwise call the
+   * generate endpoint (quota-gated server-side) and expand once it returns.
+   */
+  async function handleBriefClick(item: NewsRow) {
+    // Already expanded → collapse.
+    if (expanded.has(item.id)) {
+      setExpanded((prev) => {
+        const s = new Set(prev);
+        s.delete(item.id);
+        return s;
+      });
+      return;
+    }
+
+    // Brief already cached → just expand.
+    if (item.gd_analysis && hasGDContent(item.gd_analysis)) {
+      setExpanded((prev) => new Set(prev).add(item.id));
+      return;
+    }
+
+    // Not cached → must be logged in.
+    if (!user) {
+      navigate({ to: "/login", replace: false });
+      return;
+    }
+
+    // Call generator.
+    setGenerating((prev) => new Set(prev).add(item.id));
+    setGenError((prev) => {
+      const c = { ...prev };
+      delete c[item.id];
+      return c;
     });
+    try {
+      const res = await generateBrief(item.id);
+      setItems((prev) =>
+        prev.map((row) =>
+          row.id === item.id ? { ...row, gd_analysis: res.gd_analysis } : row,
+        ),
+      );
+      setExpanded((prev) => new Set(prev).add(item.id));
+    } catch (err: unknown) {
+      if (err && typeof err === "object" && (err as any).quotaExceeded) {
+        const q = (err as any).quota || {};
+        setPaywall({
+          used: q.used ?? 0,
+          limit: q.limit ?? 0,
+          tier: q.tier ?? "free",
+        });
+      } else {
+        setGenError((prev) => ({
+          ...prev,
+          [item.id]:
+            err instanceof Error ? err.message : "Failed to generate brief.",
+        }));
+      }
+    } finally {
+      setGenerating((prev) => {
+        const s = new Set(prev);
+        s.delete(item.id);
+        return s;
+      });
+    }
   }
 
   return (
@@ -484,7 +549,9 @@ function News() {
           <FeaturedTile
             item={featured}
             isOpen={expanded.has(featured.id)}
-            onToggle={() => toggle(featured.id)}
+            isGenerating={generating.has(featured.id)}
+            errorMsg={genError[featured.id]}
+            onBriefClick={() => handleBriefClick(featured)}
           />
         )}
 
@@ -495,7 +562,9 @@ function News() {
                 <NewsTile
                   item={n}
                   isOpen={expanded.has(n.id)}
-                  onToggle={() => toggle(n.id)}
+                  isGenerating={generating.has(n.id)}
+                  errorMsg={genError[n.id]}
+                  onBriefClick={() => handleBriefClick(n)}
                 />
               </AnimatedSection>
             ))}
@@ -508,6 +577,16 @@ function News() {
           </p>
         )}
       </div>
+
+      {paywall && (
+        <PaywallModal
+          used={paywall.used}
+          limit={paywall.limit}
+          tier={paywall.tier}
+          kind="gd_brief"
+          onClose={() => setPaywall(null)}
+        />
+      )}
     </PageShell>
   );
 }
@@ -519,13 +598,18 @@ function News() {
 function FeaturedTile({
   item,
   isOpen,
-  onToggle,
+  isGenerating,
+  errorMsg,
+  onBriefClick,
 }: {
   item: NewsRow;
   isOpen: boolean;
-  onToggle: () => void;
+  isGenerating: boolean;
+  errorMsg?: string;
+  onBriefClick: () => void;
 }) {
   const color = topicColor(item.topic);
+  const hasCached = item.gd_analysis && hasGDContent(item.gd_analysis);
   return (
     <article className="rounded-[16px] overflow-hidden border border-border bg-white shadow-sm">
       <div className="grid md:grid-cols-[1.2fr_1fr] gap-0">
@@ -561,22 +645,32 @@ function FeaturedTile({
             </p>
           )}
 
-          <div className="mt-auto pt-5 flex items-center gap-3">
+          <div className="mt-auto pt-5 flex items-center gap-3 flex-wrap">
             <SourceLink url={item.url}>
               <span className="btn-primary text-[13px] h-9 px-4 inline-flex items-center">
                 Read at source →
               </span>
             </SourceLink>
-            {item.gd_analysis && hasGDContent(item.gd_analysis) && (
-              <button
-                onClick={onToggle}
-                className="btn-secondary text-[13px] h-9 px-4 inline-flex items-center"
-                aria-expanded={isOpen}
-              >
-                {isOpen ? "Hide GD brief" : "GD brief"}
-              </button>
-            )}
+            <button
+              onClick={onBriefClick}
+              disabled={isGenerating}
+              className="btn-secondary text-[13px] h-9 px-4 inline-flex items-center disabled:opacity-60"
+              aria-expanded={isOpen}
+            >
+              {isGenerating
+                ? "Generating…"
+                : isOpen
+                  ? "Hide GD brief"
+                  : hasCached
+                    ? "Show GD brief"
+                    : "Generate GD brief ✨"}
+            </button>
           </div>
+          {errorMsg && (
+            <p className="mt-2 text-[12px] text-urgent" role="alert">
+              {errorMsg}
+            </p>
+          )}
         </div>
       </div>
 
@@ -594,11 +688,15 @@ function FeaturedTile({
 function NewsTile({
   item,
   isOpen,
-  onToggle,
+  isGenerating,
+  errorMsg,
+  onBriefClick,
 }: {
   item: NewsRow;
   isOpen: boolean;
-  onToggle: () => void;
+  isGenerating: boolean;
+  errorMsg?: string;
+  onBriefClick: () => void;
 }) {
   const color = topicColor(item.topic);
   const hasGD = item.gd_analysis && hasGDContent(item.gd_analysis);
@@ -632,20 +730,31 @@ function NewsTile({
           </p>
         )}
 
-        <div className="mt-auto pt-4 flex items-center justify-between">
-          <span className="text-[11px] text-text-muted">
+        <div className="mt-auto pt-4 flex items-center justify-between gap-2">
+          <span className="text-[11px] text-text-muted shrink-0">
             {formatDate(item.published_at)}
           </span>
-          {hasGD && (
-            <button
-              onClick={onToggle}
-              className="text-[12px] font-semibold text-orange hover:underline"
-              aria-expanded={isOpen}
-            >
-              {isOpen ? "Hide GD brief −" : "GD brief +"}
-            </button>
-          )}
+          <button
+            onClick={onBriefClick}
+            disabled={isGenerating}
+            className="text-[12px] font-semibold text-orange hover:underline disabled:opacity-60 disabled:no-underline"
+            aria-expanded={isOpen}
+          >
+            {isGenerating
+              ? "Generating…"
+              : isOpen
+                ? "Hide brief −"
+                : hasGD
+                  ? "Show GD brief +"
+                  : "Generate brief ✨"}
+          </button>
         </div>
+
+        {errorMsg && (
+          <p className="mt-2 text-[11px] text-urgent" role="alert">
+            {errorMsg}
+          </p>
+        )}
       </div>
 
       {isOpen && item.gd_analysis && (

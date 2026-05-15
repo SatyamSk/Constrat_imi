@@ -257,6 +257,47 @@ def _refresh_rankings(case_id):
         pass
 
 
+def _check_photo_quota(user_id: str):
+    """Returns (allowed, used, limit, tier) from public.check_quota('photo_analysis')."""
+    try:
+        req = Request(
+            f"{SUPABASE_URL}/rest/v1/rpc/check_quota",
+            data=json.dumps({"p_user_id": user_id, "p_kind": "photo_analysis"}).encode("utf-8"),
+            method="POST",
+            headers={
+                "apikey": SUPABASE_SERVICE_ROLE_KEY,
+                "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}",
+                "Content-Type": "application/json",
+            },
+        )
+        with urlopen(req, timeout=10) as r:
+            rows = json.loads(r.read().decode("utf-8"))
+        return rows[0] if isinstance(rows, list) and rows else {}
+    except Exception:
+        # Fail-open if quota infra not set up — better than blocking users.
+        return {"allowed": True, "used": 0, "limit": 0, "tier": "free"}
+
+
+def _log_photo_usage(user_id: str, ref_id: str = ""):
+    try:
+        req = Request(
+            f"{SUPABASE_URL}/rest/v1/usage_events",
+            data=json.dumps({
+                "user_id": user_id, "kind": "photo_analysis", "ref_id": ref_id,
+            }).encode("utf-8"),
+            method="POST",
+            headers={
+                "apikey": SUPABASE_SERVICE_ROLE_KEY,
+                "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}",
+                "Content-Type": "application/json",
+                "Prefer": "return=minimal",
+            },
+        )
+        urlopen(req, timeout=10)
+    except Exception:
+        pass
+
+
 class handler(BaseHTTPRequestHandler):
     def do_OPTIONS(self):
         self.send_response(204)
@@ -293,6 +334,18 @@ class handler(BaseHTTPRequestHandler):
                     {"error": "Provide answer_text or image_url"},
                 )
 
+            # Photo submissions are quota'd. Text-only submissions are unlimited.
+            if body.get("image_url"):
+                quota = _check_photo_quota(user["id"])
+                if not quota.get("allowed", True):
+                    return _json_response(self, 402, {
+                        "error": "quota_exceeded",
+                        "kind":  "photo_analysis",
+                        "used":  quota.get("used", 0),
+                        "limit": quota.get("limit", 0),
+                        "tier":  quota.get("tier", "free"),
+                    })
+
             analysis = _call_openai(
                 case_prompt=body.get("case_prompt", ""),
                 answer_text=body.get("answer_text", ""),
@@ -304,6 +357,10 @@ class handler(BaseHTTPRequestHandler):
                 return _json_response(self, 500, {"error": "Failed to save submission"})
 
             _refresh_rankings(body.get("case_id"))
+
+            # Bill the photo quota only after a successful save.
+            if body.get("image_url"):
+                _log_photo_usage(user["id"], ref_id=submission.get("id", ""))
 
             return _json_response(
                 self,

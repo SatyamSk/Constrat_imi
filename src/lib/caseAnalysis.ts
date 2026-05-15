@@ -74,7 +74,16 @@ export async function analyzeCaseSubmission(
 
   const data = (await res.json().catch(() => ({}))) as
     | (CaseAnalysis & { error?: string })
-    | { error?: string };
+    | { error?: string; kind?: string; used?: number; limit?: number; tier?: string };
+
+  if (res.status === 402) {
+    const err = new Error(
+      `Daily photo limit reached (${(data as any).used ?? "?"}/${(data as any).limit ?? "?"}). Upgrade to Pro for unlimited photo analyses.`,
+    );
+    (err as any).quotaExceeded = true;
+    (err as any).quota = data;
+    throw err;
+  }
 
   if (!res.ok) {
     throw new Error(

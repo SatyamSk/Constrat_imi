@@ -44,6 +44,14 @@ interface Question {
   src: string;
 }
 
+interface CaseDeck {
+  id: string;
+  name: string;
+  category: string;
+  source: string;
+  description?: string;
+}
+
 const FALLBACK_QUESTIONS: Question[] = [
   {
     type: "GUESTIMATE",
@@ -144,6 +152,7 @@ function Practice() {
   const [bookmarks, setBookmarks] = useState<Set<number>>(new Set());
   const [questions, setQuestions] = useState<Question[]>(FALLBACK_QUESTIONS);
   const [todaysCase, setTodaysCase] = useState<Question | null>(null);
+  const [caseLibrary, setCaseLibrary] = useState<CaseDeck[]>([]);
 
   // Pull live questions from Supabase if available (populated by daily_question.py cron)
   useEffect(() => {
@@ -151,33 +160,43 @@ function Practice() {
     let cancelled = false;
     (async () => {
       const today = new Date().toISOString().slice(0, 10);
-      const { data } = await supabase
-        .from("practice_questions")
-        .select("type, question, function, difficulty, source, date_assigned")
-        .order("date_assigned", { ascending: false })
-        .limit(60);
+      const [{ data: qData }, { data: cData }] = await Promise.all([
+        supabase
+          .from("practice_questions")
+          .select("type, question, function, difficulty, source, date_assigned")
+          .order("date_assigned", { ascending: false })
+          .limit(60),
+        supabase
+          .from("case_decks")
+          .select("id, name, category, source, description")
+          .order("created_at", { ascending: false })
+          .limit(24),
+      ]);
+      if (cancelled) return;
 
-      if (cancelled || !data) return;
-      const mapped: Question[] = data.map((row: any) => ({
-        type: row.type,
-        q: row.question,
-        fn: row.function ?? "General Mgmt",
-        diff: row.difficulty ?? "Medium",
-        src: row.source ?? "AI Generated",
-      }));
-      if (mapped.length > 0) {
-        setQuestions(mapped);
-        const todays = data.find((r: any) => r.date_assigned === today);
-        if (todays) {
-          setTodaysCase({
-            type: todays.type,
-            q: todays.question,
-            fn: todays.function ?? "General Mgmt",
-            diff: todays.difficulty ?? "Medium",
-            src: todays.source ?? "AI Generated",
-          });
+      if (qData) {
+        const mapped: Question[] = qData.map((row: any) => ({
+          type: row.type,
+          q: row.question,
+          fn: row.function ?? "General Mgmt",
+          diff: row.difficulty ?? "Medium",
+          src: row.source ?? "AI Generated",
+        }));
+        if (mapped.length > 0) {
+          setQuestions(mapped);
+          const todays = qData.find((r: any) => r.date_assigned === today);
+          if (todays) {
+            setTodaysCase({
+              type: todays.type,
+              q: todays.question,
+              fn: todays.function ?? "General Mgmt",
+              diff: todays.difficulty ?? "Medium",
+              src: todays.source ?? "AI Generated",
+            });
+          }
         }
       }
+      if (cData) setCaseLibrary(cData as CaseDeck[]);
     })();
     return () => {
       cancelled = true;
@@ -292,11 +311,42 @@ function Practice() {
                 >
                   Attempt & Submit Answer
                 </button>
-                <Link to="/cases" className="btn-secondary">
-                  Browse all cases →
-                </Link>
               </div>
             </div>
+
+            {/* Case library (merged from /cases) */}
+            {caseLibrary.length > 0 && (
+              <div className="mt-10">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-[15px] font-semibold">Case library</h3>
+                  <span className="text-[12px] text-text-muted">
+                    {caseLibrary.length} ranked cases
+                  </span>
+                </div>
+                <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {caseLibrary.slice(0, 9).map((c) => (
+                    <button
+                      key={c.id}
+                      onClick={() =>
+                        navigate({ to: "/case/$caseId", params: { caseId: c.id } })
+                      }
+                      className="card-base p-4 text-left hover:border-orange/50 hover:scale-[1.01] transition-all"
+                    >
+                      <span className="pill pill-orange">{c.category}</span>
+                      <p className="mt-3 text-[14px] font-semibold leading-[1.4] line-clamp-2">
+                        {c.name}
+                      </p>
+                      <div className="mt-3 flex items-center justify-between">
+                        <span className="text-[11px] text-text-muted">
+                          {c.source}
+                        </span>
+                        <span className="text-[12px] text-orange">Solve →</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Grid */}
             <div className="mt-10 grid md:grid-cols-2 xl:grid-cols-3 gap-5">

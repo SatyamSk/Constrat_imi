@@ -3,8 +3,10 @@ import { useState } from "react";
 import { PageShell, PageHeader } from "@/components/PageShell";
 import { AnimatedSection } from "@/components/AnimatedSection";
 import { GlowCard } from "@/components/GlowCard";
+import { requireAdmin } from "@/lib/requireAdmin";
 
 export const Route = createFileRoute("/deadlines")({
+  beforeLoad: requireAdmin,
   component: Deadlines,
 });
 

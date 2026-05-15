@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import {
@@ -10,6 +10,8 @@ import {
 } from "@/lib/caseAnalysis";
 import { PageShell, PageHeader } from "@/components/PageShell";
 import { GlowCard } from "@/components/GlowCard";
+import { PhotoPicker } from "@/components/PhotoPicker";
+import { PaywallModal } from "@/components/PaywallModal";
 
 export const Route = createFileRoute("/case/$caseId")({ component: CaseDetail });
 
@@ -43,7 +45,7 @@ function CaseDetail() {
   const [error, setError] = useState<string | null>(null);
   const [leaderboard, setLeaderboard] = useState<LeaderboardRow[]>([]);
   const [loadingCase, setLoadingCase] = useState(true);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [paywall, setPaywall] = useState<{ used: number; limit: number; tier: string } | null>(null);
 
   // Auth gate
   useEffect(() => {
@@ -120,7 +122,16 @@ function CaseDetail() {
       const lb = await getCaseLeaderboard(caseId, 20);
       setLeaderboard(lb as LeaderboardRow[]);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Submission failed.");
+      if (err && typeof err === "object" && (err as any).quotaExceeded) {
+        const q = (err as any).quota || {};
+        setPaywall({
+          used:  q.used  ?? 0,
+          limit: q.limit ?? 0,
+          tier:  q.tier  ?? "free",
+        });
+      } else {
+        setError(err instanceof Error ? err.message : "Submission failed.");
+      }
     } finally {
       setSubmitting(false);
     }
@@ -177,53 +188,13 @@ function CaseDetail() {
                 />
 
                 <div className="border border-dashed border-border rounded-[10px] p-4">
-                  <p className="text-[11px] uppercase tracking-[0.08em] text-text-muted font-semibold mb-2">
+                  <p className="text-[11px] uppercase tracking-[0.08em] text-text-muted font-semibold mb-3">
                     Or attach a photo
                   </p>
-                  {filePreview ? (
-                    <div className="flex items-start gap-3">
-                      <img
-                        src={filePreview}
-                        alt="Preview"
-                        className="w-32 h-32 object-cover rounded-lg border border-border"
-                      />
-                      <div className="flex-1">
-                        <p className="text-[13px] truncate">{file?.name}</p>
-                        <p className="text-[12px] text-text-muted">
-                          {(file && (file.size / 1024).toFixed(0)) || 0} KB
-                        </p>
-                        <button
-                          type="button"
-                          onClick={() => onPickFile(null)}
-                          className="mt-2 text-[12px] text-urgent hover:underline"
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="w-full h-12 border border-border rounded-[8px] text-[13px] text-text-secondary hover:border-orange hover:text-orange transition-colors"
-                    >
-                      + Upload photo (JPG / PNG, up to 10 MB)
-                    </button>
-                  )}
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    capture="environment"
-                    className="hidden"
-                    onChange={(e) => {
-                      const f = e.target.files?.[0] ?? null;
-                      if (f && f.size > 10 * 1024 * 1024) {
-                        setError("Image too large (max 10 MB).");
-                        return;
-                      }
-                      onPickFile(f);
-                    }}
+                  <PhotoPicker
+                    file={file}
+                    preview={filePreview}
+                    onChange={onPickFile}
                   />
                 </div>
 
@@ -294,11 +265,21 @@ function CaseDetail() {
             </div>
           </GlowCard>
 
-          <Link to="/cases" className="btn-ghost text-[13px] inline-block">
+          <Link to="/practice" className="btn-ghost text-[13px] inline-block">
             ← All cases
           </Link>
         </aside>
       </div>
+
+      {paywall && (
+        <PaywallModal
+          used={paywall.used}
+          limit={paywall.limit}
+          tier={paywall.tier}
+          kind="photo_analysis"
+          onClose={() => setPaywall(null)}
+        />
+      )}
     </PageShell>
   );
 }

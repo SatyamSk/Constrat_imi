@@ -4,8 +4,12 @@ import { PageShell, PageHeader } from "@/components/PageShell";
 import { GlowCard } from "@/components/GlowCard";
 import { AnimatedSection } from "@/components/AnimatedSection";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import { requireAdmin } from "@/lib/requireAdmin";
 
-export const Route = createFileRoute("/timetable")({ component: Timetable });
+export const Route = createFileRoute("/timetable")({
+  beforeLoad: requireAdmin,
+  component: Timetable,
+});
 
 interface Entry {
   id?: string;
