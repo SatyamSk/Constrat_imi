@@ -9,14 +9,13 @@ export const Route = createFileRoute("/auth/callback")({
 /**
  * Landing page for every Supabase auth redirect.
  *
- * With the **implicit** flow Supabase returns an `#access_token=...` hash.
+ * With the **implicit** flow Supabase returns `#access_token=...` in the hash.
  * The Supabase JS client auto-detects it via `detectSessionInUrl: true` and
- * fires an `onAuthStateChange(SIGNED_IN, session)` event.
+ * fires `onAuthStateChange(SIGNED_IN, session)`.
  *
- * All we need to do here is:
- *  1. Wait for the session to appear.
- *  2. If there's an `?error=...` query param (provider error), show it.
- *  3. Redirect to /dashboard (or /reset-password for recovery flows).
+ * We just wait for the session to materialise. If there's a `?code=` param
+ * (legacy/PKCE), we attempt exchange but never hard-fail — we always fall
+ * through to the session poll.
  */
 function AuthCallback() {
   const navigate = useNavigate();
@@ -42,7 +41,7 @@ function AuthCallback() {
       return;
     }
 
-    // Also check the hash for errors (some providers put them there).
+    // Also check the hash for errors.
     const hash = window.location.hash.substring(1);
     const hashParams = new URLSearchParams(hash);
     const hashError =
@@ -57,55 +56,72 @@ function AuthCallback() {
       params.get("type") === "recovery" ||
       hashParams.get("type") === "recovery";
 
-    // For PKCE legacy: if there's a ?code= param, try to exchange it.
-    const code = params.get("code");
-
     async function handleCallback() {
-      if (!supabase) return;
+      if (!supabase || cancelled) return;
 
-      // If we have a PKCE code, exchange it (backwards compat).
+      // If there's a PKCE code in the URL, try to exchange it.
+      // But if it fails, DON'T show an error — fall through to session poll.
+      const code = params.get("code");
       if (code) {
         try {
+          // eslint-disable-next-line no-console
+          console.log("[auth/callback] Attempting PKCE code exchange...");
           const { data, error: exchErr } =
             await supabase.auth.exchangeCodeForSession(code);
           if (cancelled) return;
-          if (exchErr) {
-            setError(prettyError(exchErr.message));
-            setStatus("error");
-            return;
-          }
-          if (data.session) {
+          if (!exchErr && data.session) {
+            // eslint-disable-next-line no-console
+            console.log("[auth/callback] PKCE exchange succeeded.");
             finish(recoveryFlow);
             return;
           }
-        } catch {
-          // Fall through to the session-poll below.
+          if (exchErr) {
+            // eslint-disable-next-line no-console
+            console.warn(
+              "[auth/callback] PKCE exchange failed (will try session poll):",
+              exchErr.message,
+            );
+            // Don't return — fall through to session poll.
+          }
+        } catch (e) {
+          // eslint-disable-next-line no-console
+          console.warn("[auth/callback] PKCE exchange threw:", e);
+          // Don't return — fall through.
         }
       }
 
-      // For implicit flow the Supabase client auto-parses the hash.
-      // Give it a moment, then check for the session.
-      // We poll briefly because onAuthStateChange fires asynchronously.
-      for (let attempt = 0; attempt < 20; attempt++) {
+      // For implicit flow the Supabase client auto-parses the #access_token hash.
+      // The onAuthStateChange listener fires SIGNED_IN and populates the session.
+      // We poll briefly because it happens asynchronously.
+      // eslint-disable-next-line no-console
+      console.log("[auth/callback] Polling for session...");
+      for (let attempt = 0; attempt < 30; attempt++) {
         if (cancelled) return;
         const {
           data: { session },
         } = await supabase.auth.getSession();
         if (session) {
+          // eslint-disable-next-line no-console
+          console.log("[auth/callback] Session found on attempt", attempt);
           finish(recoveryFlow);
           return;
         }
-        await new Promise((r) => setTimeout(r, 250));
+        await new Promise((r) => setTimeout(r, 300));
       }
 
       if (cancelled) return;
-      setError("No session found after sign-in. Please try again.");
+      // eslint-disable-next-line no-console
+      console.error("[auth/callback] No session after 30 attempts.");
+      setError(
+        "Could not complete sign-in. Please make sure third-party cookies " +
+          "are enabled and try again in a fresh tab.",
+      );
       setStatus("error");
     }
 
     function finish(isRecovery: boolean) {
       if (cancelled) return;
-      // Strip the OAuth params so a back-navigation doesn't re-trigger.
+      // Strip OAuth params so back-navigation doesn't re-trigger.
       window.history.replaceState({}, document.title, "/auth/callback");
       setStatus("done");
       navigate({
@@ -166,16 +182,6 @@ function Center({ children }: { children: React.ReactNode }) {
 
 function prettyError(msg: string): string {
   const lower = msg.toLowerCase();
-  if (
-    lower.includes("exchange external code") ||
-    lower.includes("code verifier")
-  ) {
-    return (
-      "Your sign-in token expired before we could complete it. This usually means " +
-      "the page was reloaded or browser storage was cleared during sign-in. " +
-      "Please try again."
-    );
-  }
   if (lower.includes("redirect")) {
     return (
       "This domain isn't allowed by Supabase. The admin needs to add " +
