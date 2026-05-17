@@ -180,9 +180,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password,
       options: {
         data: metadata,
-        // After clicking the confirmation email, land on home; the SDK will
-        // consume the token and AuthProvider will route to the dashboard.
-        emailRedirectTo: window.location.origin,
+        // After clicking the confirmation email, land on the callback page;
+        // the SDK will consume the token and redirect to dashboard.
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
     });
 
@@ -196,13 +196,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signInWithGoogle = async () => {
     if (!supabase) return { error: new Error("Supabase not configured") };
-    // Bounce back to the homepage. NO custom redirect URL — the SDK and
-    // Supabase's default redirect handling does the right thing as long as
-    // the site URL is set correctly in the Supabase dashboard.
+    // Redirect to /auth/callback — that page is in Supabase's redirect
+    // allowlist and waits for SIGNED_IN before sending to dashboard.
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: window.location.origin,
+        redirectTo: `${window.location.origin}/auth/callback`,
       },
     });
     return { error: error ? new Error(error.message) : null };
