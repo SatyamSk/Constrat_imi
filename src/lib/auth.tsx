@@ -12,10 +12,6 @@ import type { User, Session } from "@supabase/supabase-js";
 
 type SignUpResult = {
   error: Error | null;
-  /**
-   * True when Supabase returned a user but no session.
-   * That means email confirmation is enabled and we should NOT redirect to the dashboard.
-   */
   needsEmailConfirmation: boolean;
 };
 
@@ -62,29 +58,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     let mounted = true;
 
-    // 1. Subscribe to auth changes (catches SIGNED_IN after OAuth callback exchange).
+    // 1. Subscribe to auth state changes. The SDK fires SIGNED_IN once it
+    //    consumes the URL token after Google OAuth bounces back.
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, s) => {
       if (!mounted) return;
       // eslint-disable-next-line no-console
-      console.log("[Auth] state change:", event, s?.user?.email ?? "(none)");
+      console.log("[Auth]", event, s?.user?.email ?? "(none)");
       setSession(s);
       setUser(s?.user ?? null);
       setLoading(false);
 
       if (s?.user) {
-        // setTimeout avoids a Supabase deadlock when calling .from() inside the listener.
         setTimeout(() => ensureProfile(s.user), 0);
-
         if (
           (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") &&
           !hasTrackedLogin.current
         ) {
           hasTrackedLogin.current = true;
-          trackActivity({ type: "LOGGED_IN", userId: s.user.id }).catch(() => {
-            // Activity tracking is best-effort; never block login.
-          });
+          trackActivity({ type: "LOGGED_IN", userId: s.user.id }).catch(
+            () => {},
+          );
         }
       } else {
         setRole("guest");
@@ -92,23 +87,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
-    // 2. Load the initial session. The PKCE listener above also fires SIGNED_IN
-    //    on first successful exchange, but we still want to populate state ASAP
-    //    on a normal page load with an existing session.
+    // 2. Read initial session. Note: the SDK will have already consumed any
+    //    OAuth hash from the URL on construction.
     supabase.auth
       .getSession()
       .then(({ data: { session: s } }) => {
         if (!mounted) return;
         setSession(s);
         setUser(s?.user ?? null);
-        if (s?.user) {
-          ensureProfile(s.user);
-        }
+        if (s?.user) ensureProfile(s.user);
         setLoading(false);
       })
-      .catch((err) => {
-        // eslint-disable-next-line no-console
-        console.error("[Auth] getSession failed:", err);
+      .catch(() => {
         if (mounted) setLoading(false);
       });
 
@@ -118,13 +108,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  /**
-   * Make sure a row exists in `profiles` for this user.
-   *
-   * The `handle_new_user` trigger in migration 001 should create one automatically,
-   * but if it fails (e.g. Google sign-in before the trigger was deployed, or a
-   * service-role issue) we self-heal here so the rest of the app doesn't break.
-   */
   async function ensureProfile(u: User) {
     if (!supabase) return;
     try {
@@ -140,7 +123,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (!data) {
-        const { error: insertError } = await supabase.from("profiles").insert({
+        await supabase.from("profiles").insert({
           id: u.id,
           email: u.email ?? "",
           full_name:
@@ -150,40 +133,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           avatar_url: (u.user_metadata?.avatar_url as string) ?? "",
           role: "member",
         });
-
-        if (insertError) {
-          // eslint-disable-next-line no-console
-          console.error("[Auth] failed to self-heal profile:", insertError);
-          setRole("member"); // optimistic; UI will recover on next refresh
-          return;
-        }
         setRole("member");
         return;
       }
-
       setRole(data.role ?? "member");
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error("[Auth] ensureProfile crashed:", err);
+    } catch {
       setRole("member");
     }
   }
 
   const signIn = async (email: string, password: string) => {
     if (!supabase) {
-      return {
-        error: new Error(
-          "Supabase not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your .env.",
-        ),
-      };
+      return { error: new Error("Supabase not configured") };
     }
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
     if (!error) return { error: null };
-
-    // Map common Supabase error codes to friendlier strings (the UI also wraps these).
     const msg = error.message.toLowerCase();
     if (msg.includes("email not confirmed")) {
-      return { error: new Error("Please confirm your email before logging in. Check your inbox.") };
+      return {
+        error: new Error("Please confirm your email before logging in."),
+      };
     }
     if (msg.includes("invalid login")) {
       return { error: new Error("Invalid email or password.") };
@@ -198,9 +170,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   ): Promise<SignUpResult> => {
     if (!supabase) {
       return {
-        error: new Error(
-          "Supabase not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your .env.",
-        ),
+        error: new Error("Supabase not configured"),
         needsEmailConfirmation: false,
       };
     }
@@ -210,25 +180,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password,
       options: {
         data: metadata,
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        // After clicking the confirmation email, land on home; the SDK will
+        // consume the token and AuthProvider will route to the dashboard.
+        emailRedirectTo: window.location.origin,
       },
     });
 
-    if (error) {
-      return { error: new Error(error.message), needsEmailConfirmation: false };
-    }
+    if (error) return { error: new Error(error.message), needsEmailConfirmation: false };
 
-    // If Supabase returned a user but no session, "Confirm email" is enabled.
-    const needsEmailConfirmation = !!data.user && !data.session;
-    return { error: null, needsEmailConfirmation };
+    return {
+      error: null,
+      needsEmailConfirmation: !!data.user && !data.session,
+    };
   };
 
   const signInWithGoogle = async () => {
     if (!supabase) return { error: new Error("Supabase not configured") };
+    // Bounce back to the homepage. NO custom redirect URL — the SDK and
+    // Supabase's default redirect handling does the right thing as long as
+    // the site URL is set correctly in the Supabase dashboard.
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: window.location.origin,
       },
     });
     return { error: error ? new Error(error.message) : null };

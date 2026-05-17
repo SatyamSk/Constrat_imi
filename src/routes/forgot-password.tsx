@@ -27,7 +27,10 @@ function ForgotPassword() {
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
         // The recovery email's link points here with ?code=...&type=recovery
-        redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
+        // After clicking the reset link in the email, land on /reset-password.
+        // The SDK will consume the recovery token from the URL hash and
+        // grant a temporary session that lets us call updateUser({ password }).
+        redirectTo: `${window.location.origin}/reset-password`,
       });
       if (error) throw error;
       setSent(true);

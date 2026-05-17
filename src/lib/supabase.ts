@@ -11,34 +11,21 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 /**
- * Implicit flow for SPAs:
- *  - Returns `#access_token=...` directly to /auth/callback.
- *  - Supabase JS auto-detects the hash via `detectSessionInUrl`.
- *  - No code exchange step → avoids the common "code verifier expired" error
- *    that plagues PKCE when browsers clear localStorage mid-redirect.
+ * Minimal Supabase client — same shape as the reference HTML app that works
+ * in the user's other project. NO flowType set, NO custom storage, NO
+ * custom detectSessionInUrl. The SDK's defaults work; every time we've added
+ * extra config the OAuth flow has broken.
  *
- * In Supabase Dashboard → Authentication → URL Configuration:
- *   Site URL:               https://yourdomain.com
- *   Redirect URLs (add):    https://yourdomain.com/auth/callback
- *                           http://localhost:5173/auth/callback
+ * The SDK default IS `detectSessionInUrl: true` and `persistSession: true`
+ * and `autoRefreshToken: true` — we don't need to set them.
  *
- * In Authentication → Providers → Google:
- *   - Toggle on, paste your Google OAuth Client ID + Secret.
- *   - Authorized redirect URI in Google Cloud Console must be:
- *     https://<project-ref>.supabase.co/auth/v1/callback
+ * If you want PKCE later, add `flowType: "pkce"` AND make sure /auth/callback
+ * is in Supabase's redirect allowlist AND that no other client overwrites
+ * the verifier. For now: don't.
  */
 export const supabase =
   supabaseUrl && supabaseAnonKey
-    ? createClient(supabaseUrl, supabaseAnonKey, {
-        auth: {
-          flowType: "implicit",
-          detectSessionInUrl: true,
-          autoRefreshToken: true,
-          persistSession: true,
-          storage:
-            typeof window !== "undefined" ? window.localStorage : undefined,
-        },
-      })
+    ? createClient(supabaseUrl, supabaseAnonKey)
     : null;
 
 export const isSupabaseConfigured = !!supabase;
