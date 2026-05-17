@@ -137,7 +137,7 @@ function Timetable() {
             <div className="relative z-10">
               <div className="flex items-center gap-2 mb-3">
                 <span className="pulse-dot" />
-                <span className="text-[13px] font-semibold" style={{ color: "#E8490F" }}>
+                <span className="text-[15px] font-semibold" style={{ color: "#E8490F" }}>
                   Today — {todayStr}
                 </span>
               </div>
@@ -150,7 +150,7 @@ function Timetable() {
                     >
                       {c.slot}
                     </p>
-                    <p className="text-[14px] font-semibold mt-1">{c.course}</p>
+                    <p className="text-[15px] font-semibold mt-1">{c.course}</p>
                     <p className="text-[12px] text-text-muted">
                       {c.faculty} · {c.room}
                     </p>
@@ -169,7 +169,7 @@ function Timetable() {
               <button
                 key={s}
                 onClick={() => setSec(s)}
-                className={`px-4 py-1.5 rounded-md text-[13px] font-semibold transition-all ${sec === s ? "bg-white text-orange shadow-sm" : "text-text-muted hover:text-text-primary"}`}
+                className={`px-4 py-1.5 rounded-md text-[15px] font-semibold transition-all ${sec === s ? "bg-white text-orange shadow-sm" : "text-text-muted hover:text-text-primary"}`}
               >
                 Sec {s}
               </button>
@@ -210,7 +210,7 @@ function Timetable() {
         ) : entries.length === 0 ? (
           <div className="card-base p-12 text-center">
             <p className="text-[15px] font-semibold mb-2">No timetable data yet</p>
-            <p className="text-[13px] text-text-muted">
+            <p className="text-[15px] text-text-muted">
               The timetable syncs from Google Sheets daily. Check back soon.
             </p>
           </div>
@@ -220,7 +220,7 @@ function Timetable() {
             {days.map((day) => (
               <AnimatedSection key={day}>
                 <div>
-                  <h3 className="text-[14px] font-semibold text-text-muted uppercase tracking-[0.06em] mb-3 pl-1">
+                  <h3 className="text-[15px] font-semibold text-text-muted uppercase tracking-[0.06em] mb-3 pl-1">
                     {day}
                   </h3>
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
@@ -282,16 +282,16 @@ function Timetable() {
                     key={i}
                     className="border-t border-border hover:bg-orange-tint/20 transition-colors"
                   >
-                    <td className="py-2.5 px-4 text-[13px]">{e.day}</td>
+                    <td className="py-2.5 px-4 text-[15px]">{e.day}</td>
                     <td
-                      className="py-2.5 px-4 text-[13px]"
+                      className="py-2.5 px-4 text-[15px]"
                       style={{ fontFamily: "var(--font-mono)", color: "#E8490F" }}
                     >
                       {e.slot}
                     </td>
-                    <td className="py-2.5 px-4 text-[14px] font-semibold">{e.course}</td>
-                    <td className="py-2.5 px-4 text-[13px] text-text-secondary">{e.faculty}</td>
-                    <td className="py-2.5 px-4 text-[13px] text-text-muted">{e.room}</td>
+                    <td className="py-2.5 px-4 text-[15px] font-semibold">{e.course}</td>
+                    <td className="py-2.5 px-4 text-[15px] text-text-secondary">{e.faculty}</td>
+                    <td className="py-2.5 px-4 text-[15px] text-text-muted">{e.room}</td>
                   </tr>
                 ))}
               </tbody>

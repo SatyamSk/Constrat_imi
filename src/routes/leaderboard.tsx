@@ -145,7 +145,7 @@ function Leaderboard() {
                   <div className="mt-4 pt-4 border-t border-border grid grid-cols-3 gap-2 text-center">
                     <div>
                       <p
-                        className="text-[16px] font-bold"
+                        className="text-[17px] font-bold"
                         style={{ fontFamily: "var(--font-mono)" }}
                       >
                         {u.cases}
@@ -156,7 +156,7 @@ function Leaderboard() {
                     </div>
                     <div>
                       <p
-                        className="text-[16px] font-bold"
+                        className="text-[17px] font-bold"
                         style={{ fontFamily: "var(--font-mono)" }}
                       >
                         {u.guesstimates}
@@ -167,7 +167,7 @@ function Leaderboard() {
                     </div>
                     <div>
                       <p
-                        className="text-[16px] font-bold"
+                        className="text-[17px] font-bold"
                         style={{ fontFamily: "var(--font-mono)", color: "#E8490F" }}
                       >
                         {u.streak}
@@ -204,7 +204,7 @@ function Leaderboard() {
               <button
                 key={t}
                 onClick={() => setTab(t)}
-                className={`px-4 py-1.5 rounded-md text-[13px] font-medium transition-all ${tab === t ? "bg-white text-orange shadow-sm" : "text-text-muted hover:text-text-primary"}`}
+                className={`px-4 py-1.5 rounded-md text-[15px] font-medium transition-all ${tab === t ? "bg-white text-orange shadow-sm" : "text-text-muted hover:text-text-primary"}`}
               >
                 {t === "college" ? "IMI Delhi" : "Global"}
               </button>
@@ -229,17 +229,17 @@ function Leaderboard() {
             <AnimatedSection key={u.rank} delay={i * 40}>
               <div className="card-base p-4 flex items-center gap-4 hover:border-orange/30">
                 <span
-                  className="w-9 h-9 rounded-full bg-muted/60 flex items-center justify-center text-[13px] font-bold text-text-muted shrink-0"
+                  className="w-9 h-9 rounded-full bg-muted/60 flex items-center justify-center text-[15px] font-bold text-text-muted shrink-0"
                   style={{ fontFamily: "var(--font-mono)" }}
                 >
                   {u.rank}
                 </span>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[14px] font-semibold">{u.name}</p>
+                  <p className="text-[15px] font-semibold">{u.name}</p>
                   <p className="text-[11px] text-text-muted">{u.college}</p>
                 </div>
                 <div
-                  className="hidden sm:flex items-center gap-6 text-[13px]"
+                  className="hidden sm:flex items-center gap-6 text-[15px]"
                   style={{ fontFamily: "var(--font-mono)" }}
                 >
                   <div className="text-center">
@@ -274,13 +274,13 @@ function Leaderboard() {
           style={{ background: "#FFF7F3", borderColor: "#E8490F", borderWidth: "1.5px" }}
         >
           <span
-            className="w-9 h-9 rounded-full bg-orange flex items-center justify-center text-white text-[13px] font-bold shrink-0"
+            className="w-9 h-9 rounded-full bg-orange flex items-center justify-center text-white text-[15px] font-bold shrink-0"
             style={{ fontFamily: "var(--font-mono)" }}
           >
             ?
           </span>
           <div className="flex-1">
-            <p className="text-[14px] font-semibold">Your Rank</p>
+            <p className="text-[15px] font-semibold">Your Rank</p>
             <p className="text-[12px] text-text-muted">Login to see where you stand</p>
           </div>
           <Link to="/join" className="btn-primary h-9 px-5 text-[12px]">

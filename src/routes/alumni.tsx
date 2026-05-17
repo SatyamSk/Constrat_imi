@@ -89,7 +89,7 @@ function Alumni() {
                   <div className="relative z-10">
                     <div className="flex items-center gap-3">
                       <div
-                        className="w-12 h-12 rounded-full flex items-center justify-center font-semibold text-[14px] shrink-0"
+                        className="w-12 h-12 rounded-full flex items-center justify-center font-semibold text-[15px] shrink-0"
                         style={{
                           background: a.batch.includes("Current") ? "#FFF0EB" : "#F3F2EF",
                           color: a.batch.includes("Current") ? "#C03A08" : "#5C5C5A",

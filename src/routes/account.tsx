@@ -217,7 +217,7 @@ function Account() {
         <div className="mx-auto max-w-[1180px] px-5 md:px-6 pb-20">
           <div className="card-base p-12 text-center">
             <div className="w-8 h-8 rounded-full border-2 border-orange border-t-transparent animate-spin mx-auto"></div>
-            <p className="mt-4 text-[14px] text-text-muted">Loading your profile...</p>
+            <p className="mt-4 text-[15px] text-text-muted">Loading your profile...</p>
           </div>
         </div>
       </PageShell>
@@ -287,7 +287,7 @@ function Account() {
                           : user?.email?.split("@")[0]) ||
                         "Member"}
                     </h2>
-                    <p className="text-[13px] text-text-muted">{profile?.email}</p>
+                    <p className="text-[15px] text-text-muted">{profile?.email}</p>
                   </div>
                 </div>
 
@@ -378,25 +378,25 @@ function Account() {
                         <p className="text-[11px] font-semibold text-text-muted uppercase tracking-[0.08em] mb-1">
                           Batch
                         </p>
-                        <p className="text-[14px]">{profile?.batch || "—"}</p>
+                        <p className="text-[15px]">{profile?.batch || "—"}</p>
                       </div>
                       <div>
                         <p className="text-[11px] font-semibold text-text-muted uppercase tracking-[0.08em] mb-1">
                           Section
                         </p>
-                        <p className="text-[14px]">{profile?.section || "—"}</p>
+                        <p className="text-[15px]">{profile?.section || "—"}</p>
                       </div>
                       <div>
                         <p className="text-[11px] font-semibold text-text-muted uppercase tracking-[0.08em] mb-1">
                           Specialization
                         </p>
-                        <p className="text-[14px]">{profile?.specialization || "—"}</p>
+                        <p className="text-[15px]">{profile?.specialization || "—"}</p>
                       </div>
                       <div>
                         <p className="text-[11px] font-semibold text-text-muted uppercase tracking-[0.08em] mb-1">
                           Phone
                         </p>
-                        <p className="text-[14px]">{profile?.phone || "—"}</p>
+                        <p className="text-[15px]">{profile?.phone || "—"}</p>
                       </div>
                     </div>
                     <button onClick={() => setEditing(true)} className="btn-primary w-full">
@@ -414,7 +414,7 @@ function Account() {
               <GlowCard className="p-6">
                 <div className="relative z-10">
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-[14px] font-semibold">Your Global Rank</h3>
+                    <h3 className="text-[15px] font-semibold">Your Global Rank</h3>
                     <Link to="/leaderboard" className="text-[11px] text-orange hover:underline">
                       View all →
                     </Link>
@@ -426,25 +426,25 @@ function Account() {
                     >
                       #{globalRank.rank}
                     </p>
-                    <p className="text-[13px] text-text-muted pb-2">
+                    <p className="text-[15px] text-text-muted pb-2">
                       of all members
                     </p>
                   </div>
                   <div className="mt-4 grid grid-cols-3 gap-2 text-center">
                     <div>
-                      <p className="text-[16px] font-bold">{globalRank.total_score}</p>
+                      <p className="text-[17px] font-bold">{globalRank.total_score}</p>
                       <p className="text-[10px] text-text-muted uppercase tracking-[0.06em]">
                         Points
                       </p>
                     </div>
                     <div>
-                      <p className="text-[16px] font-bold">{globalRank.cases_solved}</p>
+                      <p className="text-[17px] font-bold">{globalRank.cases_solved}</p>
                       <p className="text-[10px] text-text-muted uppercase tracking-[0.06em]">
                         Cases
                       </p>
                     </div>
                     <div>
-                      <p className="text-[16px] font-bold">
+                      <p className="text-[17px] font-bold">
                         {globalRank.guesstimates_completed}
                       </p>
                       <p className="text-[10px] text-text-muted uppercase tracking-[0.06em]">
@@ -458,7 +458,7 @@ function Account() {
 
             <GlowCard className="p-6">
               <div className="relative z-10">
-                <h3 className="text-[14px] font-semibold mb-4">Your Stats</h3>
+                <h3 className="text-[15px] font-semibold mb-4">Your Stats</h3>
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
                     <p className="text-[12px] text-text-muted">Cases Solved</p>
@@ -486,12 +486,12 @@ function Account() {
 
             <GlowCard className="p-6">
               <div className="relative z-10">
-                <h3 className="text-[14px] font-semibold mb-4">Overall Score</h3>
+                <h3 className="text-[15px] font-semibold mb-4">Overall Score</h3>
                 <div className="space-y-2">
                   <div>
                     <div className="flex justify-between mb-1">
                       <p className="text-[12px] text-text-muted">Cases</p>
-                      <p className="text-[14px] font-semibold">{stats.cases_score}</p>
+                      <p className="text-[15px] font-semibold">{stats.cases_score}</p>
                     </div>
                     <div className="h-1.5 rounded-full bg-muted">
                       <div
@@ -506,7 +506,7 @@ function Account() {
                   <div>
                     <div className="flex justify-between mb-1">
                       <p className="text-[12px] text-text-muted">Guesstimates</p>
-                      <p className="text-[14px] font-semibold">{stats.guesstimates_score}</p>
+                      <p className="text-[15px] font-semibold">{stats.guesstimates_score}</p>
                     </div>
                     <div className="h-1.5 rounded-full bg-muted">
                       <div

@@ -541,7 +541,7 @@ function News() {
         {loading && (
           <div className="card-base p-12 text-center mb-8">
             <div className="w-8 h-8 mx-auto rounded-full border-2 border-orange border-t-transparent animate-spin" />
-            <p className="mt-4 text-[13px] text-text-muted">Loading today's brief…</p>
+            <p className="mt-4 text-[15px] text-text-muted">Loading today's brief…</p>
           </div>
         )}
 
@@ -572,7 +572,7 @@ function News() {
         )}
 
         {!loading && filtered.length === 0 && (
-          <p className="text-center text-text-muted py-16 text-[14px]">
+          <p className="text-center text-text-muted py-16 text-[15px]">
             No stories yet for this topic. Check back after the next refresh.
           </p>
         )}
@@ -634,27 +634,30 @@ function FeaturedTile({
           </div>
 
           <SourceLink url={item.url} className="block">
-            <h2 className="font-serif text-[22px] md:text-[26px] leading-[1.3] text-text-primary hover:text-orange transition-colors">
+            <h2
+              className="text-[22px] md:text-[28px] leading-[1.25] text-text-primary hover:text-orange transition-colors"
+              style={{ fontWeight: 700, letterSpacing: "-0.02em" }}
+            >
               {item.title}
             </h2>
           </SourceLink>
 
           {item.ai_summary && (
-            <p className="mt-3 text-[14px] leading-[1.65] text-text-secondary">
+            <p className="mt-3 text-[15px] leading-[1.65] text-text-secondary">
               {item.ai_summary}
             </p>
           )}
 
           <div className="mt-auto pt-5 flex items-center gap-3 flex-wrap">
             <SourceLink url={item.url}>
-              <span className="btn-primary text-[13px] h-9 px-4 inline-flex items-center">
+              <span className="btn-primary text-[15px] h-9 px-4 inline-flex items-center">
                 Read at source →
               </span>
             </SourceLink>
             <button
               onClick={onBriefClick}
               disabled={isGenerating}
-              className="btn-secondary text-[13px] h-9 px-4 inline-flex items-center disabled:opacity-60"
+              className="btn-secondary text-[15px] h-9 px-4 inline-flex items-center disabled:opacity-60"
               aria-expanded={isOpen}
             >
               {isGenerating
@@ -865,7 +868,7 @@ function Frame({
       >
         {title}
       </p>
-      <p className="text-[13px] leading-[1.6] text-text-primary">{children}</p>
+      <p className="text-[15px] leading-[1.6] text-text-primary">{children}</p>
     </div>
   );
 }

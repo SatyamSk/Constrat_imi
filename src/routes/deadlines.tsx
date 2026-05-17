@@ -81,7 +81,7 @@ function Deadlines() {
         subtitle="Stay on top of every important deadline. Filtered for your batch and section."
         alt
       >
-        <div className="flex items-center gap-3 text-[13px] text-text-secondary">
+        <div className="flex items-center gap-3 text-[15px] text-text-secondary">
           <span className="pulse-dot" />
           <span>For IMI students only</span>
         </div>
@@ -120,10 +120,10 @@ function Deadlines() {
                   &#x1F525;
                 </div>
                 <div>
-                  <p className="text-[14px] font-semibold text-urgent">
+                  <p className="text-[15px] font-semibold text-urgent">
                     Urgent deadlines approaching
                   </p>
-                  <p className="text-[13px] text-text-secondary mt-0.5">
+                  <p className="text-[15px] text-text-secondary mt-0.5">
                     {
                       filtered.filter(
                         (d) => getDaysLeft(d.deadline) <= 3 && getDaysLeft(d.deadline) >= 0,
@@ -169,10 +169,10 @@ function Deadlines() {
                           </span>
                           {isUrgent && !isPast && <span className="pill pill-red">Urgent</span>}
                         </div>
-                        <h3 className="mt-2 text-[16px] md:text-[17px] font-semibold leading-tight">
+                        <h3 className="mt-2 text-[17px] md:text-[17px] font-semibold leading-tight">
                           {d.title}
                         </h3>
-                        <p className="mt-1.5 text-[13px] text-text-secondary leading-relaxed">
+                        <p className="mt-1.5 text-[15px] text-text-secondary leading-relaxed">
                           {d.description}
                         </p>
                         <p className="mt-2 text-[12px] text-text-muted">
@@ -196,7 +196,7 @@ function Deadlines() {
 
           {filtered.length === 0 && (
             <div className="text-center py-20 text-text-muted">
-              <p className="text-[16px]">No deadlines found for this filter.</p>
+              <p className="text-[17px]">No deadlines found for this filter.</p>
             </div>
           )}
         </div>

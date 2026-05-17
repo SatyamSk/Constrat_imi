@@ -186,7 +186,7 @@ function Dashboard() {
 
               <div className="mt-5">
                 {news.length === 0 ? (
-                  <p className="text-[12px] text-[#8a9bb0] py-8 text-center">
+                  <p className="text-[13px] text-[#8a9bb0] py-8 text-center">
                     News will appear after the daily aggregator runs.
                   </p>
                 ) : (
@@ -219,7 +219,7 @@ function StreakBanner({ streak }: { streak: number }) {
       className="h-9 px-5 md:px-6 flex items-center justify-between"
       style={{ background: "#e8490f" }}
     >
-      <p className="text-white font-medium" style={{ fontSize: "12px", letterSpacing: "-0.005em" }}>
+      <p className="text-white font-medium" style={{ fontSize: "13px", letterSpacing: "-0.005em" }}>
         🔥 Day {streak} streak — Keep it alive. Today's case drops at 06:00 IST.
       </p>
       <span className="text-white/80 font-mono tabular-nums" style={{ fontSize: "11px" }}>
@@ -266,7 +266,7 @@ function DarkSidebar({
               <Link
                 key={it.label}
                 to={it.to}
-                className={`relative block py-2 pl-3 text-[13px] transition-colors ${
+                className={`relative block py-2 pl-3 text-[14px] transition-colors ${
                   active
                     ? "text-white font-medium"
                     : "text-white/70 hover:text-white font-light"
@@ -287,7 +287,7 @@ function DarkSidebar({
         className="p-7 pt-5"
         style={{ borderTop: "1px solid rgba(255,255,255,0.15)" }}
       >
-        <p className="text-white font-medium" style={{ fontSize: "13px" }}>
+        <p className="text-white font-medium" style={{ fontSize: "14px" }}>
           {name}
           {isPro && (
             <span className="ml-1.5 text-[#e8490f]" style={{ fontSize: "11px" }}>★ Pro</span>
@@ -408,10 +408,10 @@ function FeaturedCase({ daily, navigate }: { daily: DailyQ | null; navigate: any
         }}
         className="mt-5 w-full bg-[#0a1628] text-white py-3.5 flex items-center justify-between px-5 hover:bg-[#162236] transition-colors"
       >
-        <span className="font-medium" style={{ fontSize: "13px" }}>
+        <span className="font-medium" style={{ fontSize: "14px" }}>
           Open Case When Live
         </span>
-        <span className="font-mono tabular-nums text-[#e8490f]" style={{ fontSize: "12px" }}>
+        <span className="font-mono tabular-nums text-[#e8490f]" style={{ fontSize: "13px" }}>
           {drop}
         </span>
       </button>
@@ -433,14 +433,14 @@ function NewsRow({ item }: { item: NewsRow }) {
         <div className="min-w-0 flex-1">
           <h4
             className="font-bold text-[#0a1628] group-hover:text-[#e8490f] transition-colors"
-            style={{ fontSize: "14px", letterSpacing: "-0.01em", lineHeight: 1.35 }}
+            style={{ fontSize: "15px", letterSpacing: "-0.01em", lineHeight: 1.35 }}
           >
             {item.title}
           </h4>
           {item.ai_summary && (
             <p
               className="mt-1.5 text-[#4a5d76] font-light line-clamp-2"
-              style={{ fontSize: "12px", lineHeight: 1.5 }}
+              style={{ fontSize: "13px", lineHeight: 1.5 }}
             >
               {item.ai_summary}
             </p>
@@ -615,7 +615,7 @@ function LeaderRow({
     >
       <span
         className="font-bold text-[#0a1628] tabular-nums w-5 text-right"
-        style={{ fontSize: "12px" }}
+        style={{ fontSize: "13px" }}
       >
         {row.rank}
       </span>

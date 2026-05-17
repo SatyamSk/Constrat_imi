@@ -77,17 +77,17 @@ function Home() {
             </h1>
             <p
               className="mt-6 max-w-[440px] text-[#4a5d76] font-light leading-[1.7]"
-              style={{ fontSize: "15px" }}
+              style={{ fontSize: "16px" }}
             >
               Daily cases, guesstimate practice, company intelligence, and live
               rankings — built for MBA candidates who are serious about where
               they land.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-5">
-              <Link to="/join" className="btn-primary h-12 px-6 text-[13px]">
+              <Link to="/join" className="btn-primary h-12 px-6 text-[14px]">
                 Start Preparing — It's Free
               </Link>
-              <Link to="/login" className="btn-ghost text-[13px] font-semibold">
+              <Link to="/login" className="btn-ghost text-[14px] font-semibold">
                 See How It Works →
               </Link>
             </div>
@@ -175,12 +175,12 @@ function Home() {
             Stop hoping you'll get the job.<br />
             <span style={{ color: "#e8490f" }}>Engineer the outcome.</span>
           </h2>
-          <p className="mt-6 text-[#8a9bb0] font-light max-w-[560px] mx-auto leading-[1.65]" style={{ fontSize: "15px" }}>
+          <p className="mt-6 text-[#8a9bb0] font-light max-w-[560px] mx-auto leading-[1.65]" style={{ fontSize: "16px" }}>
             ₹99/month — less than your last chai run. Daily reps, AI scoring, live
             leaderboards. Built by a student. Priced like one.
           </p>
           <div className="mt-10">
-            <Link to="/join" className="btn-primary h-12 px-8 text-[13px]">
+            <Link to="/join" className="btn-primary h-12 px-8 text-[14px]">
               Start Preparing — It's Free
             </Link>
           </div>
@@ -379,7 +379,7 @@ function Step({
       >
         {title}
       </h3>
-      <p className="mt-3 text-[#4a5d76] font-light leading-[1.6]" style={{ fontSize: "13px" }}>
+      <p className="mt-3 text-[#4a5d76] font-light leading-[1.6]" style={{ fontSize: "14px" }}>
         {body}
       </p>
     </div>
@@ -406,7 +406,7 @@ function CompanyCard({
     >
       <p
         className="font-bold text-[#0a1628]"
-        style={{ fontSize: "14px", letterSpacing: "-0.01em" }}
+        style={{ fontSize: "15px", letterSpacing: "-0.01em" }}
       >
         {c.name}
       </p>
@@ -418,13 +418,13 @@ function CompanyCard({
       </p>
       <p
         className="mt-4 text-[#4a5d76] font-light leading-[1.55]"
-        style={{ fontSize: "12px" }}
+        style={{ fontSize: "13px" }}
       >
         {c.style}
       </p>
       <p
         className="mt-5 font-semibold text-[#e8490f] cursor-pointer hover:text-[#c03a08]"
-        style={{ fontSize: "12px" }}
+        style={{ fontSize: "13px" }}
       >
         View Profile →
       </p>

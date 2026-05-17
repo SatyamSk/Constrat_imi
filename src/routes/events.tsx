@@ -216,12 +216,12 @@ function Competitions() {
         {loading && (
           <div className="card-base p-12 text-center mb-8">
             <div className="w-8 h-8 mx-auto rounded-full border-2 border-orange border-t-transparent animate-spin" />
-            <p className="mt-4 text-[13px] text-text-muted">Loading competitions…</p>
+            <p className="mt-4 text-[15px] text-text-muted">Loading competitions…</p>
           </div>
         )}
 
         {!loading && filtered.length === 0 && (
-          <p className="text-center text-text-muted py-16 text-[14px]">
+          <p className="text-center text-text-muted py-16 text-[15px]">
             Nothing matches. Clear filters or check back after the next refresh.
           </p>
         )}

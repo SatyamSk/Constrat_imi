@@ -3,8 +3,8 @@
 @import "tw-animate-css";
 
 /* ============================================================
-   CONSTRAT — BLOOMBERG / BCG DESIGN SYSTEM
-   Pure white canvas, navy graph-paper grid, Helvetica Neue
+   CONSTRAT — DESIGN SYSTEM
+   Pure white canvas, navy graph-paper grid, Henderson BCG / Helvetica
    ============================================================ */
 
 @theme inline {
@@ -56,18 +56,23 @@
   --color-tag-urgent-bg: var(--tag-urgent-bg);
   --color-tag-urgent-text: var(--tag-urgent-text);
 
-  /* Typography — NO SERIFS ANYWHERE */
-  --font-serif: "Helvetica Neue", Helvetica, Arial, sans-serif;
-  --font-sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
-  --font-mono: "JetBrains Mono", "Helvetica Neue", monospace;
+  /* ============================================================
+     SINGLE FONT STACK — Henderson BCG Sans is the canonical face;
+     everywhere it's not available, Helvetica Neue is the fallback.
+     ALL of these aliases resolve to the same stack so legacy
+     class="font-serif" still renders the canonical sans.
+     ============================================================ */
+  --font-sans:  "Henderson BCG Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-serif: "Henderson BCG Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-mono:  "Henderson BCG Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
 :root {
   --radius: 4px;
 
   /* ── BLOOMBERG / BCG PALETTE ── */
-  --background: #ffffff;          /* PURE white, not cream */
-  --foreground: #0a1628;          /* Navy text */
+  --background: #ffffff;
+  --foreground: #0a1628;
   --surface: #ffffff;
   --section-alt: #f7fafc;
   --card: #ffffff;
@@ -88,25 +93,22 @@
   --input: #e2e8f0;
   --ring: #e8490f;
 
-  /* Brand */
   --orange: #e8490f;
   --orange-hover: #c03a08;
-  --orange-tint: #fdf0eb;          /* Orange muted background */
+  --orange-tint: #fdf0eb;
   --orange-deep: #b83208;
-  --text-primary: #0a1628;         /* Navy */
+  --text-primary: #0a1628;
   --text-secondary: #4a5d76;
   --text-muted: #8a9bb0;
-  --dark: #0a1628;                 /* Navy surface */
-  --success: #16a34a;              /* Live green */
+  --dark: #0a1628;
+  --success: #16a34a;
   --success-bg: rgba(22, 163, 74, 0.08);
-  --urgent: #dc2626;               /* Data red */
+  --urgent: #dc2626;
   --urgent-bg: rgba(220, 38, 38, 0.06);
 
-  /* Grid line tokens — THE signature element */
   --grid-line: #e8eef4;
   --grid-line-major: #c8d8e8;
 
-  /* Tag color tokens */
   --tag-comp-bg: #fdf0eb;
   --tag-comp-text: #e8490f;
   --tag-intern-bg: rgba(37, 99, 235, 0.08);
@@ -118,7 +120,7 @@
 }
 
 /* ============================================================
-   BASE LAYER
+   BASE LAYER — bumped from 14px base → 16px base
    ============================================================ */
 @layer base {
   * {
@@ -130,29 +132,67 @@
     -webkit-tap-highlight-color: transparent;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    font-size: 16px;        /* root for rem-based scales */
   }
 
-  html,
-  body {
+  html, body {
     background-color: var(--color-background);
     color: var(--color-text-primary);
-    font-family: var(--font-sans);
-    font-size: 14px;
-    line-height: 1.6;
+    font-family: var(--font-sans) !important;
+    font-size: 16px;        /* body base size */
+    line-height: 1.55;
+    letter-spacing: -0.005em;
     overflow-x: hidden;
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    letter-spacing: -0.005em;
   }
 
-  /* No serifs anywhere — h tags inherit Helvetica too */
-  h1, h2, h3, h4, h5 {
-    font-family: var(--font-sans);
-    color: var(--color-text-primary);
-    letter-spacing: -0.025em;
-    line-height: 1.1;
+  /* ALL headings use the same single font stack — no exceptions */
+  h1, h2, h3, h4, h5, h6,
+  .font-serif, .font-sans, .font-mono {
+    font-family: var(--font-sans) !important;
+  }
+
+  h1 {
+    font-size: clamp(40px, 5vw, 56px);
+    line-height: 1.05;
+    letter-spacing: -0.03em;
     font-weight: 700;
+    color: var(--color-text-primary);
+  }
+  h2 {
+    font-size: clamp(28px, 3.4vw, 38px);
+    line-height: 1.1;
+    letter-spacing: -0.025em;
+    font-weight: 700;
+    color: var(--color-text-primary);
+  }
+  h3 {
+    font-size: clamp(20px, 2vw, 24px);
+    line-height: 1.25;
+    letter-spacing: -0.015em;
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+  h4 {
+    font-size: 18px;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+  h5 {
+    font-size: 16px;
+    line-height: 1.35;
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+
+  p {
+    font-size: 16px;
+    line-height: 1.65;
+    color: var(--color-text-secondary);
   }
 
   ::selection {
@@ -161,8 +201,8 @@
   }
 
   ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 8px;
+    height: 8px;
   }
   ::-webkit-scrollbar-track {
     background: transparent;
@@ -175,8 +215,8 @@
     background: #8a9bb0;
   }
 
-  /* Tabular numbers feel — applied to anything monospace or number-heavy */
-  code, .font-mono, .tabular {
+  code, .tabular {
+    font-family: var(--font-sans);
     font-variant-numeric: tabular-nums;
     font-feature-settings: "tnum" 1;
   }
@@ -185,18 +225,13 @@
 /* ============================================================
    THE SIGNATURE GRID
    Light navy graph-paper texture, 40px minor, 200px major
-   Applied via `.grid-bg` to any white surface
    ============================================================ */
 .grid-bg {
   background-color: #ffffff;
   background-image:
-    /* Major vertical lines every 200px */
     linear-gradient(to right, var(--grid-line-major) 1px, transparent 1px),
-    /* Major horizontal lines every 200px */
     linear-gradient(to bottom, var(--grid-line-major) 1px, transparent 1px),
-    /* Minor vertical lines every 40px */
     linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
-    /* Minor horizontal lines every 40px */
     linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
   background-size:
     200px 200px,
@@ -206,7 +241,6 @@
   background-position: 0 0, 0 0, 0 0, 0 0;
 }
 
-/* Grid on dark navy surfaces — white lines at 5% opacity */
 .grid-bg-dark {
   background-color: #0a1628;
   background-image:
@@ -217,7 +251,17 @@
   background-size: 200px 200px, 200px 200px, 40px 40px, 40px 40px;
 }
 
-/* The body itself gets the subtle grid for the global Bloomberg feel */
+.grid-workspace {
+  background-color: #ffffff;
+  background-image:
+    linear-gradient(to right, #c8d8e8 1px, transparent 1px),
+    linear-gradient(to bottom, #c8d8e8 1px, transparent 1px),
+    linear-gradient(to right, #e8eef4 1px, transparent 1px),
+    linear-gradient(to bottom, #e8eef4 1px, transparent 1px);
+  background-size: 160px 160px, 160px 160px, 40px 40px, 40px 40px;
+}
+
+/* The body itself gets the subtle grid — so every page is on graph paper */
 body {
   background-image:
     linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
@@ -230,29 +274,23 @@ body {
    UTILITIES
    ============================================================ */
 @layer utilities {
-  .font-serif,
-  .font-sans {
-    font-family: var(--font-sans);
-  }
-
-  /* --- Eyebrow & Label --- */
+  /* Eyebrow & Label */
   .label-eyebrow {
-    font-size: 10px;
+    font-size: 11px;
     text-transform: uppercase;
-    letter-spacing: 0.1em;
-    font-weight: 600;
+    letter-spacing: 0.12em;
+    font-weight: 700;
     color: var(--color-text-muted);
-    font-family: var(--font-sans);
   }
   .label-orange {
-    font-size: 10px;
+    font-size: 11px;
     text-transform: uppercase;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.12em;
     font-weight: 700;
     color: var(--color-orange);
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     padding: 4px 0;
     background: transparent;
     border: none;
@@ -260,12 +298,12 @@ body {
   .label-orange::before {
     content: "";
     display: inline-block;
-    width: 2px;
-    height: 12px;
+    width: 3px;
+    height: 14px;
     background: var(--color-orange);
   }
 
-  /* --- Cards: sharp corners, navy borders --- */
+  /* Cards — sharp corners, navy borders */
   .card-base {
     background: var(--color-card);
     border: 1px solid var(--color-border);
@@ -279,14 +317,12 @@ body {
     background: #fafcfe;
   }
 
-  /* Sharp surface used inside dense layouts */
   .surface-flat {
     background: var(--color-card);
     border: 1px solid var(--color-border);
     border-radius: 4px;
   }
 
-  /* Glass header — solid white, no blur */
   .glass-dark {
     background: rgba(255, 255, 255, 0.96);
     backdrop-filter: blur(8px) saturate(180%);
@@ -294,10 +330,10 @@ body {
     border-bottom: 1px solid var(--color-border);
   }
 
-  /* --- Pulse dot --- */
+  /* Pulse dot */
   .pulse-dot {
-    width: 6px;
-    height: 6px;
+    width: 7px;
+    height: 7px;
     border-radius: 9999px;
     background: var(--color-success);
     box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.5);
@@ -306,15 +342,15 @@ body {
   }
   @keyframes pulseDot {
     0% { box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.55); }
-    70% { box-shadow: 0 0 0 6px rgba(22, 163, 74, 0); }
+    70% { box-shadow: 0 0 0 7px rgba(22, 163, 74, 0); }
     100% { box-shadow: 0 0 0 0 rgba(22, 163, 74, 0); }
   }
 
-  /* --- Pills (sharper, more terminal-like) --- */
+  /* Pills */
   .pill {
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 600;
-    padding: 3px 8px;
+    padding: 4px 9px;
     border-radius: 2px;
     display: inline-flex;
     align-items: center;
@@ -340,55 +376,48 @@ body {
     color: #ffffff;
   }
 
-  /* --- Animations --- */
-  .fade-in {
-    animation: fadeIn 400ms cubic-bezier(0.4, 0, 0.2, 1) both;
-  }
+  /* Animations */
+  .fade-in { animation: fadeIn 400ms cubic-bezier(0.4, 0, 0.2, 1) both; }
   @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: none; }
   }
-  .fade-up {
-    animation: fadeUp 600ms cubic-bezier(0.4, 0, 0.2, 1) both;
-  }
+  .fade-up { animation: fadeUp 600ms cubic-bezier(0.4, 0, 0.2, 1) both; }
   @keyframes fadeUp {
     from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: none; }
   }
 
-  /* --- Buttons: sharp pills, no gradient --- */
+  /* Buttons */
   .btn-primary {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    height: 40px;
-    padding: 0 20px;
+    height: 46px;
+    padding: 0 22px;
     border-radius: 999px;
     background: var(--color-orange);
     color: #fff;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     letter-spacing: -0.005em;
     transition: background-color 150ms ease;
     cursor: pointer;
     border: none;
-    box-shadow: none;
   }
-  .btn-primary:hover {
-    background: var(--color-orange-hover);
-  }
+  .btn-primary:hover { background: var(--color-orange-hover); }
+
   .btn-secondary {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    height: 40px;
-    padding: 0 20px;
+    height: 46px;
+    padding: 0 22px;
     border-radius: 999px;
     background: transparent;
     color: var(--color-text-primary);
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
-    letter-spacing: -0.005em;
     border: 1px solid var(--color-border);
     transition: all 150ms ease;
     cursor: pointer;
@@ -397,12 +426,12 @@ body {
     border-color: var(--color-text-primary);
     background: var(--color-muted);
   }
+
   .btn-ghost {
     display: inline-flex;
     align-items: center;
-    font-size: 13px;
-    font-weight: 500;
-    letter-spacing: -0.005em;
+    font-size: 14px;
+    font-weight: 600;
     color: var(--color-orange);
     cursor: pointer;
     transition: color 150ms;
@@ -410,57 +439,53 @@ body {
     background: none;
     padding: 0;
   }
-  .btn-ghost:hover {
-    color: var(--color-orange-hover);
-  }
+  .btn-ghost:hover { color: var(--color-orange-hover); }
+
   .btn-dark {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    height: 40px;
-    padding: 0 20px;
+    height: 46px;
+    padding: 0 22px;
     border-radius: 999px;
     background: #0a1628;
     color: #fff;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     border: none;
     cursor: pointer;
     transition: background-color 150ms ease;
   }
-  .btn-dark:hover {
-    background: #162236;
-  }
+  .btn-dark:hover { background: #162236; }
 
-  /* --- Input fields — sharp, minimal --- */
+  /* Inputs */
   .input-base {
     display: block;
-    height: 40px;
-    padding: 0 14px;
+    height: 46px;
+    padding: 0 16px;
     border-radius: 4px;
     border: 1px solid var(--color-border);
     background: var(--color-surface);
     color: var(--color-text-primary);
-    font-size: 13px;
+    font-size: 15px;
     font-family: var(--font-sans);
     transition: border-color 150ms ease, box-shadow 150ms ease;
     outline: none;
   }
-  .input-base::placeholder {
-    color: var(--color-text-muted);
-  }
+  .input-base::placeholder { color: var(--color-text-muted); }
   .input-base:focus {
     border-color: var(--color-orange);
     box-shadow: 0 0 0 3px rgba(232, 73, 15, 0.1);
   }
   textarea.input-base {
     height: auto;
-    padding: 12px 14px;
+    padding: 12px 16px;
     resize: vertical;
     line-height: 1.6;
+    font-size: 14px;
   }
 
-  /* --- Bento Grid kept for legacy --- */
+  /* Bento Grid (legacy) */
   .bento-grid {
     display: grid;
     grid-template-columns: repeat(7, minmax(50px, 1fr));
@@ -477,7 +502,7 @@ body {
 }
 
 /* ============================================================
-   TERMINAL — MONO TICKER MARQUEE
+   TICKER MARQUEE
    ============================================================ */
 .ticker-track {
   display: flex;
@@ -490,92 +515,19 @@ body {
   100% { transform: translateX(-50%); }
 }
 
-/* ============================================================
-   GROUND-NEWS STYLE BIAS BARS / ACCENT RULES
-   ============================================================ */
 .accent-rule {
-  border-left: 2px solid var(--color-orange);
-  padding-left: 12px;
+  border-left: 3px solid var(--color-orange);
+  padding-left: 14px;
 }
 
-/* ============================================================
-   FRAMEWORK GRID (CASE WORKSPACE)
-   When you want the grid to be VISIBLE not subtle
-   ============================================================ */
-.grid-workspace {
-  background-color: #ffffff;
-  background-image:
-    linear-gradient(to right, #c8d8e8 1px, transparent 1px),
-    linear-gradient(to bottom, #c8d8e8 1px, transparent 1px),
-    linear-gradient(to right, #e8eef4 1px, transparent 1px),
-    linear-gradient(to bottom, #e8eef4 1px, transparent 1px);
-  background-size: 160px 160px, 160px 160px, 40px 40px, 40px 40px;
-}
-
-/* ============================================================
-   MOBILE RESPONSIVE
-   ============================================================ */
-@media (max-width: 768px) {
-  html, body {
-    font-size: 14px;
-  }
-  h1 { font-size: clamp(28px, 8vw, 44px) !important; }
-  h2 { font-size: clamp(24px, 6vw, 36px) !important; }
-  .btn-primary, .btn-secondary, .btn-dark {
-    height: 38px;
-    padding: 0 16px;
-    font-size: 12px;
-  }
-  .input-base {
-    height: 38px;
-    font-size: 13px;
-  }
-  .bento-grid {
-    grid-template-columns: repeat(2, minmax(50px, 1fr));
-  }
-  .bento-span-2, .bento-span-3, .bento-span-4, .bento-span-5 {
-    grid-column: 1 / -1;
-  }
-}
-@media (min-width: 769px) and (max-width: 1199px) {
-  .bento-grid {
-    grid-template-columns: repeat(6, minmax(50px, 1fr));
-  }
-}
-@media (max-width: 480px) {
-  .btn-primary, .btn-secondary, .btn-dark {
-    width: 100%;
-  }
-}
-
-/* ============================================================
-   PAGE TRANSITIONS
-   ============================================================ */
-@view-transition {
-  navigation: auto;
-}
-::view-transition-old(root),
-::view-transition-new(root) {
-  animation-duration: 200ms;
-}
-
-/* ============================================================
-   UTILITY HELPERS RETAINED
-   ============================================================ */
-.text-gradient {
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  -webkit-background-clip: text;
-}
-
-/* Italic-emphasis the brief asks for (used in hero) */
+/* Italic-emphasis used in hero */
 .brand-italic {
   font-style: italic;
   font-weight: 700;
   color: var(--color-orange);
 }
 
-/* Stagger children for marketing pages */
+/* Stagger children */
 .stagger-children > * {
   opacity: 0;
   transform: translateY(20px);
@@ -589,4 +541,41 @@ body {
 .stagger-children > *:nth-child(6) { animation-delay: 0.25s; }
 @keyframes staggerIn {
   to { opacity: 1; transform: none; }
+}
+
+.text-gradient {
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  -webkit-background-clip: text;
+}
+
+/* ============================================================
+   MOBILE RESPONSIVE — keep generous sizes
+   ============================================================ */
+@media (max-width: 768px) {
+  html, body { font-size: 15px; }
+  h1 { font-size: clamp(32px, 8vw, 44px); }
+  h2 { font-size: clamp(24px, 6vw, 32px); }
+  h3 { font-size: 18px; }
+  .btn-primary, .btn-secondary, .btn-dark {
+    height: 44px;
+    padding: 0 18px;
+    font-size: 14px;
+  }
+  .input-base { height: 44px; font-size: 14px; }
+  .bento-grid { grid-template-columns: repeat(2, minmax(50px, 1fr)); }
+  .bento-span-2, .bento-span-3, .bento-span-4, .bento-span-5 {
+    grid-column: 1 / -1;
+  }
+}
+@media (min-width: 769px) and (max-width: 1199px) {
+  .bento-grid { grid-template-columns: repeat(6, minmax(50px, 1fr)); }
+}
+@media (max-width: 480px) {
+  .btn-primary, .btn-secondary, .btn-dark { width: 100%; }
+}
+
+@view-transition { navigation: auto; }
+::view-transition-old(root), ::view-transition-new(root) {
+  animation-duration: 200ms;
 }

@@ -85,7 +85,7 @@ function Join() {
           </svg>
         </div>
         <h1 className="font-serif text-[28px]">Check your email</h1>
-        <p className="mt-3 text-[14px] text-text-secondary leading-[1.65]">
+        <p className="mt-3 text-[15px] text-text-secondary leading-[1.65]">
           We sent a confirmation link to <strong>{email}</strong>. Click it to
           activate your account, then come back and log in.
         </p>
@@ -111,7 +111,7 @@ function Join() {
           </svg>
         </div>
         <h1 className="font-serif text-[28px]">Account created!</h1>
-        <p className="mt-3 text-[14px] text-text-secondary leading-[1.65]">
+        <p className="mt-3 text-[15px] text-text-secondary leading-[1.65]">
           Welcome to Constrat. Taking you to your dashboard…
         </p>
       </CenteredCard>
@@ -135,7 +135,7 @@ function Join() {
         </Link>
 
         <h1 className="font-serif text-[32px] text-center leading-[1.1]">Start preparing today.</h1>
-        <p className="mt-3 text-[14px] text-text-secondary text-center">
+        <p className="mt-3 text-[15px] text-text-secondary text-center">
           Free. No credit card. Instant access to daily cases.
         </p>
 
@@ -143,7 +143,7 @@ function Join() {
           type="button"
           onClick={handleGoogle}
           disabled={loading}
-          className="mt-8 w-full h-[48px] flex items-center justify-center gap-3 border border-border rounded-[10px] text-[14px] font-medium hover:border-text-primary transition-colors bg-white disabled:opacity-50"
+          className="mt-8 w-full h-[48px] flex items-center justify-center gap-3 border border-border rounded-[10px] text-[15px] font-medium hover:border-text-primary transition-colors bg-white disabled:opacity-50"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />
@@ -186,7 +186,7 @@ function Join() {
             className="input-base w-full"
           />
           {error && (
-            <p className="text-[13px] text-urgent" role="alert">
+            <p className="text-[15px] text-urgent" role="alert">
               {error}
             </p>
           )}
@@ -195,7 +195,7 @@ function Join() {
           </button>
         </form>
 
-        <p className="mt-6 text-center text-[13px] text-text-muted">
+        <p className="mt-6 text-center text-[15px] text-text-muted">
           Already have an account?{" "}
           <Link to="/login" className="text-orange font-semibold hover:underline">
             Login

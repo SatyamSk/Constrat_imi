@@ -79,7 +79,7 @@ function ResetPassword() {
               </svg>
             </div>
             <h1 className="font-serif text-[28px]">Password updated</h1>
-            <p className="mt-3 text-[14px] text-text-secondary">
+            <p className="mt-3 text-[15px] text-text-secondary">
               Taking you to your dashboard…
             </p>
           </div>
@@ -88,7 +88,7 @@ function ResetPassword() {
             <h1 className="font-serif text-[32px] text-center leading-[1.1]">
               Choose a new password
             </h1>
-            <p className="mt-3 text-[14px] text-text-secondary text-center">
+            <p className="mt-3 text-[15px] text-text-secondary text-center">
               Pick something memorable. At least 6 characters.
             </p>
 
@@ -110,7 +110,7 @@ function ResetPassword() {
                 className="input-base w-full"
               />
               {error && (
-                <p className="text-[13px] text-urgent" role="alert">
+                <p className="text-[15px] text-urgent" role="alert">
                   {error}
                 </p>
               )}

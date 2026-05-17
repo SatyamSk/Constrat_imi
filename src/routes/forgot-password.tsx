@@ -72,7 +72,7 @@ function ForgotPassword() {
               </svg>
             </div>
             <h1 className="font-serif text-[28px]">Check your email</h1>
-            <p className="mt-3 text-[14px] text-text-secondary leading-[1.65]">
+            <p className="mt-3 text-[15px] text-text-secondary leading-[1.65]">
               We sent a password-reset link to <strong>{email}</strong>. Click it
               to choose a new password.
             </p>
@@ -88,7 +88,7 @@ function ForgotPassword() {
             <h1 className="font-serif text-[32px] text-center leading-[1.1]">
               Reset your password
             </h1>
-            <p className="mt-3 text-[14px] text-text-secondary text-center">
+            <p className="mt-3 text-[15px] text-text-secondary text-center">
               Enter the email you used to sign up. We'll send a reset link.
             </p>
 
@@ -102,7 +102,7 @@ function ForgotPassword() {
                 className="input-base w-full"
               />
               {error && (
-                <p className="text-[13px] text-urgent" role="alert">
+                <p className="text-[15px] text-urgent" role="alert">
                   {error}
                 </p>
               )}
@@ -115,7 +115,7 @@ function ForgotPassword() {
               </button>
             </form>
 
-            <p className="mt-6 text-center text-[13px] text-text-muted">
+            <p className="mt-6 text-center text-[15px] text-text-muted">
               Remembered it?{" "}
               <Link to="/login" className="text-orange font-semibold hover:underline">
                 Back to login

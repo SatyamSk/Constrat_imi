@@ -187,7 +187,7 @@ function CaseDetail() {
         className="h-11 px-5 md:px-6 flex items-center justify-between"
         style={{ background: "#0a1628" }}
       >
-        <div className="flex items-center gap-2 text-white/50 text-[12px] font-light">
+        <div className="flex items-center gap-2 text-white/50 text-[13px] font-light">
           <Link to="/practice" className="hover:text-white">Case Bank</Link>
           <span>→</span>
           <span className="text-white">{caseRow?.name || "Case"}</span>
@@ -201,7 +201,7 @@ function CaseDetail() {
           </div>
           <div
             className="text-[#e8490f] font-bold tabular-nums"
-            style={{ fontSize: "15px" }}
+            style={{ fontSize: "16px" }}
           >
             {mins.toString().padStart(2, "0")}:{secs.toString().padStart(2, "0")}
           </div>
@@ -218,7 +218,7 @@ function CaseDetail() {
           >
             <div className="max-w-[760px] mx-auto">
               {loadingCase ? (
-                <p className="text-[#8a9bb0] text-[13px]">Loading case…</p>
+                <p className="text-[#8a9bb0] text-[14px]">Loading case…</p>
               ) : (
                 <div className="accent-rule">
                   <span className="text-[10px] uppercase tracking-[0.1em] font-bold text-[#e8490f]">
@@ -259,7 +259,7 @@ function CaseDetail() {
                     onChange={(e) => setAnswer(e.target.value)}
                     rows={12}
                     placeholder="Build your framework here. Use bullets like:&#10;&#10;1. Define the market&#10;   - Premium segment = ?&#10;   - Geographic scope = ?&#10;&#10;2. Size top-down&#10;   - Pet HHs × adoption % × spend&#10;&#10;3. Key assumption to flag..."
-                    className="w-full bg-white/80 backdrop-blur p-5 text-[13px] font-mono leading-[1.7] text-[#0a1628] resize-y outline-none"
+                    className="w-full bg-white/80 backdrop-blur p-5 text-[14px] font-mono leading-[1.7] text-[#0a1628] resize-y outline-none"
                     style={{
                       border: "1px solid #c8d8e8",
                       borderRadius: "4px",
@@ -277,7 +277,7 @@ function CaseDetail() {
                   </div>
 
                   {error && (
-                    <p className="text-[12px] text-[#dc2626]" role="alert">
+                    <p className="text-[13px] text-[#dc2626]" role="alert">
                       {error}
                     </p>
                   )}
@@ -286,7 +286,7 @@ function CaseDetail() {
                     <button
                       type="submit"
                       disabled={submitting}
-                      className="btn-primary h-12 px-7 text-[13px] disabled:opacity-60"
+                      className="btn-primary h-12 px-7 text-[14px] disabled:opacity-60"
                     >
                       {submitting ? "Analysing with GPT-4o…" : "Submit Structure →"}
                     </button>
@@ -364,7 +364,7 @@ function CaseDetail() {
             <div>
               <button
                 className="w-full text-left text-white/60 hover:text-white transition-colors flex items-center justify-between"
-                style={{ fontSize: "12px", fontWeight: 300 }}
+                style={{ fontSize: "13px", fontWeight: 300 }}
                 onClick={() => alert("Hints will be available in a future release.")}
               >
                 <span>Smart Hint — costs 5 points</span>
@@ -510,7 +510,7 @@ function ResultPanel({
           <p className="text-[#8a9bb0] pb-3 font-light">/ 100</p>
         </div>
         {myRank ? (
-          <p className="mt-2 text-[14px] text-[#4a5d76]">
+          <p className="mt-2 text-[15px] text-[#4a5d76]">
             Ranked <strong className="text-[#0a1628]">#{myRank}</strong> of {totalSolvers} solvers.
           </p>
         ) : null}
@@ -540,10 +540,10 @@ function ResultPanel({
 
         <div className="mt-6 surface-flat p-5">
           <p className="label-eyebrow">FRAMEWORK DETECTED</p>
-          <p className="mt-1 text-[15px] font-bold text-[#0a1628]">{result.framework}</p>
+          <p className="mt-1 text-[16px] font-bold text-[#0a1628]">{result.framework}</p>
 
           <p className="label-eyebrow mt-5">FEEDBACK</p>
-          <p className="mt-1 text-[13px] text-[#0a1628] leading-[1.6]">{result.feedback}</p>
+          <p className="mt-1 text-[14px] text-[#0a1628] leading-[1.6]">{result.feedback}</p>
 
           {result.strengths?.length > 0 && (
             <div className="mt-5">
@@ -552,7 +552,7 @@ function ResultPanel({
                 {result.strengths.map((s, i) => (
                   <li
                     key={i}
-                    className="text-[13px] text-[#0a1628] flex gap-2"
+                    className="text-[14px] text-[#0a1628] flex gap-2"
                   >
                     <span className="text-[#16a34a] font-bold">+</span>
                     <span>{s}</span>
@@ -568,7 +568,7 @@ function ResultPanel({
                 {result.improvements.map((s, i) => (
                   <li
                     key={i}
-                    className="text-[13px] text-[#0a1628] flex gap-2"
+                    className="text-[14px] text-[#0a1628] flex gap-2"
                   >
                     <span className="text-[#e8490f] font-bold">→</span>
                     <span>{s}</span>

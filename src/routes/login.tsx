@@ -66,7 +66,7 @@ function Login() {
         </Link>
 
         <h1 className="font-serif text-[32px] text-center leading-[1.1]">Welcome back.</h1>
-        <p className="mt-3 text-[14px] text-text-secondary text-center">
+        <p className="mt-3 text-[15px] text-text-secondary text-center">
           Your daily case is waiting.
         </p>
 
@@ -74,7 +74,7 @@ function Login() {
           type="button"
           onClick={handleGoogle}
           disabled={loading}
-          className="mt-8 w-full h-[48px] flex items-center justify-center gap-3 border border-border rounded-[10px] text-[14px] font-medium hover:border-text-primary transition-colors bg-white disabled:opacity-50"
+          className="mt-8 w-full h-[48px] flex items-center justify-center gap-3 border border-border rounded-[10px] text-[15px] font-medium hover:border-text-primary transition-colors bg-white disabled:opacity-50"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true">
             <path
@@ -121,7 +121,7 @@ function Login() {
             className="input-base w-full"
           />
           {error && (
-            <p className="text-[13px] text-urgent" role="alert">
+            <p className="text-[15px] text-urgent" role="alert">
               {error}
             </p>
           )}
@@ -136,7 +136,7 @@ function Login() {
           </Link>
         </p>
 
-        <p className="mt-6 text-center text-[13px] text-text-muted">
+        <p className="mt-6 text-center text-[15px] text-text-muted">
           Don't have an account?{" "}
           <Link to="/join" className="text-orange font-semibold hover:underline">
             Sign up free

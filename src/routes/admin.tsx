@@ -77,7 +77,7 @@ function Admin() {
             <button
               key={t}
               onClick={() => setTab(t)}
-              className="px-4 h-9 rounded-lg text-[13px] font-medium border capitalize transition-colors"
+              className="px-4 h-9 rounded-lg text-[15px] font-medium border capitalize transition-colors"
               style={
                 tab === t
                   ? { background: "#E8490F", color: "#fff", borderColor: "#E8490F" }
@@ -237,7 +237,7 @@ function CaseDeckUploader() {
   return (
     <div>
       <h2 className="font-serif text-[28px] font-semibold">Case Deck Upload</h2>
-      <p className="mt-2 text-[14px] text-text-secondary">
+      <p className="mt-2 text-[15px] text-text-secondary">
         Drop files or folders. Select multiple folders one by one — they all add to the queue. Drag
         multiple folders at once too.
       </p>
@@ -253,12 +253,12 @@ function CaseDeckUploader() {
         onDragLeave={(e) => e.currentTarget.classList.remove("border-orange")}
         onDrop={handleDrop}
       >
-        <p className="text-[16px] font-semibold text-text-primary">Drop files or folders here</p>
-        <p className="mt-1 text-[13px] text-text-muted">
+        <p className="text-[17px] font-semibold text-text-primary">Drop files or folders here</p>
+        <p className="mt-1 text-[15px] text-text-muted">
           Any format — PDF, PPT, XLSX, DOCX, images, ZIP — or entire folders. Keep adding more!
         </p>
         {queue.length > 0 && (
-          <p className="mt-2 text-[13px] text-orange font-semibold">
+          <p className="mt-2 text-[15px] text-orange font-semibold">
             {queue.length} file(s) in queue
           </p>
         )}
@@ -268,7 +268,7 @@ function CaseDeckUploader() {
               e.stopPropagation();
               fileRef.current?.click();
             }}
-            className="btn-secondary text-[13px] h-9 px-4"
+            className="btn-secondary text-[15px] h-9 px-4"
           >
             + Select Files
           </button>
@@ -277,7 +277,7 @@ function CaseDeckUploader() {
               e.stopPropagation();
               folderRef.current?.click();
             }}
-            className="btn-secondary text-[13px] h-9 px-4"
+            className="btn-secondary text-[15px] h-9 px-4"
           >
             + Select Folder
           </button>
@@ -323,9 +323,9 @@ function CaseDeckUploader() {
       {queue.length > 0 && (
         <div className="mt-8">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-[16px] font-semibold">{queue.length} file(s) in queue</h3>
+            <h3 className="text-[17px] font-semibold">{queue.length} file(s) in queue</h3>
             {pendingCount > 0 && (
-              <button onClick={uploadAll} className="btn-primary h-10 px-5 text-[13px]">
+              <button onClick={uploadAll} className="btn-primary h-10 px-5 text-[15px]">
                 Upload {pendingCount} file(s)
               </button>
             )}
@@ -338,7 +338,7 @@ function CaseDeckUploader() {
                     <input
                       value={item.cleanName}
                       onChange={(e) => updateItem(idx, { cleanName: e.target.value })}
-                      className="input-base w-full text-[14px] font-semibold"
+                      className="input-base w-full text-[15px] font-semibold"
                       disabled={item.status !== "pending"}
                     />
                     <div className="mt-2 flex gap-2 flex-wrap">
@@ -375,7 +375,7 @@ function CaseDeckUploader() {
                       </span>
                     </div>
                   </div>
-                  <div className="shrink-0 text-[13px] font-medium w-20 text-right">
+                  <div className="shrink-0 text-[15px] font-medium w-20 text-right">
                     {item.status === "pending" && <span className="text-text-muted">Pending</span>}
                     {item.status === "uploading" && (
                       <span className="text-orange">Uploading...</span>
@@ -491,7 +491,7 @@ function DeadlineManager() {
         <button onClick={addDeadline} className="btn-primary w-full">
           Add Deadline
         </button>
-        {msg && <p className="text-[13px] text-success">{msg}</p>}
+        {msg && <p className="text-[15px] text-success">{msg}</p>}
       </div>
     </div>
   );
@@ -530,7 +530,7 @@ function CompetitionManager() {
   return (
     <div>
       <h2 className="font-serif text-[28px] font-semibold">Add Competition</h2>
-      <p className="mt-2 text-[14px] text-text-secondary">
+      <p className="mt-2 text-[15px] text-text-secondary">
         From Unstop, Grad Partners, Kampus Connect, or any platform.
       </p>
       <div className="mt-6 card-base p-6 space-y-4 max-w-[600px]">
@@ -585,7 +585,7 @@ function CompetitionManager() {
         <button onClick={addComp} className="btn-primary w-full">
           Add Competition
         </button>
-        {msg && <p className="text-[13px] text-success">{msg}</p>}
+        {msg && <p className="text-[15px] text-success">{msg}</p>}
       </div>
     </div>
   );
@@ -659,7 +659,7 @@ function NewsManager() {
         <button onClick={addNews} className="btn-primary w-full">
           Add News
         </button>
-        {msg && <p className="text-[13px] text-success">{msg}</p>}
+        {msg && <p className="text-[15px] text-success">{msg}</p>}
       </div>
     </div>
   );
@@ -689,14 +689,14 @@ function TimetableManager() {
   return (
     <div>
       <h2 className="font-serif text-[28px] font-semibold">Timetable Sync</h2>
-      <p className="mt-2 text-[14px] text-text-secondary">
+      <p className="mt-2 text-[15px] text-text-secondary">
         Manually trigger timetable sync from Google Sheet.
       </p>
       <div className="mt-6 card-base p-6 max-w-[600px]">
         <button onClick={triggerSync} disabled={syncing} className="btn-primary w-full">
           {syncing ? "Syncing..." : "Trigger Timetable Sync"}
         </button>
-        {result && <p className="mt-3 text-[13px] text-text-secondary">{result}</p>}
+        {result && <p className="mt-3 text-[15px] text-text-secondary">{result}</p>}
       </div>
     </div>
   );

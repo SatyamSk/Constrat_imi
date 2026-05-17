@@ -145,7 +145,7 @@ function SubmitCase() {
       />
       <div className="mx-auto max-w-[1180px] px-5 md:px-6 pb-20">
         <div className="mb-4">
-          <Link to="/cases" className="text-[13px] text-orange hover:underline">
+          <Link to="/cases" className="text-[15px] text-orange hover:underline">
             → Browse curated cases with rankings
           </Link>
         </div>
@@ -175,7 +175,7 @@ function SubmitCase() {
                         onChange={(e) => setCasePrompt(e.target.value)}
                         placeholder="Paste the case prompt the AI should evaluate your answer against."
                         rows={4}
-                        className="input-base w-full text-[13px]"
+                        className="input-base w-full text-[15px]"
                       />
                     </div>
 
@@ -201,7 +201,7 @@ function SubmitCase() {
                         onChange={(e) => setAnswer(e.target.value)}
                         placeholder="Type your structured approach. Or skip and upload a photo below."
                         rows={10}
-                        className="input-base w-full text-[13px]"
+                        className="input-base w-full text-[15px]"
                       />
                       <p className="text-[11px] text-text-muted mt-1">
                         {answer.length} characters
@@ -239,7 +239,7 @@ function SubmitCase() {
           <div className="space-y-4">
             <GlowCard className="p-6">
               <div className="relative z-10">
-                <h3 className="text-[14px] font-semibold mb-3">Scoring</h3>
+                <h3 className="text-[15px] font-semibold mb-3">Scoring</h3>
                 <div className="space-y-2 text-[12px] text-text-secondary">
                   <Row label="Framework" pct="25%" desc="Use a recognised consulting framework." />
                   <Row label="Clarity" pct="20%" desc="Structure, signposting, readability." />
@@ -256,7 +256,7 @@ function SubmitCase() {
           <div className="mt-12">
             <h2 className="text-[20px] font-semibold mb-6">Your submissions</h2>
             {loading && (
-              <p className="text-[13px] text-text-muted">Loading…</p>
+              <p className="text-[15px] text-text-muted">Loading…</p>
             )}
             <div className="space-y-3">
               {submissions.map((s) => (
@@ -335,7 +335,7 @@ function ResultPanel({
           >
             {result.overall_score ?? result.score}
           </p>
-          <p className="text-[14px] text-text-muted pb-2">/ 100</p>
+          <p className="text-[15px] text-text-muted pb-2">/ 100</p>
         </div>
 
         <div className="mt-6 grid grid-cols-4 gap-3">
@@ -365,7 +365,7 @@ function ResultPanel({
           <p className="text-[11px] uppercase tracking-[0.08em] text-text-muted font-semibold">
             Feedback
           </p>
-          <p className="text-[14px] leading-[1.6] mt-1">{result.feedback}</p>
+          <p className="text-[15px] leading-[1.6] mt-1">{result.feedback}</p>
         </div>
 
         {result.strengths?.length > 0 && (
@@ -373,7 +373,7 @@ function ResultPanel({
             <p className="text-[11px] uppercase tracking-[0.08em] text-text-muted font-semibold">
               Strengths
             </p>
-            <ul className="mt-1 list-disc pl-5 text-[14px] space-y-1">
+            <ul className="mt-1 list-disc pl-5 text-[15px] space-y-1">
               {result.strengths.map((s, i) => (
                 <li key={i}>{s}</li>
               ))}
@@ -386,7 +386,7 @@ function ResultPanel({
             <p className="text-[11px] uppercase tracking-[0.08em] text-text-muted font-semibold">
               To improve
             </p>
-            <ul className="mt-1 list-disc pl-5 text-[14px] space-y-1">
+            <ul className="mt-1 list-disc pl-5 text-[15px] space-y-1">
               {result.improvements.map((s, i) => (
                 <li key={i}>{s}</li>
               ))}
@@ -455,7 +455,7 @@ function SubmissionDetailModal({
             <p className="text-[11px] uppercase tracking-[0.08em] text-text-muted font-semibold mb-2">
               Feedback
             </p>
-            <p className="text-[14px] leading-[1.6]">{submission.feedback}</p>
+            <p className="text-[15px] leading-[1.6]">{submission.feedback}</p>
           </div>
 
           {submission.image_url && (
@@ -475,7 +475,7 @@ function SubmissionDetailModal({
             <p className="text-[11px] uppercase tracking-[0.08em] text-text-muted font-semibold mb-2">
               Your answer
             </p>
-            <div className="bg-muted p-4 rounded-lg text-[13px] whitespace-pre-wrap max-h-[240px] overflow-y-auto">
+            <div className="bg-muted p-4 rounded-lg text-[15px] whitespace-pre-wrap max-h-[240px] overflow-y-auto">
               {submission.answer}
             </div>
           </div>

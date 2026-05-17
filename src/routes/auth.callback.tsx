@@ -141,7 +141,7 @@ function AuthCallback() {
     return (
       <Center>
         <h1 className="font-serif text-[28px]">Sign-in failed</h1>
-        <p className="mt-3 text-[14px] text-text-secondary leading-[1.65]">
+        <p className="mt-3 text-[15px] text-text-secondary leading-[1.65]">
           {error}
         </p>
         <p className="mt-3 text-[12px] text-text-muted leading-[1.6]">
@@ -159,7 +159,7 @@ function AuthCallback() {
     <Center>
       <div className="w-12 h-12 mx-auto mb-6 border-4 border-orange/30 border-t-orange rounded-full animate-spin" />
       <h1 className="font-serif text-[24px]">Signing you in…</h1>
-      <p className="mt-2 text-[13px] text-text-muted">
+      <p className="mt-2 text-[15px] text-text-muted">
         You'll be redirected in a moment.
       </p>
     </Center>
