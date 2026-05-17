@@ -5,8 +5,8 @@ import { supabase } from "@/lib/supabase";
 
 const PUBLIC_LINKS = [
   { label: "Practice", to: "/practice" },
-  { label: "Events", to: "/events" },
   { label: "News", to: "/news" },
+  { label: "Companies", to: "/events" }, // /events houses Companies + Competitions
   { label: "Leaderboard", to: "/leaderboard" },
 ];
 
@@ -18,7 +18,6 @@ const ADMIN_LINKS = [
 
 export function Nav() {
   const [open, setOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string>("");
   const [displayName, setDisplayName] = useState<string>("");
   const path = useRouterState({ select: (s) => s.location.pathname });
@@ -26,7 +25,6 @@ export function Nav() {
 
   const links = isAdmin ? [...PUBLIC_LINKS, ...ADMIN_LINKS] : PUBLIC_LINKS;
 
-  // Pull the user's avatar + name from profiles (cached for the session).
   useEffect(() => {
     if (!user || !supabase) {
       setAvatarUrl("");
@@ -53,77 +51,71 @@ export function Nav() {
     };
   }, [user]);
 
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 12);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  // Close mobile menu on route change
-  useEffect(() => {
-    setOpen(false);
-  }, [path]);
+  useEffect(() => setOpen(false), [path]);
 
   return (
     <>
       <header
-        className={`fixed top-0 inset-x-0 z-50 h-[70px] transition-all duration-300 ${
-          scrolled ? "glass-dark shadow-lg" : "bg-transparent"
-        }`}
+        className="fixed top-0 inset-x-0 z-50 h-[64px] bg-white"
+        style={{ borderBottom: "1px solid #e2e8f0" }}
       >
-        <div className="mx-auto max-w-[1180px] h-full px-5 md:px-6 flex items-center justify-between">
-          {/* Logo */}
+        <div className="mx-auto max-w-[1280px] h-full px-5 md:px-6 flex items-center justify-between">
+          {/* Wordmark only — no icon */}
           <Link
             to={user ? "/dashboard" : "/"}
-            className="flex items-center gap-2.5 group"
+            className="text-[16px] font-bold tracking-tight text-[#0a1628] hover:text-[#0a1628]"
+            style={{ letterSpacing: "-0.02em" }}
           >
-            <div className="w-8 h-8 rounded-lg bg-orange flex items-center justify-center text-white font-serif font-bold text-sm transition-transform group-hover:scale-105">
-              C
-            </div>
-            <span className="font-serif text-[20px] font-semibold text-text-primary tracking-tight">
-              Constrat
-            </span>
+            Constrat
           </Link>
 
-          {/* Desktop nav */}
-          <nav className="hidden lg:flex items-center gap-1">
-            {links.map((l) => {
+          {/* Desktop nav — center */}
+          <nav className="hidden lg:flex items-center gap-1 absolute left-1/2 -translate-x-1/2">
+            {links.map((l, i) => {
               const active = path === l.to || (l.to !== "/" && path.startsWith(l.to));
               return (
-                <Link
-                  key={l.label}
-                  to={l.to}
-                  className={`relative px-3.5 py-2 text-[13px] font-medium rounded-lg transition-all duration-200 ${
-                    active
-                      ? "text-orange bg-orange-tint"
-                      : "text-text-secondary hover:text-text-primary hover:bg-muted/60"
-                  }`}
-                >
-                  {l.label}
-                  {active && (
-                    <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-orange" />
+                <span key={l.label} className="flex items-center">
+                  {i > 0 && (
+                    <span className="text-[#c8d8e8] text-[10px] mx-1">·</span>
                   )}
-                </Link>
+                  <Link
+                    to={l.to}
+                    className={`relative px-3 py-2 text-[13px] font-normal transition-colors ${
+                      active
+                        ? "text-[#0a1628]"
+                        : "text-[#8a9bb0] hover:text-[#0a1628]"
+                    }`}
+                    style={{ letterSpacing: "-0.005em" }}
+                  >
+                    {l.label}
+                    {active && (
+                      <span
+                        className="absolute left-3 right-3 -bottom-0.5 h-[2px] bg-[#e8490f]"
+                      />
+                    )}
+                  </Link>
+                </span>
               );
             })}
           </nav>
 
-          {/* Desktop right side */}
-          <div className="hidden lg:flex items-center gap-2.5">
+          {/* Right side */}
+          <div className="hidden lg:flex items-center gap-3">
             {user && isAdmin && (
               <Link
                 to="/admin"
-                className="h-8 px-3 inline-flex items-center text-[12px] font-semibold rounded-lg bg-dark text-white hover:bg-dark/90 transition-colors"
+                className="h-7 px-3 inline-flex items-center text-[11px] font-semibold rounded-full bg-[#0a1628] text-white hover:bg-[#162236] transition-colors uppercase tracking-[0.06em]"
               >
                 Admin
               </Link>
             )}
+
             {user ? (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 <Link
                   to="/account"
-                  className="w-9 h-9 rounded-full overflow-hidden flex items-center justify-center font-semibold text-[12px] border-2 border-orange/30 hover:border-orange transition-colors"
-                  style={{ background: "#FFF0EB", color: "#C03A08" }}
+                  className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center font-semibold text-[11px] hover:ring-2 ring-[#e8490f]/30 transition-all"
+                  style={{ background: "#fdf0eb", color: "#c03a08" }}
                   title={displayName || user.email || "Profile"}
                 >
                   {avatarUrl ? (
@@ -134,14 +126,12 @@ export function Nav() {
                       onError={() => setAvatarUrl("")}
                     />
                   ) : (
-                    <span>
-                      {initials(displayName || user.email || "U")}
-                    </span>
+                    <span>{initials(displayName || user.email || "U")}</span>
                   )}
                 </Link>
                 <button
                   onClick={() => signOut()}
-                  className="h-8 px-3 inline-flex items-center text-[12px] border border-border rounded-lg text-text-secondary hover:text-text-primary hover:border-text-primary transition-colors"
+                  className="text-[11px] text-[#8a9bb0] hover:text-[#0a1628] transition-colors uppercase tracking-[0.06em] font-semibold"
                 >
                   Logout
                 </button>
@@ -150,15 +140,15 @@ export function Nav() {
               <>
                 <Link
                   to="/login"
-                  className="h-9 px-4 inline-flex items-center text-[13px] border border-border rounded-lg text-text-secondary hover:text-text-primary hover:border-text-primary transition-colors"
+                  className="text-[13px] text-[#0a1628] font-medium hover:text-[#e8490f] transition-colors"
                 >
                   Login
                 </Link>
                 <Link
                   to="/join"
-                  className="h-9 px-5 inline-flex items-center text-[13px] font-semibold rounded-lg bg-orange text-white hover:bg-orange-hover transition-all hover:-translate-y-px shadow-sm"
+                  className="h-8 px-4 inline-flex items-center text-[12px] font-semibold rounded-full bg-[#e8490f] text-white hover:bg-[#c03a08] transition-colors"
                 >
-                  Join Constrat
+                  Join Free →
                 </Link>
               </>
             )}
@@ -166,115 +156,73 @@ export function Nav() {
 
           {/* Mobile hamburger */}
           <button
-            onClick={() => setOpen(true)}
-            className="lg:hidden w-10 h-10 flex items-center justify-center rounded-lg hover:bg-muted/60 transition-colors"
-            aria-label="Open menu"
+            onClick={() => setOpen(!open)}
+            className="lg:hidden w-9 h-9 flex items-center justify-center text-[#0a1628]"
+            aria-label="Toggle menu"
           >
-            <svg width="20" height="14" viewBox="0 0 20 14" fill="none">
-              <path
-                d="M0 1h20M0 7h20M0 13h20"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-              />
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              {open ? (
+                <>
+                  <path d="M3 3l12 12M15 3L3 15" stroke="currentColor" strokeWidth="1.5" />
+                </>
+              ) : (
+                <>
+                  <path d="M2 5h14M2 9h14M2 13h14" stroke="currentColor" strokeWidth="1.5" />
+                </>
+              )}
             </svg>
           </button>
         </div>
       </header>
 
-      {/* Mobile drawer */}
+      {/* Mobile sheet */}
       {open && (
-        <div className="fixed inset-0 z-[60] lg:hidden">
-          <div
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-            onClick={() => setOpen(false)}
-          />
-          <div
-            className="absolute right-0 top-0 h-full w-[85%] max-w-[360px] bg-white shadow-2xl flex flex-col"
-            style={{ animation: "slideInRight 280ms cubic-bezier(0.16, 1, 0.3, 1)" }}
-          >
-            <div className="flex justify-between items-center p-5 border-b border-border">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-orange flex items-center justify-center text-white font-serif font-bold text-sm">
-                  C
-                </div>
-                <span className="font-serif text-[18px] font-semibold">Constrat</span>
-              </div>
-              <button
-                onClick={() => setOpen(false)}
-                className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-muted/60"
-                aria-label="Close"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto py-3">
-              {links.map((l) => {
-                const active = path === l.to || (l.to !== "/" && path.startsWith(l.to));
-                return (
-                  <Link
-                    key={l.label}
-                    to={l.to}
-                    className={`flex items-center h-[52px] px-6 text-[15px] font-medium border-l-2 transition-colors ${
-                      active
-                        ? "text-orange border-orange bg-orange-tint/50"
-                        : "text-text-primary border-transparent hover:bg-muted/40"
-                    }`}
-                  >
-                    {l.label}
-                  </Link>
-                );
-              })}
-            </div>
-
-            <div className="p-5 border-t border-border space-y-2.5">
+        <div className="lg:hidden fixed top-[64px] inset-x-0 bottom-0 z-40 bg-white" style={{ borderTop: "1px solid #e2e8f0" }}>
+          <nav className="px-5 py-6 flex flex-col">
+            {links.map((l) => {
+              const active = path === l.to || (l.to !== "/" && path.startsWith(l.to));
+              return (
+                <Link
+                  key={l.label}
+                  to={l.to}
+                  className={`py-3 text-[15px] border-b border-[#e2e8f0] transition-colors ${
+                    active ? "text-[#e8490f] font-semibold" : "text-[#0a1628]"
+                  }`}
+                >
+                  {l.label}
+                </Link>
+              );
+            })}
+            <div className="mt-6 flex flex-col gap-3">
               {user ? (
                 <>
-                  <Link
-                    to="/account"
-                    className="w-full h-11 flex items-center justify-center bg-orange text-white rounded-lg text-[14px] font-medium"
-                    onClick={() => setOpen(false)}
-                  >
-                    My Account
+                  <Link to="/dashboard" className="btn-dark">
+                    Dashboard
                   </Link>
-                  <button
-                    onClick={() => {
-                      signOut();
-                      setOpen(false);
-                    }}
-                    className="w-full h-11 flex items-center justify-center border border-border rounded-lg text-[14px] font-medium hover:border-orange hover:text-orange transition-colors"
-                  >
+                  <Link to="/account" className="btn-secondary">
+                    Profile
+                  </Link>
+                  <button onClick={() => signOut()} className="btn-secondary">
                     Logout
                   </button>
                 </>
               ) : (
                 <>
-                  <Link
-                    to="/login"
-                    className="w-full h-11 flex items-center justify-center border border-border rounded-lg text-[14px] font-medium"
-                  >
+                  <Link to="/login" className="btn-secondary">
                     Login
                   </Link>
-                  <Link
-                    to="/join"
-                    className="w-full h-11 flex items-center justify-center bg-orange text-white rounded-lg text-[14px] font-semibold"
-                  >
-                    Join Constrat
+                  <Link to="/join" className="btn-primary">
+                    Join Free →
                   </Link>
                 </>
               )}
             </div>
-          </div>
+          </nav>
         </div>
       )}
 
-      <style>{`
-        @keyframes slideInRight {
-          from { transform: translateX(100%); }
-          to { transform: translateX(0); }
-        }
-      `}</style>
+      {/* Spacer so content doesn't hide behind the fixed nav */}
+      <div className="h-[64px]" />
     </>
   );
 }

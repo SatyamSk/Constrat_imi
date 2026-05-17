@@ -1,715 +1,433 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { PageShell } from "@/components/PageShell";
-import { AnimatedSection } from "@/components/AnimatedSection";
-import { GlowCard } from "@/components/GlowCard";
-import { useState, useEffect, useRef } from "react";
+import { Footer as _Footer } from "@/components/Footer";
+import { LiveTicker } from "@/components/LiveTicker";
+import { useAuth } from "@/lib/auth";
+import { getSitePulse, type SitePulse } from "@/lib/sitePulse";
+import { supabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/")({ component: Home });
 
-function useCountUp(target: number, duration = 2000) {
-  const [val, setVal] = useState(0);
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const obs = new IntersectionObserver(
-      ([e]) => {
-        if (!e.isIntersecting) return;
-        obs.disconnect();
-        const start = performance.now();
-        const step = (now: number) => {
-          const p = Math.min((now - start) / duration, 1);
-          setVal(Math.round(p * target));
-          if (p < 1) requestAnimationFrame(step);
-        };
-        requestAnimationFrame(step);
-      },
-      { threshold: 0.3 },
-    );
-    if (ref.current) obs.observe(ref.current);
-    return () => obs.disconnect();
-  }, [target, duration]);
-  return { val, ref };
+interface CompanyProfile {
+  name: string;
+  sector: string;
+  style: string;
 }
 
+const COMPANIES: CompanyProfile[] = [
+  { name: "McKinsey",        sector: "Consulting",  style: "Hypothesis-driven case format, heavy on structured problem-solving and quantitative rigor." },
+  { name: "BCG",             sector: "Consulting",  style: "Conversational case interviews, focus on creative frameworks and business judgement." },
+  { name: "Bain",            sector: "Consulting",  style: "Profitability + market-entry cases, expect strong attention to client mindset." },
+  { name: "Goldman Sachs",   sector: "Investment Banking", style: "Technical finance grilling, valuation, deal modelling, behaviourals with VPs." },
+  { name: "Kearney",         sector: "Strategy",    style: "Operations and supply-chain cases. Pen-and-paper math under time pressure." },
+  { name: "Amazon",          sector: "Tech / Product", style: "Leadership Principles + product-sense case, customer obsession is non-negotiable." },
+];
+
 function Home() {
-  const [scrollPct, setScrollPct] = useState(0);
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [pulse, setPulse] = useState<SitePulse | null>(null);
+  const [featured, setFeatured] = useState<{ title: string; type: string; difficulty: string } | null>(null);
+
+  // If user is logged in, send them straight to dashboard
   useEffect(() => {
-    function onScroll() {
-      const h = document.documentElement.scrollHeight - window.innerHeight;
-      setScrollPct(h > 0 ? (window.scrollY / h) * 100 : 0);
+    if (user) {
+      navigate({ to: "/dashboard", replace: true });
     }
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+  }, [user, navigate]);
+
+  useEffect(() => {
+    getSitePulse().then(setPulse);
+    if (!supabase) return;
+    const today = new Date().toISOString().slice(0, 10);
+    supabase
+      .from("practice_questions")
+      .select("type, question, difficulty")
+      .eq("date_assigned", today)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) {
+          setFeatured({
+            title: data.question,
+            type: data.type,
+            difficulty: data.difficulty || "Medium",
+          });
+        }
+      });
   }, []);
 
   return (
     <PageShell>
-      <div className="scroll-progress" style={{ width: `${scrollPct}%` }} />
-      <Hero />
-      <StatsBar />
-      <Features />
-      <CasePreview />
-      <ActivityGraph />
-      <HowItWorks />
-      <CompanyIntel />
-      <SocialProof />
-      <CollegeNetwork />
-      <FinalCTA />
+      {/* ============ HERO ============ */}
+      <section className="grid-bg">
+        <div className="mx-auto max-w-[1280px] px-5 md:px-6 grid lg:grid-cols-[1fr_1.05fr] gap-0 lg:gap-12 pt-12 lg:pt-20 pb-20 lg:pb-24">
+          {/* LEFT */}
+          <div className="flex flex-col justify-center">
+            <span className="label-orange">
+              The Operating System for MBA Placement
+            </span>
+            <h1
+              className="mt-6 font-bold leading-[1.02] text-[#0a1628]"
+              style={{ fontSize: "clamp(36px, 6vw, 56px)", letterSpacing: "-0.03em" }}
+            >
+              <span className="font-light">Every placement</span><br />
+              <span className="font-bold">decision starts</span><br />
+              <span className="brand-italic">the night before.</span>
+            </h1>
+            <p
+              className="mt-6 max-w-[440px] text-[#4a5d76] font-light leading-[1.7]"
+              style={{ fontSize: "15px" }}
+            >
+              Daily cases, guesstimate practice, company intelligence, and live
+              rankings — built for MBA candidates who are serious about where
+              they land.
+            </p>
+            <div className="mt-8 flex flex-wrap items-center gap-5">
+              <Link to="/join" className="btn-primary h-12 px-6 text-[13px]">
+                Start Preparing — It's Free
+              </Link>
+              <Link to="/login" className="btn-ghost text-[13px] font-semibold">
+                See How It Works →
+              </Link>
+            </div>
+          </div>
+
+          {/* RIGHT — DARK NAVY LIVE CASE PANEL */}
+          <LiveCasePanel featured={featured} pulse={pulse} />
+        </div>
+      </section>
+
+      {/* ============ LIVE TICKER ============ */}
+      <LiveTicker dark />
+
+      {/* ============ STATS STRIP ============ */}
+      <section className="grid-bg-dark">
+        <div className="mx-auto max-w-[1280px] px-5 md:px-6 h-16 flex items-stretch">
+          <Stat number={pulse?.cases_solved_total ?? 2847} label="Cases Solved" />
+          <StatDivider />
+          <Stat number={pulse?.active_streaks ?? 312} label="Active Streaks" />
+          <StatDivider />
+          <Stat number={28} label="Companies Tracked" />
+          <StatDivider />
+          <Stat number={47} label="Interview Experiences" />
+        </div>
+      </section>
+
+      {/* ============ HOW IT WORKS ============ */}
+      <section className="grid-bg">
+        <div className="mx-auto max-w-[1280px] px-5 md:px-6 py-20">
+          <span className="label-orange">How It Works</span>
+          <h2
+            className="mt-5 font-bold text-[#0a1628] max-w-[720px]"
+            style={{ fontSize: "clamp(28px, 4vw, 36px)", letterSpacing: "-0.025em", lineHeight: 1.1 }}
+          >
+            Four steps. Repeatable daily.
+          </h2>
+
+          <div className="mt-12 grid md:grid-cols-2 lg:grid-cols-4 gap-0 border border-[#e2e8f0]">
+            <Step n="01" title="Open the daily brief" body="Today's case, news ticker, and your live rank are pre-loaded for you every morning at 06:00 IST." />
+            <Step n="02" title="Solve in 25 min" body="Build your framework directly on the grid workspace. Timer, benchmarks, structure checklist on the side." last={false} />
+            <Step n="03" title="Get an AI score" body="GPT-4o Vision scores your structure on framework, clarity, approach, execution. 0-100 in seconds." last={false} />
+            <Step n="04" title="See where you rank" body="Per-case + global leaderboards. Tagged by B-school. Recruiters cold-mail people in the top 50." last />
+          </div>
+        </div>
+      </section>
+
+      {/* ============ COMPANY INTEL ============ */}
+      <section className="grid-bg">
+        <div className="mx-auto max-w-[1280px] px-5 md:px-6 py-20">
+          <span className="label-orange">Company Intelligence</span>
+          <h2
+            className="mt-5 font-bold text-[#0a1628] max-w-[820px]"
+            style={{ fontSize: "clamp(28px, 4vw, 36px)", letterSpacing: "-0.025em", lineHeight: 1.1 }}
+          >
+            Know what they want before you walk in.
+          </h2>
+
+          <div className="mt-12 grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-0 border border-[#e2e8f0]">
+            {COMPANIES.map((c, i) => (
+              <CompanyCard
+                key={c.name}
+                c={c}
+                borderRight={i % 3 !== 2}
+                borderBottom={i < 3}
+              />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ============ FINAL CTA ============ */}
+      <section className="grid-bg-dark relative overflow-hidden">
+        <div className="mx-auto max-w-[1280px] px-5 md:px-6 py-24 text-center">
+          <span
+            className="inline-block text-[10px] uppercase tracking-[0.12em] font-bold"
+            style={{ color: "#e8490f" }}
+          >
+            <span className="inline-block w-1 h-3 bg-[#e8490f] mr-2 align-middle" />
+            Built for serious candidates
+          </span>
+          <h2
+            className="mt-6 font-bold text-white max-w-[820px] mx-auto"
+            style={{ fontSize: "clamp(32px, 5vw, 48px)", letterSpacing: "-0.025em", lineHeight: 1.05 }}
+          >
+            Stop hoping you'll get the job.<br />
+            <span style={{ color: "#e8490f" }}>Engineer the outcome.</span>
+          </h2>
+          <p className="mt-6 text-[#8a9bb0] font-light max-w-[560px] mx-auto leading-[1.65]" style={{ fontSize: "15px" }}>
+            ₹99/month — less than your last chai run. Daily reps, AI scoring, live
+            leaderboards. Built by a student. Priced like one.
+          </p>
+          <div className="mt-10">
+            <Link to="/join" className="btn-primary h-12 px-8 text-[13px]">
+              Start Preparing — It's Free
+            </Link>
+          </div>
+        </div>
+      </section>
     </PageShell>
   );
 }
 
-/* ── HERO ── */
-function Hero() {
+/* ============ LIVE CASE PANEL ============ */
+function LiveCasePanel({
+  featured,
+  pulse,
+}: {
+  featured: { title: string; type: string; difficulty: string } | null;
+  pulse: SitePulse | null;
+}) {
+  const [countdown, setCountdown] = useState<string>("--:--:--");
+
+  // Counts down to next 06:00 IST (= 00:30 UTC)
+  useEffect(() => {
+    function tick() {
+      const now = new Date();
+      const target = new Date();
+      target.setUTCHours(0, 30, 0, 0);
+      if (target.getTime() <= now.getTime()) {
+        target.setUTCDate(target.getUTCDate() + 1);
+      }
+      const diff = target.getTime() - now.getTime();
+      const h = Math.floor(diff / 3_600_000);
+      const m = Math.floor((diff % 3_600_000) / 60_000);
+      const s = Math.floor((diff % 60_000) / 1000);
+      setCountdown(
+        [h, m, s]
+          .map((n) => n.toString().padStart(2, "0"))
+          .join(":"),
+      );
+    }
+    tick();
+    const t = window.setInterval(tick, 1000);
+    return () => window.clearInterval(t);
+  }, []);
+
+  const caseTitle = featured?.title ||
+    "A leading Indian FMCG company is considering entering the premium pet food market. Should they?";
+  const caseType = featured?.type || "Market Entry";
+
   return (
-    <section
-      className="relative overflow-hidden grain-overlay"
+    <div
+      className="relative overflow-hidden p-7 lg:p-8 flex flex-col mt-10 lg:mt-0 grid-bg-dark"
+      style={{ minHeight: "520px" }}
+    >
+      {/* Top: three live pills */}
+      <div className="flex flex-wrap gap-2">
+        <LivePill icon="dot">
+          {(pulse?.solving_right_now ?? 1247).toLocaleString()} solving right now
+        </LivePill>
+        <LivePill>{(pulse?.cases_in_bank ?? 2847).toLocaleString()} cases in the bank</LivePill>
+        <LivePill>{(pulse?.active_streaks ?? 312)} active streaks today</LivePill>
+      </div>
+
+      {/* Case tag */}
+      <div className="mt-7 flex items-center gap-2">
+        <span className="inline-block w-2 h-2 bg-[#e8490f] rounded-full" />
+        <span className="text-[10px] uppercase tracking-[0.12em] font-bold text-[#e8490f]">
+          Live Now · {caseType} · {featured?.difficulty || "Hard"}
+        </span>
+      </div>
+
+      {/* Question */}
+      <p
+        className="mt-3 text-white font-medium leading-[1.45]"
+        style={{ fontSize: "17px" }}
+      >
+        {caseTitle}
+      </p>
+
+      {/* Divider */}
+      <div className="my-6 h-px bg-white/10" />
+
+      {/* Mini framework grid — purely visual, shows a student mid-solve */}
+      <div className="grid grid-cols-2 gap-px bg-white/10">
+        <FrameworkCell label="Market Definition" content="Premium = >₹500/kg packaged pet food" />
+        <FrameworkCell label="Segmentation" content="Dog vs cat · Tier-1 vs Tier-2 · Veg vs non-veg" />
+        <FrameworkCell label="Sizing Logic" content="Pet HHs × adoption × spend/yr" cursor />
+        <FrameworkCell label="Key Assumption" content="3.5% of urban HHs own a premium-eligible pet" />
+      </div>
+
+      {/* Bottom data strip */}
+      <div className="mt-auto pt-6 flex items-end justify-between gap-3">
+        <p className="text-white/50 font-light leading-[1.5]" style={{ fontSize: "10px" }}>
+          Avg solve time 23 min · Top score 94 · Attempts today 847
+        </p>
+        <p
+          className="text-[#e8490f] font-bold tabular-nums"
+          style={{ fontSize: "11px", letterSpacing: "0.02em" }}
+        >
+          DROPS IN {countdown}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function LivePill({ children, icon }: { children: React.ReactNode; icon?: "dot" }) {
+  return (
+    <span
+      className="inline-flex items-center gap-2 px-3 py-1.5 text-[11px] text-white/85 font-light"
+      style={{ background: "#162236", letterSpacing: "-0.005em" }}
+    >
+      {icon === "dot" && <span className="pulse-dot" />}
+      {children}
+    </span>
+  );
+}
+
+function FrameworkCell({
+  label,
+  content,
+  cursor = false,
+}: {
+  label: string;
+  content: string;
+  cursor?: boolean;
+}) {
+  return (
+    <div className="bg-[#0a1628] p-3" style={{ minHeight: "80px" }}>
+      <p
+        className="text-[9px] uppercase font-bold tracking-[0.12em] text-white/40"
+        style={{ letterSpacing: "0.12em" }}
+      >
+        {label}
+      </p>
+      <p className="mt-2 text-[11px] text-white/85 font-light leading-[1.45]">
+        {content}
+        {cursor && (
+          <span
+            className="inline-block w-[1px] h-3 bg-[#e8490f] ml-1 align-middle"
+            style={{ animation: "fadeIn 1s ease-in-out infinite alternate" }}
+          />
+        )}
+      </p>
+    </div>
+  );
+}
+
+/* ============ STATS BAR ============ */
+function Stat({ number, label }: { number: number; label: string }) {
+  return (
+    <div className="flex-1 flex flex-col items-start justify-center px-4 md:px-6">
+      <p className="text-white font-bold tabular-nums" style={{ fontSize: "20px" }}>
+        {number.toLocaleString()}
+      </p>
+      <p
+        className="text-white/60 font-light uppercase mt-0.5"
+        style={{ fontSize: "9px", letterSpacing: "0.12em" }}
+      >
+        {label}
+      </p>
+    </div>
+  );
+}
+function StatDivider() {
+  return <div className="self-stretch w-px bg-white/15" />;
+}
+
+/* ============ HOW IT WORKS STEP ============ */
+function Step({
+  n,
+  title,
+  body,
+  last,
+}: {
+  n: string;
+  title: string;
+  body: string;
+  last?: boolean;
+}) {
+  return (
+    <div
+      className="bg-white p-7"
       style={{
-        background:
-          "radial-gradient(ellipse 80% 50% at 50% -20%, rgba(232,73,15,0.08), transparent), radial-gradient(ellipse 60% 40% at 100% 0%, rgba(232,73,15,0.04), transparent), #FAFAF8",
+        borderRight: last ? "none" : "1px solid #e2e8f0",
+        borderBottom: "1px solid #e2e8f0",
       }}
     >
-      <div
-        className="absolute inset-0 opacity-[0.03]"
-        style={{
-          backgroundImage:
-            "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")",
-        }}
-      />
-      <div className="mx-auto max-w-[1180px] px-5 md:px-6 pt-32 md:pt-[160px] pb-20 md:pb-28 relative z-10">
-        <AnimatedSection variant="blur">
-          <div className="max-w-[720px]">
-            <h1 className="font-serif text-[44px] sm:text-[56px] md:text-[72px] leading-[1.1] tracking-[-0.02em] text-text-primary">
-              The operating system for <span style={{ color: "#E8490F" }}>MBA placement.</span>
-            </h1>
-            <p
-              className="mt-6 text-[17px] md:text-[19px] text-text-secondary leading-[1.65] max-w-[560px]"
-              style={{ fontFamily: "var(--font-sans)" }}
-            >
-              Daily cases, guesstimates, company intel, and interview prep — built for students who
-              are serious about where they land.
-            </p>
-            <div className="mt-8 flex flex-wrap items-center gap-3">
-              <Link to="/join" className="btn-primary text-[15px] h-[52px] px-7">
-                Start Preparing — It's Free
-              </Link>
-              <a href="#how-it-works" className="btn-secondary text-[15px] h-[52px] px-7">
-                See How It Works
-              </a>
-            </div>
-          </div>
-        </AnimatedSection>
-      </div>
-    </section>
+      <p
+        className="text-[10px] font-bold tabular-nums text-[#e8490f]"
+        style={{ letterSpacing: "0.08em" }}
+      >
+        {n}
+      </p>
+      <h3
+        className="mt-4 font-bold text-[#0a1628]"
+        style={{ fontSize: "18px", letterSpacing: "-0.015em", lineHeight: 1.3 }}
+      >
+        {title}
+      </h3>
+      <p className="mt-3 text-[#4a5d76] font-light leading-[1.6]" style={{ fontSize: "13px" }}>
+        {body}
+      </p>
+    </div>
   );
 }
 
-/* ── STATS BAR ── */
-function StatsBar() {
-  const s1 = useCountUp(2847);
-  const s2 = useCountUp(312);
-  const s3 = useCountUp(28);
-  const s4 = useCountUp(47);
-  const stats = [
-    { ...s1, label: "Cases Solved This Week", suffix: "" },
-    { ...s2, label: "Active Streak Users", suffix: "" },
-    { ...s3, label: "Companies Tracked", suffix: "" },
-    { ...s4, label: "Interview Experiences", suffix: "" },
-  ];
+/* ============ COMPANY CARD ============ */
+function CompanyCard({
+  c,
+  borderRight,
+  borderBottom,
+}: {
+  c: CompanyProfile;
+  borderRight: boolean;
+  borderBottom: boolean;
+}) {
   return (
-    <section style={{ background: "#1A1A1A" }}>
-      <div className="mx-auto max-w-[1180px] px-5 md:px-6 py-6 md:py-8 grid grid-cols-2 md:grid-cols-4 gap-6">
-        {stats.map((s, i) => (
-          <div key={i} ref={s.ref} className="text-center">
-            <p
-              className="text-[32px] md:text-[40px] font-bold leading-none"
-              style={{ fontFamily: "var(--font-mono)", color: "#FF6B35" }}
-            >
-              {s.val.toLocaleString()}
-              {s.suffix}
-            </p>
-            <p
-              className="mt-1 text-[12px] uppercase tracking-[0.1em] font-medium"
-              style={{ fontFamily: "var(--font-sans)", color: "#888" }}
-            >
-              {s.label}
-            </p>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-/* ── FEATURES ── */
-function Features() {
-  const cols = [
-    {
-      title: "Daily Practice Loop",
-      desc: "A new case and guesstimate every morning. Timed. Framework-guided. AI-evaluated. Build your streak or fall behind.",
-      icon: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4",
-    },
-    {
-      title: "Placement Intelligence",
-      desc: "Company profiles, interview experiences, insider data on what each firm asks and what they look for. Know before you walk in.",
-      icon: "M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
-    },
-    {
-      title: "IMI-Specific Layer",
-      desc: "Live timetable sync, batch leaderboard, Telegram alerts for schedule changes, placement deadlines, and club events.",
-      icon: "M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4",
-    },
-  ];
-  return (
-    <section className="bg-background">
-      <div className="mx-auto max-w-[1180px] px-5 md:px-6 py-20 md:py-28">
-        <div className="grid md:grid-cols-3 gap-8">
-          {cols.map((c, i) => (
-            <AnimatedSection key={i} delay={i * 100}>
-              <div className="p-6">
-                <div
-                  className="w-11 h-11 rounded-lg flex items-center justify-center"
-                  style={{ background: "#FFF0EB" }}
-                >
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="#E8490F"
-                    strokeWidth={2}
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" d={c.icon} />
-                  </svg>
-                </div>
-                <h3
-                  className="mt-5 text-[20px] font-semibold tracking-[-0.01em]"
-                  style={{ fontFamily: "var(--font-sans)" }}
-                >
-                  {c.title}
-                </h3>
-                <p className="mt-3 text-[14px] text-text-secondary leading-[1.65]">{c.desc}</p>
-              </div>
-            </AnimatedSection>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ── CASE PREVIEW (FOMO) ── */
-function CasePreview() {
-  const [h, setH] = useState(23);
-  const [m, setM] = useState(47);
-  useEffect(() => {
-    const t = setInterval(
-      () =>
-        setM((p) => {
-          if (p <= 0) {
-            setH((q) => Math.max(q - 1, 0));
-            return 59;
-          }
-          return p - 1;
-        }),
-      60000,
-    );
-    return () => clearInterval(t);
-  }, []);
-  return (
-    <section className="relative overflow-hidden grain-overlay" style={{ background: "#FFF7F3" }}>
-      <div className="mx-auto max-w-[1180px] px-5 md:px-6 py-20 md:py-28 relative z-10">
-        <AnimatedSection variant="blur">
-          <div className="grid lg:grid-cols-[1fr_1.1fr] gap-10 items-center">
-            <div>
-              <span className="label-orange">Live Now</span>
-              <h2 className="mt-5 font-serif text-[34px] md:text-[44px] leading-[1.2] tracking-[-0.01em]">
-                Today's Case is Live.
-              </h2>
-              <p className="mt-4 text-[15px] text-text-secondary leading-[1.65] max-w-[440px]">
-                A new case drops every morning. Solve it, get AI feedback, see your percentile. Miss
-                it, and it locks at midnight.
-              </p>
-              <Link to="/login" className="btn-primary mt-6">
-                Solve It — Login to Continue
-              </Link>
-            </div>
-            <AnimatedSection variant="scale" delay={200}>
-              <GlowCard className="p-7 md:p-8 card-magnetic">
-                <div className="relative z-10">
-                  <div className="flex items-center justify-between">
-                    <div className="flex gap-2">
-                      <span className="pill pill-orange">Market Entry</span>
-                      <span className="pill pill-red">Hard</span>
-                    </div>
-                    <span
-                      className="text-[13px] font-semibold"
-                      style={{ fontFamily: "var(--font-mono)", color: "#E8490F" }}
-                    >
-                      {String(h).padStart(2, "0")}:{String(m).padStart(2, "0")} left
-                    </span>
-                  </div>
-                  <h3 className="mt-5 font-serif text-[22px] md:text-[26px] leading-[1.2]">
-                    A leading Indian FMCG company is considering entering the premium pet food
-                    market. Should they?
-                  </h3>
-                  <p className="mt-4 text-[14px] text-text-secondary leading-[1.6]">
-                    The client is a Rs 12,000 Cr FMCG conglomerate with strong rural distribution.
-                    They've noticed premium pet food growing at 28% CAGR in urban India...
-                  </p>
-                  <div
-                    className="mt-5 p-4 rounded-lg"
-                    style={{
-                      background: "#F3F2EF",
-                      filter: "blur(4px)",
-                      userSelect: "none",
-                      pointerEvents: "none",
-                    }}
-                  >
-                    <p className="text-[13px]">
-                      Framework: Start with market sizing → customer segmentation → competitive
-                      landscape → channel strategy → financial viability...
-                    </p>
-                  </div>
-                  <div className="mt-4 flex items-center justify-between text-[12px] text-text-muted">
-                    <span>Resembles: McKinsey Round 1</span>
-                    <span>143 solved today</span>
-                  </div>
-                </div>
-              </GlowCard>
-            </AnimatedSection>
-          </div>
-        </AnimatedSection>
-      </div>
-    </section>
-  );
-}
-
-/* ── HOW IT WORKS ── */
-/* ── ACTIVITY GRAPH ── */
-function ActivityGraph() {
-  // Sample data: 4 weeks of daily practice counts
-  const weeklyData = [12, 18, 24, 31, 28, 35, 42, 38, 45, 52, 48, 56];
-  const labels = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
-  const maxVal = Math.max(...weeklyData);
-  const w = 560,
-    h = 180,
-    px = 40,
-    py = 20;
-  const plotW = w - px * 2,
-    plotH = h - py * 2;
-  const points = weeklyData.map((v, i) => ({
-    x: px + (i / (weeklyData.length - 1)) * plotW,
-    y: py + plotH - (v / maxVal) * plotH,
-  }));
-  const linePath = points.map((p, i) => `${i === 0 ? "M" : "L"}${p.x},${p.y}`).join(" ");
-  const areaPath = `${linePath} L${points[points.length - 1].x},${h - py} L${points[0].x},${h - py} Z`;
-
-  // Heatmap: 12 weeks x 7 days
-  const heatmap: number[][] = Array.from({ length: 12 }, () =>
-    Array.from({ length: 7 }, () => Math.random()),
-  );
-
-  return (
-    <section className="bg-background">
-      <div className="mx-auto max-w-[1180px] px-5 md:px-6 py-20 md:py-28">
-        <AnimatedSection>
-          <div className="grid lg:grid-cols-[1.2fr_1fr] gap-8 items-start">
-            {/* Chart */}
-            <GlowCard className="p-6 md:p-8">
-              <div className="relative z-10">
-                <div className="flex items-center justify-between mb-6">
-                  <div>
-                    <span className="label-orange">Platform Activity</span>
-                    <h3 className="mt-2 text-[22px] font-serif leading-[1.3]">
-                      Cases solved per month
-                    </h3>
-                  </div>
-                  <div className="text-right">
-                    <p
-                      className="text-[28px] font-bold"
-                      style={{ fontFamily: "var(--font-mono)", color: "#E8490F" }}
-                    >
-                      56
-                    </p>
-                    <p className="text-[11px] text-text-muted">this month</p>
-                  </div>
-                </div>
-                <svg viewBox={`0 0 ${w} ${h}`} className="w-full" style={{ overflow: "visible" }}>
-                  {/* Grid lines */}
-                  {[0, 0.25, 0.5, 0.75, 1].map((f) => (
-                    <line
-                      key={f}
-                      x1={px}
-                      x2={w - px}
-                      y1={py + plotH * (1 - f)}
-                      y2={py + plotH * (1 - f)}
-                      stroke="#E8E4DE"
-                      strokeWidth={0.5}
-                      strokeDasharray={f > 0 && f < 1 ? "4 4" : "0"}
-                    />
-                  ))}
-                  {/* Area fill */}
-                  <path d={areaPath} fill="url(#areaGrad)" opacity={0.3} />
-                  {/* Line */}
-                  <path
-                    d={linePath}
-                    fill="none"
-                    stroke="#E8490F"
-                    strokeWidth={2.5}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  {/* Dots */}
-                  {points.map((p, i) => (
-                    <g key={i}>
-                      <circle cx={p.x} cy={p.y} r={3.5} fill="#E8490F" />
-                      <circle cx={p.x} cy={p.y} r={6} fill="#E8490F" opacity={0.15} />
-                    </g>
-                  ))}
-                  {/* X labels */}
-                  {points.map((p, i) => (
-                    <text
-                      key={i}
-                      x={p.x}
-                      y={h - 2}
-                      textAnchor="middle"
-                      fill="#9A9997"
-                      fontSize={10}
-                      fontFamily="var(--font-sans)"
-                    >
-                      {labels[i]}
-                    </text>
-                  ))}
-                  <defs>
-                    <linearGradient id="areaGrad" x1="0" x2="0" y1="0" y2="1">
-                      <stop offset="0%" stopColor="#E8490F" stopOpacity={0.4} />
-                      <stop offset="100%" stopColor="#E8490F" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                </svg>
-              </div>
-            </GlowCard>
-
-            {/* Heatmap + streak stats */}
-            <div className="space-y-5">
-              <GlowCard className="p-6">
-                <div className="relative z-10">
-                  <h3
-                    className="text-[16px] font-semibold mb-4"
-                    style={{ fontFamily: "var(--font-sans)" }}
-                  >
-                    Daily practice activity
-                  </h3>
-                  <div className="flex gap-[3px]">
-                    {heatmap.map((week, wi) => (
-                      <div key={wi} className="flex flex-col gap-[3px]">
-                        {week.map((v, di) => (
-                          <div
-                            key={di}
-                            className="w-[14px] h-[14px] rounded-[3px] transition-colors"
-                            style={{
-                              background:
-                                v > 0.7
-                                  ? "#E8490F"
-                                  : v > 0.4
-                                    ? "#FFA064"
-                                    : v > 0.15
-                                      ? "#FFD4B8"
-                                      : "#F3F2EF",
-                            }}
-                          />
-                        ))}
-                      </div>
-                    ))}
-                  </div>
-                  <div className="mt-3 flex items-center gap-2 text-[10px] text-text-muted">
-                    <span>Less</span>
-                    {["#F3F2EF", "#FFD4B8", "#FFA064", "#E8490F"].map((c) => (
-                      <div
-                        key={c}
-                        className="w-[10px] h-[10px] rounded-[2px]"
-                        style={{ background: c }}
-                      />
-                    ))}
-                    <span>More</span>
-                  </div>
-                </div>
-              </GlowCard>
-              <div className="grid grid-cols-2 gap-4">
-                {[
-                  { n: "312", l: "Active streaks", sub: "users practicing daily" },
-                  { n: "87%", l: "Completion rate", sub: "daily case attempts" },
-                ].map((s, i) => (
-                  <div key={i} className="card-base p-4">
-                    <p
-                      className="text-[28px] font-bold leading-none"
-                      style={{
-                        fontFamily: "var(--font-mono)",
-                        color: i === 0 ? "#E8490F" : "#22C55E",
-                      }}
-                    >
-                      {s.n}
-                    </p>
-                    <p className="text-[12px] font-semibold text-text-primary mt-2">{s.l}</p>
-                    <p className="text-[11px] text-text-muted">{s.sub}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </AnimatedSection>
-      </div>
-    </section>
-  );
-}
-
-function HowItWorks() {
-  const steps = [
-    {
-      n: "01",
-      title: "Set your targets",
-      desc: "Pick your target firms and domains. We personalize your daily prep.",
-    },
-    {
-      n: "02",
-      title: "Solve daily",
-      desc: "Case + guesstimate + news brief. Timed. Scored. Tracked.",
-    },
-    {
-      n: "03",
-      title: "Track your streak",
-      desc: "See where you rank among your batch. Don't break the chain.",
-    },
-    {
-      n: "04",
-      title: "Walk in prepared",
-      desc: "Know what each firm asks, how they evaluate, what they want to hear.",
-    },
-  ];
-  return (
-    <section id="how-it-works" className="bg-background">
-      <div className="mx-auto max-w-[1180px] px-5 md:px-6 py-20 md:py-28">
-        <AnimatedSection>
-          <h2 className="font-serif text-[34px] md:text-[44px] leading-[1.2] tracking-[-0.01em] text-center">
-            How it works.
-          </h2>
-        </AnimatedSection>
-        <div className="mt-14 grid md:grid-cols-4 gap-8">
-          {steps.map((s, i) => (
-            <AnimatedSection key={i} delay={i * 100}>
-              <div className="text-center md:text-left">
-                <span
-                  className="text-[36px] font-bold leading-none"
-                  style={{ fontFamily: "var(--font-mono)", color: "#E8490F" }}
-                >
-                  {s.n}
-                </span>
-                <h3
-                  className="mt-4 text-[17px] font-semibold"
-                  style={{ fontFamily: "var(--font-sans)" }}
-                >
-                  {s.title}
-                </h3>
-                <p className="mt-2 text-[13px] text-text-secondary leading-[1.6]">{s.desc}</p>
-              </div>
-            </AnimatedSection>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ── COMPANY INTEL ── */
-
-function CompanyIntel() {
-  const firms = [
-    { name: "McKinsey", style: "Exhibit-heavy, structured, MECE at every level", icon: "♔" },
-    { name: "BCG", style: "Creative, data-heavy, comfortable with ambiguity", icon: "♕" },
-    { name: "Bain", style: "Commercial sense, buddy interviews, strong opinions", icon: "♖" },
-    { name: "Goldman Sachs", style: "Valuation, market sizing, financial modeling", icon: "♗" },
-    { name: "HUL", style: "Market entry, rural distribution, P&L management", icon: "♘" },
-    { name: "Amazon", style: "LP-driven cases, customer obsession, scale thinking", icon: "♙" },
-  ];
-  return (
-    <section className="relative overflow-hidden grain-overlay" style={{ background: "#FFF7F3" }}>
-      <div className="mx-auto max-w-[1180px] px-5 md:px-6 py-20 md:py-28 relative z-10">
-        <AnimatedSection variant="blur">
-          <span className="label-orange">Company Intelligence</span>
-          <h2 className="mt-5 font-serif text-[34px] md:text-[44px] leading-[1.2] tracking-[-0.01em]">
-            Know what they want before you walk in.
-          </h2>
-          <p className="mt-4 text-[15px] text-text-secondary max-w-[520px]">
-            Interview style, case types, common PI questions, and insider data for 28+ firms.
-          </p>
-        </AnimatedSection>
-        <div className="mt-10 grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {firms.map((f, i) => (
-            <AnimatedSection
-              key={f.name}
-              delay={i * 80}
-              variant={i % 2 === 0 ? "slide-left" : "slide-right"}
-            >
-              <div className="card-base card-magnetic p-5">
-                <div className="flex items-center gap-3 mb-3">
-                  <span className="text-[28px] opacity-20">{f.icon}</span>
-                  <h3
-                    className="text-[16px] font-semibold highlight-bar"
-                    style={{ fontFamily: "var(--font-sans)" }}
-                  >
-                    {f.name}
-                  </h3>
-                </div>
-                <p className="text-[13px] text-text-secondary leading-[1.55]">{f.style}</p>
-                <Link to="/cases" className="btn-ghost text-[12px] mt-3 inline-block">
-                  View Profile →
-                </Link>
-              </div>
-            </AnimatedSection>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ── SOCIAL PROOF ── */
-function SocialProof() {
-  const quotes = [
-    {
-      text: "Constrat's daily cases forced me into a routine. By the time interviews came, I'd solved 60+ cases. Got McKinsey shortlist.",
-      name: "Ananya R.",
-      info: "IMI Delhi, Batch 2025",
-    },
-    {
-      text: "The company profiles told me exactly what Deloitte asks in Round 2. Walked in knowing the framework they wanted.",
-      name: "Karan M.",
-      info: "IMI Delhi, Batch 2025",
-    },
-    {
-      text: "I was doing random prep before Constrat. The streak system and leaderboard made me consistent. 47-day streak and counting.",
-      name: "Priya S.",
-      info: "IMI Delhi, Batch 2026",
-    },
-    {
-      text: "The guesstimate practice alone was worth it. 100+ solved, and my speed went from 8 minutes to under 3.",
-      name: "Arjun D.",
-      info: "IMI Delhi, Batch 2025",
-    },
-  ];
-  return (
-    <section className="bg-background">
-      <div className="mx-auto max-w-[1180px] px-5 md:px-6 py-20 md:py-28">
-        <AnimatedSection>
-          <h2 className="font-serif text-[34px] md:text-[44px] leading-[1.2] tracking-[-0.01em] text-center">
-            What students say.
-          </h2>
-        </AnimatedSection>
-        <div className="mt-12 grid md:grid-cols-2 gap-6">
-          {quotes.map((q, i) => (
-            <AnimatedSection key={i} delay={i * 80}>
-              <div className="card-base p-6">
-                <p className="text-[14px] text-text-secondary leading-[1.7] italic">"{q.text}"</p>
-                <div className="mt-4 pt-4 border-t border-border">
-                  <p className="text-[13px] font-semibold">{q.name}</p>
-                  <p className="text-[12px] text-text-muted">{q.info}</p>
-                </div>
-              </div>
-            </AnimatedSection>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ── COLLEGE NETWORK ── */
-function CollegeNetwork() {
-  const colleges = [
-    "IMI Delhi",
-    "IIM Ahmedabad",
-    "IIM Bangalore",
-    "IIM Kozhikode",
-    "XLRI",
-    "FMS Delhi",
-    "ISB Hyderabad",
-    "MDI Gurgaon",
-  ];
-  return (
-    <section style={{ background: "#FFF7F3" }}>
-      <div className="mx-auto max-w-[1180px] px-5 md:px-6 py-20 md:py-28 text-center">
-        <AnimatedSection>
-          <span className="label-orange">College Network</span>
-          <h2 className="mt-5 font-serif text-[34px] md:text-[44px] leading-[1.2] tracking-[-0.01em]">
-            Built for every B-school.
-          </h2>
-          <div className="mt-10 flex flex-wrap justify-center gap-3">
-            {colleges.map((c) => (
-              <span
-                key={c}
-                className="px-5 py-2.5 rounded-lg border text-[13px] font-medium"
-                style={{
-                  borderColor: c === "IMI Delhi" ? "#E8490F" : "#E8E4DE",
-                  color: c === "IMI Delhi" ? "#E8490F" : "#5C5C5A",
-                  background: c === "IMI Delhi" ? "#FFF0EB" : "#fff",
-                }}
-              >
-                {c}
-              </span>
-            ))}
-          </div>
-          <p className="mt-8 text-[14px] text-text-secondary">
-            Your college isn't here yet?{" "}
-            <a
-              href="https://forms.gle/placeholder"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-orange font-semibold hover:underline"
-            >
-              Bring Constrat to your campus.
-            </a>
-          </p>
-        </AnimatedSection>
-      </div>
-    </section>
-  );
-}
-
-/* ── FINAL CTA ── */
-function FinalCTA() {
-  return (
-    <section className="gradient-cta relative overflow-hidden">
-      <div className="mx-auto max-w-[1180px] px-5 md:px-6 py-24 md:py-32 text-center relative z-10">
-        <AnimatedSection>
-          <h2
-            className="font-serif text-[36px] sm:text-[48px] md:text-[56px] leading-[1.2] tracking-[-0.01em]"
-            style={{ color: "#F4ECE2" }}
-          >
-            Placement season doesn't wait.
-            <br />
-            Neither should you.
-          </h2>
-          <Link
-            to="/join"
-            className="inline-flex items-center justify-center h-[56px] px-8 rounded-[12px] bg-orange text-white font-semibold text-[16px] hover:bg-orange-hover transition-all hover:-translate-y-px shadow-lg shadow-orange/20 mt-10"
-            style={{ fontFamily: "var(--font-sans)" }}
-          >
-            Start Preparing — It's Free
-          </Link>
-        </AnimatedSection>
-      </div>
-    </section>
+    <div
+      className="bg-white p-6 transition-colors hover:bg-[#fafcfe]"
+      style={{
+        borderRight: borderRight ? "1px solid #e2e8f0" : "none",
+        borderBottom: borderBottom ? "1px solid #e2e8f0" : "none",
+      }}
+    >
+      <p
+        className="font-bold text-[#0a1628]"
+        style={{ fontSize: "14px", letterSpacing: "-0.01em" }}
+      >
+        {c.name}
+      </p>
+      <p
+        className="text-[#8a9bb0] font-light mt-0.5"
+        style={{ fontSize: "11px" }}
+      >
+        {c.sector}
+      </p>
+      <p
+        className="mt-4 text-[#4a5d76] font-light leading-[1.55]"
+        style={{ fontSize: "12px" }}
+      >
+        {c.style}
+      </p>
+      <p
+        className="mt-5 font-semibold text-[#e8490f] cursor-pointer hover:text-[#c03a08]"
+        style={{ fontSize: "12px" }}
+      >
+        View Profile →
+      </p>
+    </div>
   );
 }
