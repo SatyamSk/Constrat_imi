@@ -11,21 +11,20 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 /**
- * Minimal Supabase client — same shape as the reference HTML app that works
- * in the user's other project. NO flowType set, NO custom storage, NO
- * custom detectSessionInUrl. The SDK's defaults work; every time we've added
- * extra config the OAuth flow has broken.
+ * Implicit flow — returns #access_token directly in the URL hash.
+ * The SDK's detectSessionInUrl (default: true) picks it up automatically.
  *
- * The SDK default IS `detectSessionInUrl: true` and `persistSession: true`
- * and `autoRefreshToken: true` — we don't need to set them.
- *
- * If you want PKCE later, add `flowType: "pkce"` AND make sure /auth/callback
- * is in Supabase's redirect allowlist AND that no other client overwrites
- * the verifier. For now: don't.
+ * DO NOT use PKCE here. The code verifier stored in localStorage before
+ * the Google redirect consistently gets lost/mismatched, producing the
+ * "Unable to exchange external code: 4/0A" error. Implicit avoids this.
  */
 export const supabase =
   supabaseUrl && supabaseAnonKey
-    ? createClient(supabaseUrl, supabaseAnonKey)
+    ? createClient(supabaseUrl, supabaseAnonKey, {
+        auth: {
+          flowType: "implicit",
+        },
+      })
     : null;
 
 export const isSupabaseConfigured = !!supabase;
