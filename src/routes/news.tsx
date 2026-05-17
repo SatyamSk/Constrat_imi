@@ -613,7 +613,7 @@ function FeaturedTile({
   return (
     <article className="rounded-[16px] overflow-hidden border border-border bg-white shadow-sm">
       <div className="grid md:grid-cols-[1.2fr_1fr] gap-0">
-        <NewsImage url={item.image_url} fallbackColor={color} className="md:h-full md:min-h-[280px] h-[200px]" />
+        <NewsImage url={item.image_url} fallbackColor={color} topic={item.topic} className="md:h-full md:min-h-[280px] h-[200px]" />
         <div className="p-6 md:p-8 flex flex-col">
           <div className="flex items-center gap-2 mb-3">
             <span
@@ -707,7 +707,7 @@ function NewsTile({
   return (
     <article className="card-base overflow-hidden flex flex-col h-full">
       <SourceLink url={item.url}>
-        <NewsImage url={item.image_url} fallbackColor={color} className="h-[160px]" />
+        <NewsImage url={item.image_url} fallbackColor={color} topic={item.topic} className="h-[160px]" />
       </SourceLink>
 
       <div className="p-5 flex flex-col flex-1">
@@ -953,21 +953,40 @@ function PillRow({
   );
 }
 
-// ---------------------------------------------------------------------------
-// Bits
-// ---------------------------------------------------------------------------
+/** Map topics to image search terms for auto-generated Unsplash images */
+const TOPIC_IMAGE_TERMS: Record<string, string> = {
+  "Markets & Economy": "stock+market+trading",
+  "Policy & Regulation": "government+policy",
+  "Startups & VC": "startup+office+tech",
+  "FMCG & Retail": "retail+store+shopping",
+  "Consulting Industry": "business+consulting+meeting",
+  "Global Business": "global+trade+shipping",
+  "India Focus": "india+business+city",
+  Technology: "technology+artificial+intelligence",
+};
 
 function NewsImage({
   url,
   fallbackColor,
   className = "",
+  topic,
 }: {
   url?: string;
   fallbackColor: string;
   className?: string;
+  topic?: string;
 }) {
   const [errored, setErrored] = useState(false);
-  if (!url || errored) {
+
+  // Generate a topic-aware Unsplash image when no URL is provided
+  const effectiveUrl = (!url || errored)
+    ? `https://source.unsplash.com/800x500/?${TOPIC_IMAGE_TERMS[topic ?? ""] || "business+finance"}`
+    : url;
+
+  // If Unsplash also errors, fall back to gradient
+  const [fallbackErrored, setFallbackErrored] = useState(false);
+
+  if ((!url || errored) && fallbackErrored) {
     return (
       <div
         className={`w-full ${className}`}
@@ -980,10 +999,16 @@ function NewsImage({
   }
   return (
     <img
-      src={url}
+      src={effectiveUrl}
       alt=""
       loading="lazy"
-      onError={() => setErrored(true)}
+      onError={() => {
+        if (!url || errored) {
+          setFallbackErrored(true);
+        } else {
+          setErrored(true);
+        }
+      }}
       className={`w-full object-cover ${className}`}
     />
   );
