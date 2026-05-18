@@ -320,9 +320,11 @@ function DarkSidebar({
   const items = [
     { label: "Today's Brief", to: "/dashboard" },
     { label: "Practice", to: "/practice" },
+    { label: "Analytics", to: "/analytics" },
     { label: "News Feed", to: "/news" },
     { label: "Competitions", to: "/events" },
     { label: "Rankings", to: "/leaderboard" },
+    { label: "Upgrade", to: "/upgrade" },
     { label: "Settings", to: "/account" },
   ];
 
@@ -592,7 +594,7 @@ function RightPanel({
             </div>
             {!isPro && (
               <Link
-                to="/payment"
+                to="/upgrade"
                 className="mt-3 inline-block text-[11px] font-semibold text-[#e8490f] hover:underline"
               >
                 Upgrade for more →

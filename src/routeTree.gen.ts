@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from "./routes/__root"
+import { Route as UpgradeRouteImport } from "./routes/upgrade"
 import { Route as TimetableRouteImport } from "./routes/timetable"
 import { Route as SubmitCaseRouteImport } from "./routes/submit-case"
 import { Route as ResetPasswordRouteImport } from "./routes/reset-password"
@@ -23,6 +24,7 @@ import { Route as EventsRouteImport } from "./routes/events"
 import { Route as DeadlinesRouteImport } from "./routes/deadlines"
 import { Route as DashboardRouteImport } from "./routes/dashboard"
 import { Route as CasesRouteImport } from "./routes/cases"
+import { Route as AnalyticsRouteImport } from "./routes/analytics"
 import { Route as AlumniRouteImport } from "./routes/alumni"
 import { Route as AdminRouteImport } from "./routes/admin"
 import { Route as AccountRouteImport } from "./routes/account"
@@ -30,6 +32,11 @@ import { Route as IndexRouteImport } from "./routes/index"
 import { Route as CaseCaseIdRouteImport } from "./routes/case.$caseId"
 import { Route as AuthCallbackRouteImport } from "./routes/auth.callback"
 
+const UpgradeRoute = UpgradeRouteImport.update({
+  id: "/upgrade",
+  path: "/upgrade",
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TimetableRoute = TimetableRouteImport.update({
   id: "/timetable",
   path: "/timetable",
@@ -100,6 +107,11 @@ const CasesRoute = CasesRouteImport.update({
   path: "/cases",
   getParentRoute: () => rootRouteImport,
 } as any)
+const AnalyticsRoute = AnalyticsRouteImport.update({
+  id: "/analytics",
+  path: "/analytics",
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AlumniRoute = AlumniRouteImport.update({
   id: "/alumni",
   path: "/alumni",
@@ -136,6 +148,7 @@ export interface FileRoutesByFullPath {
   "/account": typeof AccountRoute
   "/admin": typeof AdminRoute
   "/alumni": typeof AlumniRoute
+  "/analytics": typeof AnalyticsRoute
   "/cases": typeof CasesRoute
   "/dashboard": typeof DashboardRoute
   "/deadlines": typeof DeadlinesRoute
@@ -150,6 +163,7 @@ export interface FileRoutesByFullPath {
   "/reset-password": typeof ResetPasswordRoute
   "/submit-case": typeof SubmitCaseRoute
   "/timetable": typeof TimetableRoute
+  "/upgrade": typeof UpgradeRoute
   "/auth/callback": typeof AuthCallbackRoute
   "/case/$caseId": typeof CaseCaseIdRoute
 }
@@ -158,6 +172,7 @@ export interface FileRoutesByTo {
   "/account": typeof AccountRoute
   "/admin": typeof AdminRoute
   "/alumni": typeof AlumniRoute
+  "/analytics": typeof AnalyticsRoute
   "/cases": typeof CasesRoute
   "/dashboard": typeof DashboardRoute
   "/deadlines": typeof DeadlinesRoute
@@ -172,6 +187,7 @@ export interface FileRoutesByTo {
   "/reset-password": typeof ResetPasswordRoute
   "/submit-case": typeof SubmitCaseRoute
   "/timetable": typeof TimetableRoute
+  "/upgrade": typeof UpgradeRoute
   "/auth/callback": typeof AuthCallbackRoute
   "/case/$caseId": typeof CaseCaseIdRoute
 }
@@ -181,6 +197,7 @@ export interface FileRoutesById {
   "/account": typeof AccountRoute
   "/admin": typeof AdminRoute
   "/alumni": typeof AlumniRoute
+  "/analytics": typeof AnalyticsRoute
   "/cases": typeof CasesRoute
   "/dashboard": typeof DashboardRoute
   "/deadlines": typeof DeadlinesRoute
@@ -195,6 +212,7 @@ export interface FileRoutesById {
   "/reset-password": typeof ResetPasswordRoute
   "/submit-case": typeof SubmitCaseRoute
   "/timetable": typeof TimetableRoute
+  "/upgrade": typeof UpgradeRoute
   "/auth/callback": typeof AuthCallbackRoute
   "/case/$caseId": typeof CaseCaseIdRoute
 }
@@ -205,6 +223,7 @@ export interface FileRouteTypes {
     | "/account"
     | "/admin"
     | "/alumni"
+    | "/analytics"
     | "/cases"
     | "/dashboard"
     | "/deadlines"
@@ -219,6 +238,7 @@ export interface FileRouteTypes {
     | "/reset-password"
     | "/submit-case"
     | "/timetable"
+    | "/upgrade"
     | "/auth/callback"
     | "/case/$caseId"
   fileRoutesByTo: FileRoutesByTo
@@ -227,6 +247,7 @@ export interface FileRouteTypes {
     | "/account"
     | "/admin"
     | "/alumni"
+    | "/analytics"
     | "/cases"
     | "/dashboard"
     | "/deadlines"
@@ -241,6 +262,7 @@ export interface FileRouteTypes {
     | "/reset-password"
     | "/submit-case"
     | "/timetable"
+    | "/upgrade"
     | "/auth/callback"
     | "/case/$caseId"
   id:
@@ -249,6 +271,7 @@ export interface FileRouteTypes {
     | "/account"
     | "/admin"
     | "/alumni"
+    | "/analytics"
     | "/cases"
     | "/dashboard"
     | "/deadlines"
@@ -263,6 +286,7 @@ export interface FileRouteTypes {
     | "/reset-password"
     | "/submit-case"
     | "/timetable"
+    | "/upgrade"
     | "/auth/callback"
     | "/case/$caseId"
   fileRoutesById: FileRoutesById
@@ -272,6 +296,7 @@ export interface RootRouteChildren {
   AccountRoute: typeof AccountRoute
   AdminRoute: typeof AdminRoute
   AlumniRoute: typeof AlumniRoute
+  AnalyticsRoute: typeof AnalyticsRoute
   CasesRoute: typeof CasesRoute
   DashboardRoute: typeof DashboardRoute
   DeadlinesRoute: typeof DeadlinesRoute
@@ -286,12 +311,20 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   SubmitCaseRoute: typeof SubmitCaseRoute
   TimetableRoute: typeof TimetableRoute
+  UpgradeRoute: typeof UpgradeRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   CaseCaseIdRoute: typeof CaseCaseIdRoute
 }
 
 declare module "@tanstack/react-router" {
   interface FileRoutesByPath {
+    "/upgrade": {
+      id: "/upgrade"
+      path: "/upgrade"
+      fullPath: "/upgrade"
+      preLoaderRoute: typeof UpgradeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     "/timetable": {
       id: "/timetable"
       path: "/timetable"
@@ -390,6 +423,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof CasesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    "/analytics": {
+      id: "/analytics"
+      path: "/analytics"
+      fullPath: "/analytics"
+      preLoaderRoute: typeof AnalyticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     "/alumni": {
       id: "/alumni"
       path: "/alumni"
@@ -440,6 +480,7 @@ const rootRouteChildren: RootRouteChildren = {
   AccountRoute: AccountRoute,
   AdminRoute: AdminRoute,
   AlumniRoute: AlumniRoute,
+  AnalyticsRoute: AnalyticsRoute,
   CasesRoute: CasesRoute,
   DashboardRoute: DashboardRoute,
   DeadlinesRoute: DeadlinesRoute,
@@ -454,6 +495,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   SubmitCaseRoute: SubmitCaseRoute,
   TimetableRoute: TimetableRoute,
+  UpgradeRoute: UpgradeRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   CaseCaseIdRoute: CaseCaseIdRoute,
 }

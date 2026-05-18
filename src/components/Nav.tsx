@@ -8,6 +8,7 @@ const PUBLIC_LINKS = [
   { label: "News", to: "/news" },
   { label: "Companies", to: "/events" }, // /events houses Companies + Competitions
   { label: "Leaderboard", to: "/leaderboard" },
+  { label: "Analytics", to: "/analytics" },
 ];
 
 const ADMIN_LINKS = [
@@ -101,6 +102,15 @@ export function Nav() {
 
           {/* Right side */}
           <div className="hidden lg:flex items-center gap-3">
+            {user && (
+              <Link
+                to="/upgrade"
+                className="h-7 px-3 inline-flex items-center text-[11px] font-bold rounded-full bg-[#e8490f] text-white hover:bg-[#c03a08] transition-colors uppercase tracking-[0.06em]"
+              >
+                ★ Pro
+              </Link>
+            )}
+
             {user && isAdmin && (
               <Link
                 to="/admin"

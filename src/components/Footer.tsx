@@ -31,7 +31,7 @@ export function Footer() {
           <FooterCol title="Account">
             <FooterLink to="/dashboard">Dashboard</FooterLink>
             <FooterLink to="/account">Profile</FooterLink>
-            <FooterLink to="/payment">Become Pro</FooterLink>
+            <FooterLink to="/upgrade">Become Pro</FooterLink>
             <FooterLink to="/join">Sign Up</FooterLink>
           </FooterCol>
 

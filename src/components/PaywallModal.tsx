@@ -61,7 +61,7 @@ export function PaywallModal({ used, limit, tier, kind, onClose }: Props) {
           <button onClick={onClose} className="btn-secondary flex-1">
             Maybe later
           </button>
-          <Link to="/payment" className="btn-primary flex-1 text-center">
+          <Link to="/upgrade" className="btn-primary flex-1 text-center">
             Upgrade
           </Link>
         </div>
