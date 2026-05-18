@@ -288,7 +288,7 @@ function CaseDetail() {
                       disabled={submitting}
                       className="btn-primary h-12 px-7 text-[14px] disabled:opacity-60"
                     >
-                      {submitting ? "Analysing with GPT-4o…" : "Submit Structure →"}
+                      {submitting ? "Analysing…" : "Submit Structure →"}
                     </button>
                     <p className="text-[11px] text-[#8a9bb0] font-light">
                       Photo submissions count against your daily quota. Text-only is unlimited.

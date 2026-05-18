@@ -10,93 +10,103 @@ export const Route = createFileRoute("/leaderboard")({ component: Leaderboard })
 const USERS = [
   {
     rank: 1,
-    name: "Ananya R.",
-    college: "IMI Delhi",
+    name: "Ananya Raghavan",
+    college: "IMI New Delhi",
     cases: 67,
     guesstimates: 112,
     streak: 47,
     longest: 47,
+    todayPts: 18,
   },
   {
     rank: 2,
-    name: "Karan M.",
-    college: "IMI Delhi",
+    name: "Karan Malhotra",
+    college: "IMI New Delhi",
     cases: 58,
     guesstimates: 95,
     streak: 33,
     longest: 41,
+    todayPts: 12,
   },
   {
     rank: 3,
-    name: "Priya S.",
-    college: "IMI Delhi",
+    name: "Priya Srinivasan",
+    college: "IMI New Delhi",
     cases: 52,
     guesstimates: 88,
     streak: 29,
     longest: 35,
+    todayPts: 9,
   },
   {
     rank: 4,
-    name: "Arjun D.",
-    college: "IMI Delhi",
+    name: "Arjun Deshpande",
+    college: "IIM Ahmedabad",
     cases: 45,
     guesstimates: 76,
     streak: 21,
     longest: 28,
+    todayPts: 15,
   },
   {
     rank: 5,
-    name: "Sneha K.",
-    college: "IMI Delhi",
+    name: "Sneha Kulkarni",
+    college: "IIM Bangalore",
     cases: 41,
     guesstimates: 63,
     streak: 18,
     longest: 24,
+    todayPts: 0,
   },
   {
     rank: 6,
-    name: "Rahul P.",
-    college: "IMI Delhi",
+    name: "Rahul Parthasarathy",
+    college: "IMI New Delhi",
     cases: 38,
     guesstimates: 58,
     streak: 14,
     longest: 22,
+    todayPts: 6,
   },
   {
     rank: 7,
-    name: "Meera J.",
-    college: "IMI Delhi",
+    name: "Meera Joshi",
+    college: "XLRI Jamshedpur",
     cases: 34,
     guesstimates: 51,
     streak: 12,
     longest: 19,
+    todayPts: 3,
   },
   {
     rank: 8,
-    name: "Vikram S.",
-    college: "IMI Delhi",
+    name: "Vikram Sethi",
+    college: "IMI New Delhi",
     cases: 29,
     guesstimates: 44,
     streak: 9,
     longest: 16,
+    todayPts: 8,
   },
   {
     rank: 9,
-    name: "Neha G.",
-    college: "IMI Delhi",
+    name: "Neha Gupta",
+    college: "FMS Delhi",
     cases: 25,
     guesstimates: 39,
     streak: 7,
     longest: 14,
+    todayPts: 0,
   },
   {
     rank: 10,
-    name: "Amit T.",
-    college: "IMI Delhi",
+    name: "Amit Thakkar",
+    college: "IMI New Delhi",
     cases: 22,
     guesstimates: 33,
     streak: 5,
     longest: 11,
+    todayPts: 4,
   },
 ].map((u) => ({ ...u, score: u.cases * 3 + u.guesstimates * 1 + u.streak * 2 }));
 
@@ -258,11 +268,19 @@ function Leaderboard() {
                   </div>
                 </div>
                 <p
-                  className="text-[18px] font-bold shrink-0"
-                  style={{ fontFamily: "var(--font-mono)" }}
-                >
-                  {u.score}
-                </p>
+                    className="text-[18px] font-bold shrink-0"
+                    style={{ fontFamily: "var(--font-mono)" }}
+                  >
+                    {u.score}
+                  </p>
+                  {u.todayPts > 0 && (
+                    <span
+                      className="text-[11px] font-bold shrink-0 tabular-nums"
+                      style={{ color: "#16A34A", fontFamily: "var(--font-mono)" }}
+                    >
+                      +{u.todayPts}
+                    </span>
+                  )}
               </div>
             </AnimatedSection>
           ))}

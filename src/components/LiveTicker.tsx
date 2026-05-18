@@ -9,7 +9,7 @@ const FALLBACK: TickerItem[] = [
   { text: "Daily case drops at 06:00 IST" },
   { text: "GD brief generator: 3 free / day" },
   { text: "McKinsey case methodology updated" },
-  { text: "Photo analysis powered by GPT-4o Vision" },
+  { text: "Photo analysis: snap your case structure, get an AI score in seconds" },
   { text: "Pro plan: ₹99/mo · cancel anytime" },
 ];
 

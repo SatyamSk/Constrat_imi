@@ -160,7 +160,7 @@ function BecomePro() {
           <Feature
             icon="📸"
             title="Unlimited photo analyses"
-            body="Snap your handwritten case structure, get a GPT-4o Vision score in seconds. Free plan stops at 5/day — Pro keeps going as long as you do."
+            body="Snap your handwritten case structure, get an AI score in seconds. Free plan stops at 5/day — Pro keeps going as long as you do."
           />
           <Feature
             icon="📰"
@@ -216,7 +216,7 @@ function BecomePro() {
             <tbody className="text-[14px]">
               <Row label="Daily AI-generated case + guesstimate" free="✓" pro="✓" />
               <Row label="Text-based case analysis" free="Unlimited" pro="Unlimited" />
-              <Row label="Photo case analysis (GPT-4o Vision)" free="5 / day" pro="Unlimited" highlight />
+              <Row label="Photo case analysis (AI Vision)" free="5 / day" pro="Unlimited" highlight />
               <Row label="GD news briefs (macro/micro/args)" free="3 / day" pro="25 / day" highlight />
               <Row label="Per-case + global leaderboards" free="✓" pro="✓" />
               <Row label="Early access to new cases (48h)" free="—" pro="✓" highlight />
@@ -276,7 +276,7 @@ function BecomePro() {
         <div className="mt-10 space-y-3">
           <Faq q="How does the Pro photo analysis quota work?">
             On Pro, photo submissions are unlimited (soft ceiling of 1000/day to
-            block abuse). Each photo gets a full GPT-4o Vision pass scoring
+            block abuse). Each photo gets a full AI Vision pass scoring
             framework, clarity, approach, and execution out of 100 — same as
             the free tier, just without the 5/day wall.
           </Faq>

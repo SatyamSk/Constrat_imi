@@ -224,11 +224,10 @@ function SubmitCase() {
                       disabled={submitting}
                       className="btn-primary w-full disabled:opacity-60"
                     >
-                      {submitting ? "Analyzing with GPT-4o…" : "Submit for AI Analysis"}
+                      {submitting ? "Analysing…" : "Submit for AI Analysis"}
                     </button>
                     <p className="text-[11px] text-text-muted text-center">
-                      Your photo and answer are sent to OpenAI for evaluation. Don't include
-                      anything you wouldn't share.
+                      Your solution is scored on framework, clarity, approach, and execution.
                     </p>
                   </form>
                 </div>

@@ -128,7 +128,7 @@ function Home() {
           <div className="mt-12 grid md:grid-cols-2 lg:grid-cols-4 gap-0 border border-[#e2e8f0]">
             <Step n="01" title="Open the daily brief" body="Today's case, news ticker, and your live rank are pre-loaded for you every morning at 06:00 IST." />
             <Step n="02" title="Solve in 25 min" body="Build your framework directly on the grid workspace. Timer, benchmarks, structure checklist on the side." last={false} />
-            <Step n="03" title="Get an AI score" body="GPT-4o Vision scores your structure on framework, clarity, approach, execution. 0-100 in seconds." last={false} />
+            <Step n="03" title="Get an AI score" body="Our AI scores your structure on framework, clarity, approach, execution. 0-100 in seconds." last={false} />
             <Step n="04" title="See where you rank" body="Per-case + global leaderboards. Tagged by B-school. Recruiters cold-mail people in the top 50." last />
           </div>
         </div>
