@@ -6,6 +6,10 @@ import { getMyGlobalRank, getGlobalLeaderboard } from "@/lib/caseAnalysis";
 import { getMySubscription, checkQuota, type SubscriptionInfo, type QuotaInfo } from "@/lib/billing";
 import { getSitePulse, type SitePulse } from "@/lib/sitePulse";
 import { Nav } from "@/components/Nav";
+import {
+  RadarChart, ScoreGraph, PercentileCard, InsightsPanel,
+  CASE_AXES, GUESSTIMATE_AXES, SCORE_HISTORY,
+} from "@/components/Analytics";
 
 export const Route = createFileRoute("/dashboard")({ component: Dashboard });
 
@@ -170,8 +174,50 @@ function Dashboard() {
               score={stats.total_score}
             />
 
-            {/* FEATURED CASE */}
-            <FeaturedCase daily={daily} navigate={navigate} />
+            {/* ANALYTICS HUB */}
+            <section className="mt-8">
+              <div className="flex items-baseline justify-between mb-5">
+                <h2 className="text-[#0a1628] font-bold" style={{ fontSize: "16px", letterSpacing: "-0.015em" }}>
+                  Performance Analytics
+                </h2>
+              </div>
+
+              {/* Percentile strip */}
+              <div className="flex gap-5 mb-6">
+                <div className="flex-1 p-4" style={{ background: "rgba(255,255,255,0.62)", backdropFilter: "blur(2px)", border: "1px solid #e2e8f0", borderRadius: 6 }}>
+                  <PercentileCard rank={rank?.rank ?? 3} totalUsers={148} period="This Week" />
+                </div>
+                <div className="flex-1 p-4" style={{ background: "rgba(255,255,255,0.62)", backdropFilter: "blur(2px)", border: "1px solid #e2e8f0", borderRadius: 6 }}>
+                  <PercentileCard rank={rank?.rank ?? 5} totalUsers={312} period="This Month" />
+                </div>
+                <div className="flex-1 p-4" style={{ background: "rgba(255,255,255,0.62)", backdropFilter: "blur(2px)", border: "1px solid #e2e8f0", borderRadius: 6 }}>
+                  <PercentileCard rank={rank?.rank ?? 8} totalUsers={520} period="Overall" />
+                </div>
+              </div>
+
+              {/* Radar charts side by side */}
+              <div className="grid md:grid-cols-2 gap-4 mb-6">
+                <div className="p-5" style={{ background: "rgba(255,255,255,0.62)", backdropFilter: "blur(2px)", border: "1px solid #e2e8f0", borderRadius: 6 }}>
+                  <RadarChart axes={CASE_AXES} accent="#E8490F" title="Case Solving" />
+                </div>
+                <div className="p-5" style={{ background: "rgba(255,255,255,0.62)", backdropFilter: "blur(2px)", border: "1px solid #e2e8f0", borderRadius: 6 }}>
+                  <RadarChart axes={GUESSTIMATE_AXES} accent="#3B82F6" title="Guesstimates" />
+                </div>
+              </div>
+
+              {/* Score progression */}
+              <div className="p-5 mb-6" style={{ background: "rgba(255,255,255,0.62)", backdropFilter: "blur(2px)", border: "1px solid #e2e8f0", borderRadius: 6 }}>
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-[11px] uppercase tracking-[0.1em] font-bold text-[#8a9bb0]">
+                    Score Progression · Last 20 submissions
+                  </p>
+                </div>
+                <ScoreGraph data={SCORE_HISTORY} />
+              </div>
+
+              {/* Strengths & Focus */}
+              <InsightsPanel caseAxes={CASE_AXES} guessAxes={GUESSTIMATE_AXES} />
+            </section>
 
             {/* MARKET INTELLIGENCE / NEWS FEED */}
             <section className="mt-10">
@@ -190,7 +236,7 @@ function Dashboard() {
                     News will appear after the daily aggregator runs.
                   </p>
                 ) : (
-                  news.map((n) => <NewsRow key={n.id} item={n} />)
+                  news.slice(0, 2).map((n) => <NewsRow key={n.id} item={n} />)
                 )}
               </div>
             </section>
