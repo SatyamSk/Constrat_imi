@@ -278,6 +278,17 @@ def process_article(source: str, country: str, entry) -> dict | None:
         if not article_url:
             return None
 
+        # Get published date from RSS entry
+        published = getattr(entry, "published", "") or ""
+        if published and hasattr(entry, "published_parsed") and entry.published_parsed:
+            try:
+                published = datetime(*entry.published_parsed[:6], tzinfo=timezone.utc).isoformat()
+            except Exception:
+                if not published:
+                    published = datetime.now(timezone.utc).isoformat()
+        else:
+            published = published or datetime.now(timezone.utc).isoformat()
+
         # Get thumbnail from RSS
         thumbnail = extract_thumbnail(entry)
 
@@ -497,7 +508,7 @@ def upsert_news(article: dict) -> bool:
         "ai_summary": article.get("description", "")[:300],
         "country": article.get("_country", "IN"),
         "read_time": "2 min",
-        "published_at": datetime.now(timezone.utc).isoformat(),
+        "published_at": article.get("published", datetime.now(timezone.utc).isoformat()),
         "image_url": article.get("image_url", ""),
         "gd_analysis": {},
     }
