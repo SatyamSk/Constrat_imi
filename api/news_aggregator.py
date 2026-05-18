@@ -1,25 +1,36 @@
 """
-News Aggregator — fetches articles, finds the canonical article URL, and an
-image. Articles are NEVER dropped just because we couldn't find an image — the
-UI falls back to a gradient placeholder.
+News Aggregator — fetches RSS feeds, extracts exact article URLs and
+high-quality thumbnail images, filters by MBA/consulting relevance via GPT,
+and upserts to Supabase.
 
-Cron: vercel.json runs /api/news_aggregator daily at 05:00 UTC.
+Uses feedparser + requests + BeautifulSoup for robust extraction.
+
+Cron: vercel.json runs /api/news_aggregator twice daily (05:00 & 14:00 UTC).
+Admin can also trigger manually from /admin → News tab.
 
 Env required:
   SUPABASE_URL or VITE_SUPABASE_URL
   SUPABASE_SERVICE_ROLE_KEY
-  CRON_SECRET                  (optional, recommended)
+  OPENAI_API_KEY                 (for GPT relevance filtering)
+  CRON_SECRET                    (optional, recommended)
 """
 from __future__ import annotations
 
 import json
 import os
 import re
-import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler
-from urllib.parse import quote_plus, urljoin, urlparse, urlunparse
-from urllib.request import Request, build_opener, HTTPRedirectHandler
+from concurrent.futures import ThreadPoolExecutor
+from urllib.parse import urljoin, urlparse, urlunparse
+
+import feedparser
+import requests
+from bs4 import BeautifulSoup
+
+# ---------------------------------------------------------------------------
+# Config
+# ---------------------------------------------------------------------------
 
 SUPABASE_URL = (
     os.environ.get("SUPABASE_URL")
@@ -30,121 +41,51 @@ SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
 OPENAI_KEY = os.environ.get("OPENAI_API_KEY", "")
 CRON_SECRET = os.environ.get("CRON_SECRET", "")
 
+HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+    ),
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.5",
+}
+
+# ---------------------------------------------------------------------------
+# RSS Feed Sources — business, macro/micro economics, consulting
+# ---------------------------------------------------------------------------
+
 RSS_FEEDS = [
-    {"url": "https://economictimes.indiatimes.com/rssfeedstopstories.cms",
+    # Indian business
+    {"url": "https://economictimes.indiatimes.com/rssfeedsdefault.cms",
      "source": "Economic Times", "country": "IN"},
     {"url": "https://www.livemint.com/rss/companies",
      "source": "Mint", "country": "IN"},
     {"url": "https://www.business-standard.com/rss/latest.rss",
      "source": "Business Standard", "country": "IN"},
-    {"url": "https://feeds.reuters.com/reuters/businessNews",
-     "source": "Reuters", "country": "GLOBAL"},
     {"url": "https://www.thehindubusinessline.com/feeder/default.rss",
      "source": "Hindu Business Line", "country": "IN"},
+    # Global business
+    {"url": "https://feeds.reuters.com/reuters/businessNews",
+     "source": "Reuters", "country": "GLOBAL"},
+    {"url": "https://feeds.reuters.com/reuters/topNews",
+     "source": "Reuters Top", "country": "GLOBAL"},
+    {"url": "https://news.google.com/rss/search?q=consulting+business+strategy&hl=en-IN&gl=IN&ceid=IN:en",
+     "source": "Google News", "country": "GLOBAL"},
+    {"url": "https://rss.nytimes.com/services/xml/rss/nyt/Business.xml",
+     "source": "NY Times", "country": "GLOBAL"},
 ]
 
-MAX_ITEMS_PER_FEED = 8
-
-UA_HEADERS = {
-    "User-Agent": (
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-        "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
-    ),
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-    "Accept-Language": "en-US,en;q=0.5",
-}
-
-NS = {
-    "media":   "http://search.yahoo.com/mrss/",
-    "content": "http://purl.org/rss/1.0/modules/content/",
-    "dc":      "http://purl.org/dc/elements/1.1/",
-}
+MAX_ITEMS_PER_FEED = 15
 
 # ---------------------------------------------------------------------------
-# Regex pool
+# HTML / URL helpers
 # ---------------------------------------------------------------------------
 
-IMG_TAG_RE = re.compile(r'<img[^>]+(?:data-src|src)=[\'"]([^\'"]+)[\'"]', re.I)
-OG_IMAGE_RES = [
-    re.compile(r'<meta[^>]+property=[\'"]og:image[\'"][^>]+content=[\'"]([^\'"]+)[\'"]', re.I),
-    re.compile(r'<meta[^>]+content=[\'"]([^\'"]+)[\'"][^>]+property=[\'"]og:image[\'"]', re.I),
-    re.compile(r'<meta[^>]+property=[\'"]og:image:secure_url[\'"][^>]+content=[\'"]([^\'"]+)[\'"]', re.I),
-    re.compile(r'<meta[^>]+name=[\'"]twitter:image[\'"][^>]+content=[\'"]([^\'"]+)[\'"]', re.I),
-    re.compile(r'<meta[^>]+content=[\'"]([^\'"]+)[\'"][^>]+name=[\'"]twitter:image[\'"]', re.I),
-]
-CANONICAL_RE = re.compile(r'<link[^>]+rel=[\'"]canonical[\'"][^>]+href=[\'"]([^\'"]+)[\'"]', re.I)
-CANONICAL_RE_ALT = re.compile(r'<link[^>]+href=[\'"]([^\'"]+)[\'"][^>]+rel=[\'"]canonical[\'"]', re.I)
-JSON_LD_IMG_RE = re.compile(r'"image"\s*:\s*"([^"]+)"', re.I)
-JSON_LD_IMG_LIST_RE = re.compile(r'"image"\s*:\s*\[\s*"([^"]+)"', re.I)
+HTML_RE = re.compile(r"<[^>]+>")
 
 
-# ---------------------------------------------------------------------------
-# HTTP with redirect tracking
-# ---------------------------------------------------------------------------
-
-class _TrackingRedirectHandler(HTTPRedirectHandler):
-    """Records the final URL after redirects so we can use it as canonical."""
-    def __init__(self):
-        super().__init__()
-        self.final_url = None
-
-    def redirect_request(self, req, fp, code, msg, headers, newurl):
-        self.final_url = newurl
-        return super().redirect_request(req, fp, code, msg, headers, newurl)
-
-
-def http_get(url: str, timeout: int = 10, max_bytes: int = 524_288):
-    """Fetch URL with redirect tracking. Returns (final_url, body_text)."""
-    handler = _TrackingRedirectHandler()
-    opener = build_opener(handler)
-    req = Request(url, headers=UA_HEADERS)
-    try:
-        with opener.open(req, timeout=timeout) as resp:
-            body = resp.read(max_bytes).decode("utf-8", errors="ignore")
-            final = handler.final_url or resp.geturl() or url
-            return final, body
-    except Exception as e:
-        # eslint -- print so it shows in vercel logs
-        print(f"[news] http_get failed for {url[:80]}: {e}")
-        return url, ""
-
-
-# ---------------------------------------------------------------------------
-# URL helpers
-# ---------------------------------------------------------------------------
-
-def _normalise(url: str, base: str = "") -> str:
-    url = (url or "").strip()
-    if not url:
-        return ""
-    if url.startswith("//"):
-        return "https:" + url
-    if url.startswith("/") and base:
-        return urljoin(base, url)
-    return url
-
-
-# Tracking / aggregator domains where the RSS <link> is just a redirect shim.
-# We treat ANY redirect as fine; this list is for "definitely needs resolving"
-# detection if we want to skip OG scrapes on shim URLs.
-_TRACKER_HOSTS = {
-    "news.google.com",
-    "feedproxy.google.com",
-    "feeds.feedburner.com",
-    "click.linksynergy.com",
-    "redirect.viglink.com",
-    "trib.al",
-    "bit.ly",
-    "ow.ly",
-}
-
-
-def _is_tracker(url: str) -> bool:
-    try:
-        host = (urlparse(url).hostname or "").lower()
-        return any(host == t or host.endswith("." + t) for t in _TRACKER_HOSTS)
-    except Exception:
-        return False
+def _strip_html(s: str) -> str:
+    return HTML_RE.sub("", s or "").strip()
 
 
 def _strip_tracking_params(url: str) -> str:
@@ -156,8 +97,8 @@ def _strip_tracking_params(url: str) -> str:
         kept = [
             kv for kv in parts.query.split("&")
             if kv and not kv.lower().startswith(
-                ("utm_", "fbclid", "gclid", "mc_cid", "mc_eid", "ref=", "ref_src",
-                 "source=", "from=", "_branch", "share_id", "share_app_id")
+                ("utm_", "fbclid", "gclid", "mc_cid", "mc_eid", "ref=",
+                 "source=", "from=", "_branch", "share_id")
             )
         ]
         new_query = "&".join(kept)
@@ -167,256 +108,310 @@ def _strip_tracking_params(url: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Image extraction from RSS XML item
+# Thumbnail extraction from RSS entry (feedparser)
 # ---------------------------------------------------------------------------
 
-def _image_from_item(item) -> str:
-    enc = item.find("enclosure")
-    if enc is not None:
-        url = enc.attrib.get("url", "")
-        if url and "image" in enc.attrib.get("type", "image/jpeg"):
-            return _normalise(url)
+def extract_thumbnail(entry) -> str:
+    """Extract image URL from RSS entry using multiple strategies."""
 
-    thumb = item.find("media:thumbnail", NS)
-    if thumb is not None and thumb.attrib.get("url"):
-        return _normalise(thumb.attrib["url"])
-
-    for mc in item.findall("media:content", NS):
-        if mc.attrib.get("medium", "image") == "image" and mc.attrib.get("url"):
-            return _normalise(mc.attrib["url"])
-
-    desc_el = item.find("description")
-    if desc_el is not None and desc_el.text:
-        m = IMG_TAG_RE.search(desc_el.text)
-        if m:
-            return _normalise(m.group(1))
-
-    content_el = item.find("content:encoded", NS)
-    if content_el is not None and content_el.text:
-        m = IMG_TAG_RE.search(content_el.text)
-        if m:
-            return _normalise(m.group(1))
-
-    return ""
-
-
-def _image_from_html(html: str, base_url: str) -> str:
-    """Pull og:image / twitter:image / JSON-LD image / first big <img>."""
-    if not html:
-        return ""
-    for rx in OG_IMAGE_RES:
-        m = rx.search(html)
-        if m:
-            return _normalise(m.group(1), base_url)
-    # JSON-LD
-    for rx in (JSON_LD_IMG_LIST_RE, JSON_LD_IMG_RE):
-        m = rx.search(html)
-        if m:
-            return _normalise(m.group(1), base_url)
-    # Fall back to the first reasonably large-looking img
-    for m in IMG_TAG_RE.finditer(html):
-        candidate = _normalise(m.group(1), base_url)
-        low = candidate.lower()
-        if any(x in low for x in ("logo", "favicon", "sprite", "icon", "1x1", "pixel")):
-            continue
-        if not candidate.startswith(("http://", "https://")):
-            continue
-        return candidate
-    return ""
-
-
-def _canonical_from_html(html: str, fallback: str) -> str:
-    """Find <link rel='canonical'> or og:url. Falls back to the given URL."""
-    if not html:
-        return fallback
-    for rx in (CANONICAL_RE, CANONICAL_RE_ALT):
-        m = rx.search(html)
-        if m:
-            url = _normalise(m.group(1), fallback)
-            if url.startswith(("http://", "https://")):
+    # 1. media:content
+    if hasattr(entry, "media_content"):
+        for media in entry.media_content:
+            url = media.get("url", "")
+            if url:
                 return url
-    og_url = re.search(
-        r'<meta[^>]+property=[\'"]og:url[\'"][^>]+content=[\'"]([^\'"]+)[\'"]', html, re.I
-    )
-    if og_url:
-        return _normalise(og_url.group(1), fallback)
-    return fallback
 
+    # 2. media:thumbnail
+    if hasattr(entry, "media_thumbnail"):
+        for thumb in entry.media_thumbnail:
+            url = thumb.get("url", "")
+            if url:
+                return url
 
-# ---------------------------------------------------------------------------
-# Image fallback by web search
-# ---------------------------------------------------------------------------
+    # 3. enclosure (RSS 2.0)
+    if hasattr(entry, "links"):
+        for link in entry.links:
+            if "image" in link.get("type", "") and link.get("href"):
+                return link["href"]
 
-def _validate_image(url: str) -> bool:
-    """Cheap sanity check — file extension or HEAD content-type."""
-    if not url or len(url) > 1000:
-        return False
-    if not url.lower().startswith(("http://", "https://")):
-        return False
-    low = url.lower().rsplit("?", 1)[0]
-    if low.endswith((".jpg", ".jpeg", ".png", ".webp", ".gif", ".avif")):
-        return True
-    try:
-        req = Request(url, headers=UA_HEADERS, method="HEAD")
-        from urllib.request import urlopen
-        with urlopen(req, timeout=3) as r:
-            ct = (r.headers.get("Content-Type") or "").lower()
-            return ct.startswith("image/")
-    except Exception:
-        return False
-
-
-def _search_image_via_news(title: str) -> str:
-    """
-    Google News HTML SERP scrape. We pull the article cards' embedded image
-    URLs (they're inline base-64 SVG or img src to Google's encrypted CDN).
-    These work as hot-linked images and are stable.
-    """
-    if not title:
-        return ""
-    try:
-        url = (
-            "https://news.google.com/search?q="
-            + quote_plus(title[:150])
-            + "&hl=en-IN&gl=IN&ceid=IN:en"
-        )
-        _, html = http_get(url, timeout=8)
-    except Exception:
-        return ""
-
-    # Google News uses <img src="https://news.google.com/api/attachments/..."> or
-    # external image URLs from the article publishers.
-    # Match both, prefer external publisher images.
-    matches = re.findall(r'<img[^>]+src=[\'"]([^\'"]+)[\'"]', html or "")
-    if not matches:
-        return ""
-
-    # First pass: prefer external publisher CDN images (more reliable than
-    # Google's encrypted CDN which sometimes rejects hot-links).
-    for m in matches[:30]:
-        if not m.startswith(("http://", "https://")):
-            continue
-        low = m.lower()
-        if "googleusercontent" in low or "google.com/api" in low:
-            continue
-        if any(x in low for x in ("logo", "favicon", "sprite", "icon", "1x1", "pixel", "gstatic")):
-            continue
-        if _validate_image(m):
-            return m
-
-    # Second pass: anything Google-hosted that's clearly an image.
-    for m in matches[:30]:
-        if not m.startswith(("http://", "https://")):
-            continue
-        low = m.lower()
-        if any(x in low for x in ("logo", "favicon", "sprite", "icon", "1x1", "pixel")):
-            continue
-        if "googleusercontent" in low and (".jpg" in low or ".jpeg" in low or ".png" in low or ".webp" in low):
-            return m
-
-    return ""
-
-
-def _search_image_wikipedia(title: str) -> str:
-    """
-    Wikipedia REST API page-image endpoint. Looks up the topic by name and
-    returns its lead image. Useful for company/person stories — e.g. an
-    article about Reliance Industries will get the Reliance logo.
-    """
-    if not title:
-        return ""
-    # Strip news-style decoration so we have a chance of matching a Wikipedia page.
-    cleaned = re.sub(r"[^\w\s&-]", " ", title).strip()
-    if len(cleaned) < 3:
-        return ""
-
-    try:
-        from urllib.request import urlopen
-        url = (
-            "https://en.wikipedia.org/api/rest_v1/page/summary/"
-            + quote_plus(cleaned[:120])
-        )
-        req = Request(url, headers={"User-Agent": UA_HEADERS["User-Agent"]})
-        with urlopen(req, timeout=6) as r:
-            data = json.loads(r.read().decode("utf-8"))
-        # originalimage > thumbnail.
-        for key in ("originalimage", "thumbnail"):
-            img = data.get(key) or {}
-            src = img.get("source") or ""
-            if src and src.startswith("https://"):
+    # 4. Image embedded in summary/description HTML
+    summary = getattr(entry, "summary", "") or ""
+    if summary:
+        soup = BeautifulSoup(summary, "html.parser")
+        img = soup.find("img")
+        if img and img.get("src"):
+            src = img["src"]
+            if src.startswith(("http://", "https://")):
                 return src
-    except Exception:
-        pass
+
+    # 5. content:encoded
+    content = ""
+    if hasattr(entry, "content"):
+        for c in entry.content:
+            content += c.get("value", "")
+    if content:
+        soup = BeautifulSoup(content, "html.parser")
+        img = soup.find("img")
+        if img and img.get("src"):
+            src = img["src"]
+            if src.startswith(("http://", "https://")):
+                return src
+
     return ""
 
 
-def _search_web_image(title: str, source: str = "") -> str:
-    """Tries Google News (best for current events) then Wikipedia (for evergreen)."""
-    if not title:
+# ---------------------------------------------------------------------------
+# OG image extraction from article page
+# ---------------------------------------------------------------------------
+
+def get_og_image(article_url: str) -> str:
+    """Fetch the article page and extract og:image or twitter:image."""
+    if not article_url:
         return ""
-    img = _search_image_via_news(f"{title} {source}".strip()[:200])
-    if img:
-        return img
-    # Wikipedia fallback — extract the main subject (first capitalised noun phrase)
-    subject = _extract_subject(title)
-    return _search_image_wikipedia(subject) if subject else ""
-
-
-def _extract_subject(title: str) -> str:
-    """
-    Pull the main subject from a headline for Wikipedia lookup.
-    e.g. "Reliance Retail posts 18% revenue growth..." → "Reliance Retail"
-    """
-    # First chunk of consecutive capitalised words.
-    m = re.match(r"^([A-Z][\w&'-]*(?:\s+[A-Z][\w&'-]*){0,3})", title.strip())
-    return m.group(1) if m else ""
-
-
-# ---------------------------------------------------------------------------
-# RSS fetching
-# ---------------------------------------------------------------------------
-
-def fetch_rss(feed_url: str):
-    _, xml_text = http_get(feed_url, timeout=15)
-    if not xml_text:
-        return []
     try:
-        root = ET.fromstring(xml_text)
+        resp = requests.get(article_url, headers=HEADERS, timeout=8,
+                            allow_redirects=True)
+        soup = BeautifulSoup(resp.text, "html.parser")
+
+        # og:image
+        og = soup.find("meta", property="og:image")
+        if og and og.get("content"):
+            return og["content"]
+
+        # og:image:secure_url
+        og_sec = soup.find("meta", property="og:image:secure_url")
+        if og_sec and og_sec.get("content"):
+            return og_sec["content"]
+
+        # twitter:image
+        twitter = soup.find("meta", attrs={"name": "twitter:image"})
+        if twitter and twitter.get("content"):
+            return twitter["content"]
+
+        # JSON-LD image
+        for script in soup.find_all("script", type="application/ld+json"):
+            try:
+                ld = json.loads(script.string or "")
+                img = ld.get("image")
+                if isinstance(img, str) and img.startswith("http"):
+                    return img
+                if isinstance(img, list) and img:
+                    return img[0] if isinstance(img[0], str) else img[0].get("url", "")
+                if isinstance(img, dict):
+                    return img.get("url", "")
+            except Exception:
+                continue
+
+        # First large <img> on page (skip logos/icons)
+        for img in soup.find_all("img", src=True):
+            src = img["src"]
+            low = src.lower()
+            if any(x in low for x in ("logo", "favicon", "icon", "sprite", "1x1", "pixel", "avatar")):
+                continue
+            # Check for width/height hints
+            w = img.get("width", "")
+            h = img.get("height", "")
+            if w and str(w).isdigit() and int(w) < 200:
+                continue
+            if h and str(h).isdigit() and int(h) < 100:
+                continue
+            if src.startswith(("http://", "https://")):
+                return src
+            if src.startswith("/"):
+                return urljoin(article_url, src)
+
     except Exception as e:
-        print(f"[news] RSS parse error {feed_url}: {e}")
-        return []
+        print(f"[news] og_image failed for {article_url[:60]}: {e}")
 
-    items = []
-    for item in root.iter("item"):
-        title_el = item.find("title")
-        link_el = item.find("link")
-        desc_el = item.find("description")
-        pub_el = item.find("pubDate")
-        if title_el is None or not title_el.text:
-            continue
-
-        items.append({
-            "title": title_el.text.strip()[:500],
-            "url": (link_el.text or "").strip() if link_el is not None else "",
-            "description": (
-                (desc_el.text or "").strip()[:600]
-                if desc_el is not None and desc_el.text else ""
-            ),
-            "published": (pub_el.text or "").strip() if pub_el is not None else "",
-            "image_url": _image_from_item(item),
-        })
-    return items[:MAX_ITEMS_PER_FEED]
+    return ""
 
 
 # ---------------------------------------------------------------------------
-# GPT relevance filter — scores headlines for MBA/consulting prep relevance
+# Resolve canonical URL from article page
 # ---------------------------------------------------------------------------
 
-def _gpt_filter_articles(articles: list[dict]) -> list[dict]:
+def get_canonical_url(article_url: str, soup: BeautifulSoup = None) -> str:
+    """Get the canonical URL from the page, or return the original."""
+    if not article_url:
+        return article_url
+    try:
+        if soup is None:
+            resp = requests.get(article_url, headers=HEADERS, timeout=8,
+                                allow_redirects=True)
+            # The final URL after redirects IS the canonical
+            final_url = resp.url
+            soup = BeautifulSoup(resp.text, "html.parser")
+        else:
+            final_url = article_url
+
+        # <link rel="canonical">
+        canon = soup.find("link", rel="canonical")
+        if canon and canon.get("href"):
+            href = canon["href"]
+            if href.startswith(("http://", "https://")):
+                return _strip_tracking_params(href)
+
+        # og:url
+        og_url = soup.find("meta", property="og:url")
+        if og_url and og_url.get("content"):
+            content = og_url["content"]
+            if content.startswith(("http://", "https://")):
+                return _strip_tracking_params(content)
+
+        return _strip_tracking_params(final_url)
+    except Exception:
+        return _strip_tracking_params(article_url)
+
+
+# ---------------------------------------------------------------------------
+# Process a single RSS entry — extract everything
+# ---------------------------------------------------------------------------
+
+def process_article(source: str, country: str, entry) -> dict | None:
+    """Process one RSS entry: extract title, exact URL, thumbnail, summary."""
+    try:
+        title = getattr(entry, "title", "")
+        if not title:
+            return None
+
+        article_url = getattr(entry, "link", "")
+        if not article_url:
+            return None
+
+        # Get thumbnail from RSS
+        thumbnail = extract_thumbnail(entry)
+
+        # If no thumbnail from RSS, scrape the article page for og:image
+        soup = None
+        if not thumbnail and article_url:
+            try:
+                resp = requests.get(article_url, headers=HEADERS, timeout=8,
+                                    allow_redirects=True)
+                article_url = resp.url  # Follow redirects to real URL
+                soup = BeautifulSoup(resp.text, "html.parser")
+
+                # Extract OG image from parsed page
+                og = soup.find("meta", property="og:image")
+                if og and og.get("content"):
+                    thumbnail = og["content"]
+
+                if not thumbnail:
+                    og_sec = soup.find("meta", property="og:image:secure_url")
+                    if og_sec and og_sec.get("content"):
+                        thumbnail = og_sec["content"]
+
+                if not thumbnail:
+                    twitter = soup.find("meta", attrs={"name": "twitter:image"})
+                    if twitter and twitter.get("content"):
+                        thumbnail = twitter["content"]
+
+                # JSON-LD fallback
+                if not thumbnail:
+                    for script in soup.find_all("script", type="application/ld+json"):
+                        try:
+                            ld = json.loads(script.string or "")
+                            img = ld.get("image")
+                            if isinstance(img, str) and img.startswith("http"):
+                                thumbnail = img
+                                break
+                            if isinstance(img, list) and img:
+                                thumbnail = img[0] if isinstance(img[0], str) else img[0].get("url", "")
+                                break
+                        except Exception:
+                            continue
+            except Exception as e:
+                print(f"[news] scrape failed {article_url[:60]}: {e}")
+
+        # Resolve canonical URL
+        if soup:
+            canon = soup.find("link", rel="canonical")
+            if canon and canon.get("href", "").startswith("http"):
+                article_url = canon["href"]
+            else:
+                og_url = soup.find("meta", property="og:url")
+                if og_url and og_url.get("content", "").startswith("http"):
+                    article_url = og_url["content"]
+
+        article_url = _strip_tracking_params(article_url)
+
+        # Clean summary
+        summary = _strip_html(
+            getattr(entry, "summary", "")
+            or getattr(entry, "description", "")
+        )[:300]
+
+        published = getattr(entry, "published", "") or ""
+
+        return {
+            "title": title.strip()[:500],
+            "url": article_url,
+            "description": summary,
+            "published": published,
+            "image_url": thumbnail or "",
+            "_source": source,
+            "_country": country,
+        }
+
+    except Exception as e:
+        print(f"[news] process_article error: {e}")
+        return None
+
+
+# ---------------------------------------------------------------------------
+# Fetch all RSS feeds
+# ---------------------------------------------------------------------------
+
+def fetch_all_feeds() -> list[dict]:
+    """Fetch all RSS feeds and process articles with thread pooling."""
+    all_articles = []
+    seen_urls = set()
+    seen_titles = set()
+
+    for feed_cfg in RSS_FEEDS:
+        source = feed_cfg["source"]
+        country = feed_cfg["country"]
+        rss_url = feed_cfg["url"]
+        print(f"[news] Fetching {source}: {rss_url[:80]}")
+
+        try:
+            feed = feedparser.parse(rss_url)
+            entries = feed.entries[:MAX_ITEMS_PER_FEED]
+
+            # Process articles in parallel (5 threads per feed)
+            with ThreadPoolExecutor(max_workers=5) as executor:
+                results = list(executor.map(
+                    lambda e: process_article(source, country, e),
+                    entries,
+                ))
+
+            for article in results:
+                if not article:
+                    continue
+                # Deduplicate by URL and title
+                url_key = article["url"].rstrip("/").lower()
+                title_key = article["title"].lower().strip()
+                if url_key in seen_urls or title_key in seen_titles:
+                    continue
+                seen_urls.add(url_key)
+                seen_titles.add(title_key)
+                all_articles.append(article)
+
+        except Exception as e:
+            print(f"[news] Feed error {source}: {e}")
+
+    print(f"[news] Total unique articles: {len(all_articles)}")
+    return all_articles
+
+
+# ---------------------------------------------------------------------------
+# GPT relevance filter — scores headlines for MBA/consulting relevance
+# ---------------------------------------------------------------------------
+
+def gpt_filter_articles(articles: list[dict]) -> list[dict]:
     """
-    Send a batch of headlines to GPT-4o-mini. Each headline gets a relevance
-    score 0-10 for consulting/MBA prep. Only articles scoring >= 5 are kept.
-    Falls back to keeping all articles if OpenAI is not configured or errors.
+    Send a batch of headlines to GPT-4o-mini. Each gets a relevance score
+    0-10 for MBA/consulting/business prep. Only articles scoring >= 5 kept.
+    Falls back to keeping all articles if OpenAI errors.
     """
     if not OPENAI_KEY or not articles:
         return articles
@@ -426,47 +421,53 @@ def _gpt_filter_articles(articles: list[dict]) -> list[dict]:
         headlines.append(f"{i+1}. {a['title'][:200]}")
 
     prompt = (
-        "You are a news curator for an MBA consulting prep platform. "
-        "Score each headline 0-10 for relevance to consulting case interviews, "
-        "group discussions, business strategy, market analysis, or MBA career prep.\n\n"
+        "You are a news curator for an MBA consulting prep platform (Constrat). "
+        "Score each headline 0-10 for relevance to: business strategy, consulting "
+        "case interviews, group discussions, market analysis, macroeconomics, "
+        "microeconomics, industry trends, or MBA career prep.\n\n"
         "Headlines:\n" + "\n".join(headlines) + "\n\n"
-        "Return ONLY a JSON array of objects: [{\"index\": 1, \"score\": 8}, ...]. "
+        "Return ONLY a JSON array: [{\"index\": 1, \"score\": 8, \"topic\": \"Markets & Economy\"}, ...]\n"
+        "Topics must be one of: Markets & Economy, Policy & Regulation, Startups & VC, "
+        "FMCG & Retail, Consulting Industry, Global Business, India Focus, Technology\n"
         "No explanation, no markdown fences."
     )
 
     try:
-        import urllib.request
-        data = json.dumps({
-            "model": "gpt-4o-mini",
-            "messages": [{"role": "user", "content": prompt}],
-            "temperature": 0.1,
-            "max_tokens": 1500,
-        }).encode("utf-8")
-
-        req = Request(
+        resp = requests.post(
             "https://api.openai.com/v1/chat/completions",
-            data=data,
             headers={
                 "Authorization": f"Bearer {OPENAI_KEY}",
                 "Content-Type": "application/json",
             },
+            json={
+                "model": "gpt-4o-mini",
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0.1,
+                "max_tokens": 2000,
+            },
+            timeout=45,
         )
-        with urllib.request.urlopen(req, timeout=30) as r:
-            resp = json.loads(r.read().decode("utf-8"))
+        data = resp.json()
+        content = data["choices"][0]["message"]["content"].strip()
 
-        content = resp["choices"][0]["message"]["content"].strip()
-        # Strip markdown fences if present
+        # Strip markdown fences
         if content.startswith("```"):
             content = content.split("\n", 1)[-1].rsplit("```", 1)[0].strip()
 
         scores = json.loads(content)
-        score_map = {s["index"]: s["score"] for s in scores if isinstance(s, dict)}
+        score_map = {}
+        topic_map = {}
+        for s in scores:
+            if isinstance(s, dict):
+                score_map[s.get("index")] = s.get("score", 5)
+                topic_map[s.get("index")] = s.get("topic", "India Focus")
 
         filtered = []
         for i, a in enumerate(articles):
-            relevance = score_map.get(i + 1, 5)  # default to 5 if missing
+            relevance = score_map.get(i + 1, 5)
             if relevance >= 5:
                 a["_relevance"] = relevance
+                a["_topic"] = topic_map.get(i + 1, "India Focus")
                 filtered.append(a)
 
         print(f"[news] GPT filter: {len(articles)} -> {len(filtered)} articles (>= 5 relevance)")
@@ -478,55 +479,10 @@ def _gpt_filter_articles(articles: list[dict]) -> list[dict]:
 
 
 # ---------------------------------------------------------------------------
-# Per-article enrichment: resolve URL + find image
+# Supabase upsert
 # ---------------------------------------------------------------------------
 
-def enrich_article(article: dict) -> dict:
-    """
-    1. Resolve any redirects on the article URL so it points at the real piece.
-    2. If we don't have an image yet, fetch the article page and grab og:image.
-    3. If still no image, search the web by the article title.
-    Mutates the dict in place; also returns it.
-    """
-    url = article.get("url", "")
-    if not url:
-        return article
-
-    needs_resolve = _is_tracker(url) or not article.get("image_url")
-
-    final_url = url
-    html = ""
-    if needs_resolve:
-        # Single fetch resolves redirects AND gives us the HTML for OG scrape.
-        final_url, html = http_get(url, timeout=10, max_bytes=262_144)
-
-    # Prefer canonical URL from the page if available.
-    if html:
-        final_url = _canonical_from_html(html, final_url)
-
-    article["url"] = _strip_tracking_params(final_url or url)
-
-    # Image: RSS first, then OG, then web search.
-    if not article.get("image_url"):
-        article["image_url"] = _image_from_html(html, article["url"]) if html else ""
-
-    if not article.get("image_url"):
-        # OG scrape via HEAD won't work — fetch the page now if we haven't.
-        if not html:
-            _, html = http_get(article["url"], timeout=8, max_bytes=262_144)
-            article["image_url"] = _image_from_html(html, article["url"])
-
-    if not article.get("image_url"):
-        article["image_url"] = _search_web_image(article["title"])
-
-    return article
-
-
-# ---------------------------------------------------------------------------
-# Supabase upsert (dedupe on url)
-# ---------------------------------------------------------------------------
-
-def upsert_news(article, source, country) -> bool:
+def upsert_news(article: dict) -> bool:
     if not (SUPABASE_URL and SUPABASE_KEY):
         return False
     if not article.get("url"):
@@ -534,41 +490,34 @@ def upsert_news(article, source, country) -> bool:
 
     payload = {
         "title": article["title"][:500],
-        "source": source,
-        "topic": "India Focus",                # reclassified on first GD brief
+        "source": article.get("_source", ""),
+        "topic": article.get("_topic", "India Focus"),
         "summary_points": [],
         "url": article["url"],
-        "ai_summary": _strip_html(article.get("description", ""))[:300],
-        "country": country,
+        "ai_summary": article.get("description", "")[:300],
+        "country": article.get("_country", "IN"),
         "read_time": "2 min",
         "published_at": datetime.now(timezone.utc).isoformat(),
         "image_url": article.get("image_url", ""),
         "gd_analysis": {},
     }
 
-    from urllib.request import urlopen
-    req = Request(
-        f"{SUPABASE_URL}/rest/v1/news?on_conflict=url",
-        data=json.dumps(payload).encode("utf-8"),
-        method="POST",
-        headers={
-            "apikey": SUPABASE_KEY,
-            "Authorization": f"Bearer {SUPABASE_KEY}",
-            "Content-Type": "application/json",
-            "Prefer": "resolution=merge-duplicates,return=minimal",
-        },
-    )
     try:
-        urlopen(req, timeout=15)
-        return True
+        resp = requests.post(
+            f"{SUPABASE_URL}/rest/v1/news?on_conflict=url",
+            json=payload,
+            headers={
+                "apikey": SUPABASE_KEY,
+                "Authorization": f"Bearer {SUPABASE_KEY}",
+                "Content-Type": "application/json",
+                "Prefer": "resolution=merge-duplicates,return=minimal",
+            },
+            timeout=15,
+        )
+        return resp.status_code < 300
     except Exception as e:
         print(f"[news] upsert error: {e}")
         return False
-
-
-_HTML_RE = re.compile(r"<[^>]+>")
-def _strip_html(s: str) -> str:
-    return _HTML_RE.sub("", s or "").strip()
 
 
 # ---------------------------------------------------------------------------
@@ -577,6 +526,7 @@ def _strip_html(s: str) -> str:
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
+        # Optional auth check
         if CRON_SECRET:
             auth = self.headers.get("Authorization", "")
             if auth != f"Bearer {CRON_SECRET}":
@@ -586,27 +536,21 @@ class handler(BaseHTTPRequestHandler):
                 self.wfile.write(json.dumps({"error": "unauthorized"}).encode())
                 return
 
-        seen, kept, no_image, total_raw = set(), 0, 0, 0
         try:
-            all_articles = []
-            for feed in RSS_FEEDS:
-                for it in fetch_rss(feed["url"]):
-                    if not it.get("url") or it["url"] in seen:
-                        continue
-                    seen.add(it["url"])
-                    it["_source"] = feed["source"]
-                    it["_country"] = feed["country"]
-                    all_articles.append(it)
+            # 1. Fetch all RSS feeds
+            all_articles = fetch_all_feeds()
             total_raw = len(all_articles)
 
-            # GPT relevance filter
-            all_articles = _gpt_filter_articles(all_articles)
+            # 2. GPT relevance filter + topic categorization
+            all_articles = gpt_filter_articles(all_articles)
 
-            for it in all_articles:
-                enrich_article(it)
-                if not it.get("image_url"):
+            # 3. Upsert to Supabase
+            kept = 0
+            no_image = 0
+            for article in all_articles:
+                if not article.get("image_url"):
                     no_image += 1
-                if upsert_news(it, it["_source"], it["_country"]):
+                if upsert_news(article):
                     kept += 1
 
             self.send_response(200)
@@ -615,12 +559,17 @@ class handler(BaseHTTPRequestHandler):
             self.wfile.write(json.dumps({
                 "success": True,
                 "articles_raw": total_raw,
+                "articles_filtered": len(all_articles),
                 "articles_kept": kept,
                 "articles_without_image": no_image,
                 "timestamp": datetime.now(timezone.utc).isoformat(),
             }).encode())
+
         except Exception as e:
             self.send_response(500)
             self.send_header("Content-Type", "application/json")
             self.end_headers()
-            self.wfile.write(json.dumps({"success": False, "error": str(e)}).encode())
+            self.wfile.write(json.dumps({
+                "success": False,
+                "error": str(e),
+            }).encode())
