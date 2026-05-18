@@ -27,6 +27,7 @@ SUPABASE_URL = (
     or ""
 ).rstrip("/")
 SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
+OPENAI_KEY = os.environ.get("OPENAI_API_KEY", "")
 CRON_SECRET = os.environ.get("CRON_SECRET", "")
 
 RSS_FEEDS = [
@@ -408,6 +409,75 @@ def fetch_rss(feed_url: str):
 
 
 # ---------------------------------------------------------------------------
+# GPT relevance filter — scores headlines for MBA/consulting prep relevance
+# ---------------------------------------------------------------------------
+
+def _gpt_filter_articles(articles: list[dict]) -> list[dict]:
+    """
+    Send a batch of headlines to GPT-4o-mini. Each headline gets a relevance
+    score 0-10 for consulting/MBA prep. Only articles scoring >= 5 are kept.
+    Falls back to keeping all articles if OpenAI is not configured or errors.
+    """
+    if not OPENAI_KEY or not articles:
+        return articles
+
+    headlines = []
+    for i, a in enumerate(articles):
+        headlines.append(f"{i+1}. {a['title'][:200]}")
+
+    prompt = (
+        "You are a news curator for an MBA consulting prep platform. "
+        "Score each headline 0-10 for relevance to consulting case interviews, "
+        "group discussions, business strategy, market analysis, or MBA career prep.\n\n"
+        "Headlines:\n" + "\n".join(headlines) + "\n\n"
+        "Return ONLY a JSON array of objects: [{\"index\": 1, \"score\": 8}, ...]. "
+        "No explanation, no markdown fences."
+    )
+
+    try:
+        import urllib.request
+        data = json.dumps({
+            "model": "gpt-4o-mini",
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": 0.1,
+            "max_tokens": 1500,
+        }).encode("utf-8")
+
+        req = Request(
+            "https://api.openai.com/v1/chat/completions",
+            data=data,
+            headers={
+                "Authorization": f"Bearer {OPENAI_KEY}",
+                "Content-Type": "application/json",
+            },
+        )
+        with urllib.request.urlopen(req, timeout=30) as r:
+            resp = json.loads(r.read().decode("utf-8"))
+
+        content = resp["choices"][0]["message"]["content"].strip()
+        # Strip markdown fences if present
+        if content.startswith("```"):
+            content = content.split("\n", 1)[-1].rsplit("```", 1)[0].strip()
+
+        scores = json.loads(content)
+        score_map = {s["index"]: s["score"] for s in scores if isinstance(s, dict)}
+
+        filtered = []
+        for i, a in enumerate(articles):
+            relevance = score_map.get(i + 1, 5)  # default to 5 if missing
+            if relevance >= 5:
+                a["_relevance"] = relevance
+                filtered.append(a)
+
+        print(f"[news] GPT filter: {len(articles)} -> {len(filtered)} articles (>= 5 relevance)")
+        return filtered
+
+    except Exception as e:
+        print(f"[news] GPT filter failed, keeping all: {e}")
+        return articles
+
+
+# ---------------------------------------------------------------------------
 # Per-article enrichment: resolve URL + find image
 # ---------------------------------------------------------------------------
 
@@ -516,24 +586,35 @@ class handler(BaseHTTPRequestHandler):
                 self.wfile.write(json.dumps({"error": "unauthorized"}).encode())
                 return
 
-        seen, kept, no_image = set(), 0, 0
+        seen, kept, no_image, total_raw = set(), 0, 0, 0
         try:
+            all_articles = []
             for feed in RSS_FEEDS:
                 for it in fetch_rss(feed["url"]):
                     if not it.get("url") or it["url"] in seen:
                         continue
                     seen.add(it["url"])
-                    enrich_article(it)
-                    if not it.get("image_url"):
-                        no_image += 1
-                    if upsert_news(it, feed["source"], feed["country"]):
-                        kept += 1
+                    it["_source"] = feed["source"]
+                    it["_country"] = feed["country"]
+                    all_articles.append(it)
+            total_raw = len(all_articles)
+
+            # GPT relevance filter
+            all_articles = _gpt_filter_articles(all_articles)
+
+            for it in all_articles:
+                enrich_article(it)
+                if not it.get("image_url"):
+                    no_image += 1
+                if upsert_news(it, it["_source"], it["_country"]):
+                    kept += 1
 
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
             self.end_headers()
             self.wfile.write(json.dumps({
                 "success": True,
+                "articles_raw": total_raw,
                 "articles_kept": kept,
                 "articles_without_image": no_image,
                 "timestamp": datetime.now(timezone.utc).isoformat(),
