@@ -559,6 +559,14 @@ class handler(BaseHTTPRequestHandler):
     def do_GET(self):
 
         try:
+            # Diagnostics — report env var presence
+            diag = {
+                "has_supabase_url": bool(SUPABASE_URL),
+                "has_supabase_key": bool(SUPABASE_KEY),
+                "has_openai_key": bool(OPENAI_KEY),
+                "supabase_url_prefix": SUPABASE_URL[:40] + "..." if len(SUPABASE_URL) > 40 else SUPABASE_URL,
+            }
+
             # 1. Fetch all RSS feeds
             all_articles = fetch_all_feeds()
             total_raw = len(all_articles)
@@ -566,24 +574,58 @@ class handler(BaseHTTPRequestHandler):
             # 2. GPT relevance filter + topic categorization
             all_articles = gpt_filter_articles(all_articles)
 
-            # 3. Upsert to Supabase
+            # 3. Upsert to Supabase — capture first error for diagnostics
             kept = 0
             no_image = 0
+            first_error = ""
             for article in all_articles:
                 if not article.get("image_url"):
                     no_image += 1
                 if upsert_news(article):
                     kept += 1
+                elif not first_error:
+                    # Try to get the actual error for diagnostics
+                    try:
+                        pub = datetime.now(timezone.utc).isoformat()
+                        test_payload = {
+                            "title": article["title"][:500],
+                            "source": article.get("_source", ""),
+                            "topic": article.get("_topic", "India Focus"),
+                            "summary_points": [],
+                            "url": article["url"],
+                            "ai_summary": article.get("description", "")[:300],
+                            "country": article.get("_country", "IN"),
+                            "read_time": "2 min",
+                            "published_at": pub,
+                            "image_url": article.get("image_url", ""),
+                            "gd_analysis": {},
+                        }
+                        test_resp = requests.post(
+                            f"{SUPABASE_URL}/rest/v1/news",
+                            json=test_payload,
+                            headers={
+                                "apikey": SUPABASE_KEY,
+                                "Authorization": f"Bearer {SUPABASE_KEY}",
+                                "Content-Type": "application/json",
+                                "Prefer": "return=minimal",
+                            },
+                            timeout=10,
+                        )
+                        first_error = f"HTTP {test_resp.status_code}: {test_resp.text[:300]}"
+                    except Exception as te:
+                        first_error = str(te)
 
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
             self.end_headers()
             self.wfile.write(json.dumps({
-                "success": True,
+                "success": kept > 0,
                 "articles_raw": total_raw,
                 "articles_filtered": len(all_articles),
                 "articles_kept": kept,
                 "articles_without_image": no_image,
+                "first_error": first_error or None,
+                "diagnostics": diag,
                 "timestamp": datetime.now(timezone.utc).isoformat(),
             }).encode())
 
@@ -594,4 +636,9 @@ class handler(BaseHTTPRequestHandler):
             self.wfile.write(json.dumps({
                 "success": False,
                 "error": str(e),
+                "diagnostics": {
+                    "has_supabase_url": bool(SUPABASE_URL),
+                    "has_supabase_key": bool(SUPABASE_KEY),
+                    "has_openai_key": bool(OPENAI_KEY),
+                },
             }).encode())
