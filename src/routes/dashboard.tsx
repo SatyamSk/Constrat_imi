@@ -61,6 +61,7 @@ function Dashboard() {
   const [pulse, setPulse] = useState<SitePulse | null>(null);
   const [leaders, setLeaders] = useState<LeaderRow[]>([]);
   const [activity, setActivity] = useState<Record<string, number>>({});
+  const [totalUsers, setTotalUsers] = useState<number>(1);
 
   useEffect(() => {
     if (authLoading) return;
@@ -77,7 +78,7 @@ function Dashboard() {
 
     const [
       { data: profile },
-      { data: statsData },
+      { data: submissions },
       { data: newsData },
       { data: dailyData },
       rankData,
@@ -87,9 +88,15 @@ function Dashboard() {
       pulseData,
       leadersData,
       { data: activityData },
+      { count: totalUsersCount },
     ] = await Promise.all([
       supabase.from("profiles").select("full_name, email, batch").eq("id", uid).maybeSingle(),
-      supabase.from("user_statistics").select("*").eq("user_id", uid).maybeSingle(),
+      // Compute stats from case_submissions directly (source of truth)
+      supabase
+        .from("case_submissions")
+        .select("score, submitted_at")
+        .eq("user_id", uid)
+        .order("submitted_at", { ascending: false }),
       supabase.from("news")
         .select("id, title, source, topic, url, ai_summary, published_at")
         .order("published_at", { ascending: false })
@@ -110,6 +117,10 @@ function Dashboard() {
         .select("submitted_at")
         .eq("user_id", uid)
         .gte("submitted_at", new Date(Date.now() - 35 * 86400000).toISOString()),
+      // Total users for percentile calculation
+      supabase
+        .from("global_leaderboard")
+        .select("user_id", { count: "exact", head: true }),
     ]);
 
     setName(
@@ -118,14 +129,30 @@ function Dashboard() {
         user?.email?.split("@")[0] || "there",
     );
     setCollege((profile as any)?.batch || "MBA Candidate");
-    if (statsData) {
-      setStats({
-        cases_solved: statsData.cases_solved ?? 0,
-        guesstimates_completed: statsData.guesstimates_completed ?? 0,
-        total_score: statsData.total_score ?? 0,
-        current_streak: statsData.current_streak ?? 0,
-      });
+
+    // Compute stats from actual submissions (source of truth)
+    const allSubs = submissions || [];
+    const totalScore = allSubs.reduce((sum: number, s: any) => sum + (s.score || 0), 0);
+    const casesSolved = allSubs.length;
+    // Streak: count consecutive days with submissions ending today
+    let streak = 0;
+    if (allSubs.length > 0) {
+      const daySet = new Set(allSubs.map((s: any) => s.submitted_at?.slice(0, 10)));
+      const d = new Date();
+      while (daySet.has(d.toISOString().slice(0, 10))) {
+        streak++;
+        d.setDate(d.getDate() - 1);
+      }
     }
+    setStats({
+      cases_solved: casesSolved,
+      guesstimates_completed: 0,
+      total_score: totalScore,
+      current_streak: streak,
+    });
+
+    // Store total user count for percentile calculations
+    setTotalUsers(totalUsersCount ?? 1);
     setNews((newsData as NewsRow[]) || []);
     setDaily(dailyData as DailyQ);
     setRank(rankData as any);
@@ -185,13 +212,13 @@ function Dashboard() {
               {/* Percentile strip */}
               <div className="flex gap-5 mb-6">
                 <div className="flex-1 p-4" style={{ background: "rgba(255,255,255,0.62)", backdropFilter: "blur(2px)", border: "1px solid #e2e8f0", borderRadius: 6 }}>
-                  <PercentileCard rank={rank?.rank ?? 3} totalUsers={148} period="This Week" />
+                  <PercentileCard rank={rank?.rank ?? null} totalUsers={totalUsers} period="This Week" />
                 </div>
                 <div className="flex-1 p-4" style={{ background: "rgba(255,255,255,0.62)", backdropFilter: "blur(2px)", border: "1px solid #e2e8f0", borderRadius: 6 }}>
-                  <PercentileCard rank={rank?.rank ?? 5} totalUsers={312} period="This Month" />
+                  <PercentileCard rank={rank?.rank ?? null} totalUsers={totalUsers} period="This Month" />
                 </div>
                 <div className="flex-1 p-4" style={{ background: "rgba(255,255,255,0.62)", backdropFilter: "blur(2px)", border: "1px solid #e2e8f0", borderRadius: 6 }}>
-                  <PercentileCard rank={rank?.rank ?? 8} totalUsers={520} period="Overall" />
+                  <PercentileCard rank={rank?.rank ?? null} totalUsers={totalUsers} period="Overall" />
                 </div>
               </div>
 
