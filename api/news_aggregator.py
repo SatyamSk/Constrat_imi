@@ -495,9 +495,21 @@ def gpt_filter_articles(articles: list[dict]) -> list[dict]:
 
 def upsert_news(article: dict) -> bool:
     if not (SUPABASE_URL and SUPABASE_KEY):
+        print("[news] upsert skipped: no SUPABASE_URL or SUPABASE_KEY")
         return False
     if not article.get("url"):
         return False
+
+    # Parse published date safely — feedparser dates are like
+    # "Sun, 18 May 2026 08:00:00 GMT" which Postgres might reject
+    pub = datetime.now(timezone.utc).isoformat()
+    raw_pub = article.get("published", "")
+    if raw_pub:
+        try:
+            from email.utils import parsedate_to_datetime
+            pub = parsedate_to_datetime(raw_pub).isoformat()
+        except Exception:
+            pass  # keep default UTC now
 
     payload = {
         "title": article["title"][:500],
@@ -508,24 +520,32 @@ def upsert_news(article: dict) -> bool:
         "ai_summary": article.get("description", "")[:300],
         "country": article.get("_country", "IN"),
         "read_time": "2 min",
-        "published_at": article.get("published", datetime.now(timezone.utc).isoformat()),
+        "published_at": pub,
         "image_url": article.get("image_url", ""),
         "gd_analysis": {},
     }
 
     try:
+        # Plain INSERT — if URL already exists, the partial unique index
+        # will cause a 409 which we treat as "already have it" (success).
         resp = requests.post(
-            f"{SUPABASE_URL}/rest/v1/news?on_conflict=url",
+            f"{SUPABASE_URL}/rest/v1/news",
             json=payload,
             headers={
                 "apikey": SUPABASE_KEY,
                 "Authorization": f"Bearer {SUPABASE_KEY}",
                 "Content-Type": "application/json",
-                "Prefer": "resolution=merge-duplicates,return=minimal",
+                "Prefer": "return=minimal",
             },
             timeout=15,
         )
-        return resp.status_code < 300
+        if resp.status_code < 300:
+            return True
+        if resp.status_code == 409:
+            # Duplicate URL — already exists, that's fine
+            return True
+        print(f"[news] upsert FAILED {resp.status_code}: {resp.text[:200]}")
+        return False
     except Exception as e:
         print(f"[news] upsert error: {e}")
         return False
