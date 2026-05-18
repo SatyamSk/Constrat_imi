@@ -46,9 +46,6 @@ interface NewsRow {
   gd_analysis: GDAnalysis | null;
 }
 
-// No static fallback — page is fully dynamic from Supabase
-const FALLBACK: NewsRow[] = [];
-
 // ---------------------------------------------------------------------------
 // Topic colors
 // ---------------------------------------------------------------------------

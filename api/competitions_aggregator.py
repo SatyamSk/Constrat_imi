@@ -138,10 +138,6 @@ def upsert(comp):
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
-        if CRON_SECRET:
-            auth = self.headers.get("Authorization", "")
-            if auth != f"Bearer {CRON_SECRET}":
-                return _json(self, 401, {"error": "unauthorized"})
 
         if not OPENAI_KEY:
             return _json(self, 500, {"error": "openai_not_configured"})
