@@ -953,16 +953,16 @@ function PillRow({
   );
 }
 
-/** Map topics to image search terms for auto-generated Unsplash images */
-const TOPIC_IMAGE_TERMS: Record<string, string> = {
-  "Markets & Economy": "stock+market+trading",
-  "Policy & Regulation": "government+policy",
-  "Startups & VC": "startup+office+tech",
-  "FMCG & Retail": "retail+store+shopping",
-  "Consulting Industry": "business+consulting+meeting",
-  "Global Business": "global+trade+shipping",
-  "India Focus": "india+business+city",
-  Technology: "technology+artificial+intelligence",
+/** Map topics to stable picsum seed IDs for consistent placeholder images */
+const TOPIC_SEEDS: Record<string, number> = {
+  "Markets & Economy": 1011,
+  "Policy & Regulation": 1035,
+  "Startups & VC": 1060,
+  "FMCG & Retail": 1005,
+  "Consulting Industry": 1015,
+  "Global Business": 1040,
+  "India Focus": 1029,
+  Technology: 1069,
 };
 
 function NewsImage({
@@ -978,12 +978,11 @@ function NewsImage({
 }) {
   const [errored, setErrored] = useState(false);
 
-  // Generate a topic-aware Unsplash image when no URL is provided
-  const effectiveUrl = (!url || errored)
-    ? `https://source.unsplash.com/800x500/?${TOPIC_IMAGE_TERMS[topic ?? ""] || "business+finance"}`
-    : url;
+  // Use picsum.photos with a stable seed per topic for deterministic images
+  const seed = TOPIC_SEEDS[topic ?? ""] || 1020;
+  const placeholderUrl = `https://picsum.photos/seed/${seed}/800/500`;
 
-  // If Unsplash also errors, fall back to gradient
+  const effectiveUrl = (!url || errored) ? placeholderUrl : url;
   const [fallbackErrored, setFallbackErrored] = useState(false);
 
   if ((!url || errored) && fallbackErrored) {

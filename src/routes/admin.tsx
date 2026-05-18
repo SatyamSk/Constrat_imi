@@ -595,6 +595,8 @@ function CompetitionManager() {
 function NewsManager() {
   const [form, setForm] = useState({ title: "", source: "", topic: "Macro", summary: "", url: "" });
   const [msg, setMsg] = useState("");
+  const [cronStatus, setCronStatus] = useState<string>("");
+  const [cronRunning, setCronRunning] = useState(false);
 
   async function addNews() {
     if (!form.title) return;
@@ -613,10 +615,77 @@ function NewsManager() {
     setForm({ title: "", source: "", topic: "Macro", summary: "", url: "" });
   }
 
+  async function runCron(endpoint: string, label: string) {
+    setCronRunning(true);
+    setCronStatus(`Running ${label}…`);
+    try {
+      const res = await fetch(`/api/${endpoint}`);
+      const data = await res.json();
+      if (data.success) {
+        const parts = [];
+        if (data.articles_raw) parts.push(`${data.articles_raw} fetched`);
+        if (data.articles_kept) parts.push(`${data.articles_kept} kept`);
+        if (data.articles_without_image !== undefined) parts.push(`${data.articles_without_image} missing images`);
+        setCronStatus(`✓ ${label}: ${parts.join(", ") || "done"}`);
+      } else {
+        setCronStatus(`✗ ${label}: ${data.error || "failed"}`);
+      }
+    } catch {
+      setCronStatus(`✗ ${label}: endpoint not available in dev mode. Works on Vercel.`);
+    }
+    setCronRunning(false);
+  }
+
   return (
     <div>
-      <h2 className="font-serif text-[28px] font-semibold">Add News Article</h2>
-      <div className="mt-6 card-base p-6 space-y-4 max-w-[600px]">
+      <h2 className="font-serif text-[28px] font-semibold">News Management</h2>
+
+      {/* Manual cron triggers */}
+      <div className="mt-6 card-base p-6 max-w-[700px]">
+        <h3 className="text-[16px] font-semibold mb-1">Run Cron Jobs Manually</h3>
+        <p className="text-[12px] text-text-muted mb-4">
+          Cron runs automatically at 10:30 AM & 7:30 PM IST. Use these buttons for instant runs.
+        </p>
+        <div className="flex flex-wrap gap-3">
+          <button
+            onClick={() => runCron("news_aggregator", "News Aggregator")}
+            disabled={cronRunning}
+            className="btn-primary h-9 px-5 text-[13px] disabled:opacity-60"
+          >
+            {cronRunning ? "Running…" : "▶ Run News Aggregator"}
+          </button>
+          <button
+            onClick={() => runCron("daily_question", "Daily Question")}
+            disabled={cronRunning}
+            className="btn-secondary h-9 px-5 text-[13px] disabled:opacity-60"
+          >
+            ▶ Daily Question
+          </button>
+          <button
+            onClick={() => runCron("competitions_aggregator", "Competitions")}
+            disabled={cronRunning}
+            className="btn-secondary h-9 px-5 text-[13px] disabled:opacity-60"
+          >
+            ▶ Competitions
+          </button>
+          <button
+            onClick={() => runCron("timetable_sync", "Timetable")}
+            disabled={cronRunning}
+            className="btn-secondary h-9 px-5 text-[13px] disabled:opacity-60"
+          >
+            ▶ Timetable Sync
+          </button>
+        </div>
+        {cronStatus && (
+          <p className={`mt-3 text-[13px] ${cronStatus.startsWith("✓") ? "text-success" : cronStatus.startsWith("✗") ? "text-urgent" : "text-text-muted"}`}>
+            {cronStatus}
+          </p>
+        )}
+      </div>
+
+      {/* Manual article add */}
+      <h3 className="mt-10 text-[16px] font-semibold">Add Article Manually</h3>
+      <div className="mt-4 card-base p-6 space-y-4 max-w-[600px]">
         <input
           value={form.title}
           onChange={(e) => setForm({ ...form, title: e.target.value })}
