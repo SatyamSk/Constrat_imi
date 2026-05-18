@@ -24,7 +24,6 @@ import { Route as EventsRouteImport } from "./routes/events"
 import { Route as DeadlinesRouteImport } from "./routes/deadlines"
 import { Route as DashboardRouteImport } from "./routes/dashboard"
 import { Route as CasesRouteImport } from "./routes/cases"
-import { Route as AnalyticsRouteImport } from "./routes/analytics"
 import { Route as AlumniRouteImport } from "./routes/alumni"
 import { Route as AdminRouteImport } from "./routes/admin"
 import { Route as AccountRouteImport } from "./routes/account"
@@ -107,11 +106,6 @@ const CasesRoute = CasesRouteImport.update({
   path: "/cases",
   getParentRoute: () => rootRouteImport,
 } as any)
-const AnalyticsRoute = AnalyticsRouteImport.update({
-  id: "/analytics",
-  path: "/analytics",
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AlumniRoute = AlumniRouteImport.update({
   id: "/alumni",
   path: "/alumni",
@@ -148,7 +142,6 @@ export interface FileRoutesByFullPath {
   "/account": typeof AccountRoute
   "/admin": typeof AdminRoute
   "/alumni": typeof AlumniRoute
-  "/analytics": typeof AnalyticsRoute
   "/cases": typeof CasesRoute
   "/dashboard": typeof DashboardRoute
   "/deadlines": typeof DeadlinesRoute
@@ -172,7 +165,6 @@ export interface FileRoutesByTo {
   "/account": typeof AccountRoute
   "/admin": typeof AdminRoute
   "/alumni": typeof AlumniRoute
-  "/analytics": typeof AnalyticsRoute
   "/cases": typeof CasesRoute
   "/dashboard": typeof DashboardRoute
   "/deadlines": typeof DeadlinesRoute
@@ -197,7 +189,6 @@ export interface FileRoutesById {
   "/account": typeof AccountRoute
   "/admin": typeof AdminRoute
   "/alumni": typeof AlumniRoute
-  "/analytics": typeof AnalyticsRoute
   "/cases": typeof CasesRoute
   "/dashboard": typeof DashboardRoute
   "/deadlines": typeof DeadlinesRoute
@@ -223,7 +214,6 @@ export interface FileRouteTypes {
     | "/account"
     | "/admin"
     | "/alumni"
-    | "/analytics"
     | "/cases"
     | "/dashboard"
     | "/deadlines"
@@ -247,7 +237,6 @@ export interface FileRouteTypes {
     | "/account"
     | "/admin"
     | "/alumni"
-    | "/analytics"
     | "/cases"
     | "/dashboard"
     | "/deadlines"
@@ -271,7 +260,6 @@ export interface FileRouteTypes {
     | "/account"
     | "/admin"
     | "/alumni"
-    | "/analytics"
     | "/cases"
     | "/dashboard"
     | "/deadlines"
@@ -296,7 +284,6 @@ export interface RootRouteChildren {
   AccountRoute: typeof AccountRoute
   AdminRoute: typeof AdminRoute
   AlumniRoute: typeof AlumniRoute
-  AnalyticsRoute: typeof AnalyticsRoute
   CasesRoute: typeof CasesRoute
   DashboardRoute: typeof DashboardRoute
   DeadlinesRoute: typeof DeadlinesRoute
@@ -423,13 +410,6 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof CasesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    "/analytics": {
-      id: "/analytics"
-      path: "/analytics"
-      fullPath: "/analytics"
-      preLoaderRoute: typeof AnalyticsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     "/alumni": {
       id: "/alumni"
       path: "/alumni"
@@ -480,7 +460,6 @@ const rootRouteChildren: RootRouteChildren = {
   AccountRoute: AccountRoute,
   AdminRoute: AdminRoute,
   AlumniRoute: AlumniRoute,
-  AnalyticsRoute: AnalyticsRoute,
   CasesRoute: CasesRoute,
   DashboardRoute: DashboardRoute,
   DeadlinesRoute: DeadlinesRoute,

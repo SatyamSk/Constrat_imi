@@ -631,7 +631,7 @@ function NewsManager() {
         setCronStatus(`✗ ${label}: ${data.error || "failed"}`);
       }
     } catch {
-      setCronStatus(`✗ ${label}: endpoint not available in dev mode. Works on Vercel.`);
+      setCronStatus(`✗ ${label}: Python API only runs on Vercel. Deploy first, or trigger at your-site.vercel.app/api/${endpoint}`);
     }
     setCronRunning(false);
   }
@@ -750,7 +750,7 @@ function TimetableManager() {
           : `Error: ${data.error}`,
       );
     } catch {
-      setResult("Sync endpoint not available in dev mode. Works on Vercel.");
+      setResult("Python API only runs on Vercel (not in local dev). Deploy to trigger, or use the Vercel dashboard.");
     }
     setSyncing(false);
   }

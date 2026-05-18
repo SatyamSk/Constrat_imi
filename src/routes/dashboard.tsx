@@ -6,10 +6,12 @@ import { getMyGlobalRank, getGlobalLeaderboard } from "@/lib/caseAnalysis";
 import { getMySubscription, checkQuota, type SubscriptionInfo, type QuotaInfo } from "@/lib/billing";
 import { getSitePulse, type SitePulse } from "@/lib/sitePulse";
 import { Nav } from "@/components/Nav";
-import {
-  RadarChart, ScoreGraph, PercentileCard, InsightsPanel,
-  CASE_AXES, GUESSTIMATE_AXES, SCORE_HISTORY,
-} from "@/components/Analytics";
+import { RadarChart } from "@/components/RadarChart";
+import { LineChart } from "@/components/LineChart";
+
+// Types for real analytics data
+interface DimensionRow { axis: string; value: number; }
+interface ProgressionPoint { ts: string; score: number; index: number; }
 
 export const Route = createFileRoute("/dashboard")({ component: Dashboard });
 
@@ -62,6 +64,8 @@ function Dashboard() {
   const [leaders, setLeaders] = useState<LeaderRow[]>([]);
   const [activity, setActivity] = useState<Record<string, number>>({});
   const [totalUsers, setTotalUsers] = useState<number>(1);
+  const [caseDims, setCaseDims] = useState<DimensionRow[]>([]);
+  const [scoreProgression, setScoreProgression] = useState<ProgressionPoint[]>([]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -94,7 +98,7 @@ function Dashboard() {
       // Compute stats from case_submissions directly (source of truth)
       supabase
         .from("case_submissions")
-        .select("score, submitted_at")
+        .select("score, submitted_at, ai_analysis")
         .eq("user_id", uid)
         .order("submitted_at", { ascending: false }),
       supabase.from("news")
@@ -150,6 +154,37 @@ function Dashboard() {
       total_score: totalScore,
       current_streak: streak,
     });
+
+    // Compute REAL radar dimensions from ai_analysis in submissions
+    const dims: Record<string, number[]> = { Framework: [], Clarity: [], Approach: [], Execution: [] };
+    allSubs.forEach((s: any) => {
+      const ai = s.ai_analysis;
+      if (ai && typeof ai === 'object') {
+        if (typeof ai.framework === 'number') dims.Framework.push(ai.framework);
+        else if (typeof ai.framework === 'string' && !isNaN(Number(ai.framework))) dims.Framework.push(Number(ai.framework));
+        if (typeof ai.clarity === 'number') dims.Clarity.push(ai.clarity);
+        else if (typeof ai.clarity === 'string' && !isNaN(Number(ai.clarity))) dims.Clarity.push(Number(ai.clarity));
+        if (typeof ai.approach === 'number') dims.Approach.push(ai.approach);
+        else if (typeof ai.approach === 'string' && !isNaN(Number(ai.approach))) dims.Approach.push(Number(ai.approach));
+        if (typeof ai.execution === 'number') dims.Execution.push(ai.execution);
+        else if (typeof ai.execution === 'string' && !isNaN(Number(ai.execution))) dims.Execution.push(Number(ai.execution));
+      }
+    });
+    const avg = (arr: number[]) => arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : 0;
+    setCaseDims([
+      { axis: 'Framework', value: avg(dims.Framework) },
+      { axis: 'Clarity', value: avg(dims.Clarity) },
+      { axis: 'Approach', value: avg(dims.Approach) },
+      { axis: 'Execution', value: avg(dims.Execution) },
+    ]);
+
+    // Compute REAL score progression from submissions (oldest → newest)
+    const reversed = [...allSubs].reverse();
+    setScoreProgression(reversed.map((s: any, i: number) => ({
+      ts: s.submitted_at || '',
+      score: s.score || 0,
+      index: i + 1,
+    })));
 
     // Store total user count for percentile calculations
     setTotalUsers(totalUsersCount ?? 1);
@@ -211,39 +246,73 @@ function Dashboard() {
 
               {/* Percentile strip */}
               <div className="flex gap-5 mb-6">
-                <div className="flex-1 p-4" style={{ background: "rgba(255,255,255,0.62)", backdropFilter: "blur(2px)", border: "1px solid #e2e8f0", borderRadius: 6 }}>
-                  <PercentileCard rank={rank?.rank ?? null} totalUsers={totalUsers} period="This Week" />
-                </div>
-                <div className="flex-1 p-4" style={{ background: "rgba(255,255,255,0.62)", backdropFilter: "blur(2px)", border: "1px solid #e2e8f0", borderRadius: 6 }}>
-                  <PercentileCard rank={rank?.rank ?? null} totalUsers={totalUsers} period="This Month" />
-                </div>
-                <div className="flex-1 p-4" style={{ background: "rgba(255,255,255,0.62)", backdropFilter: "blur(2px)", border: "1px solid #e2e8f0", borderRadius: 6 }}>
-                  <PercentileCard rank={rank?.rank ?? null} totalUsers={totalUsers} period="Overall" />
-                </div>
+                {["This Week", "This Month", "Overall"].map((period) => {
+                  const pct = rank?.rank && totalUsers > 0 ? Math.round((1 - (rank.rank) / totalUsers) * 100) : null;
+                  return (
+                    <div key={period} className="flex-1 p-4 text-center" style={{ background: "rgba(255,255,255,0.62)", backdropFilter: "blur(2px)", border: "1px solid #e2e8f0", borderRadius: 6 }}>
+                      <p className="text-[10px] uppercase tracking-[0.1em] font-bold text-[#8a9bb0]">{period}</p>
+                      <p className="mt-1 font-bold tabular-nums" style={{ fontSize: 28, color: "#E8490F", fontFamily: "var(--font-mono)", letterSpacing: "-0.02em" }}>
+                        {pct !== null ? `${pct}th` : "—"}
+                      </p>
+                      <p className="text-[10px] text-[#8a9bb0]">percentile</p>
+                    </div>
+                  );
+                })}
               </div>
 
-              {/* Radar charts side by side */}
-              <div className="grid md:grid-cols-2 gap-4 mb-6">
-                <div className="p-5" style={{ background: "rgba(255,255,255,0.62)", backdropFilter: "blur(2px)", border: "1px solid #e2e8f0", borderRadius: 6 }}>
-                  <RadarChart axes={CASE_AXES} accent="#E8490F" title="Case Solving" />
-                </div>
-                <div className="p-5" style={{ background: "rgba(255,255,255,0.62)", backdropFilter: "blur(2px)", border: "1px solid #e2e8f0", borderRadius: 6 }}>
-                  <RadarChart axes={GUESSTIMATE_AXES} accent="#3B82F6" title="Guesstimates" />
-                </div>
+              {/* Radar chart — real data from submissions */}
+              <div className="p-5 mb-6" style={{ background: "rgba(255,255,255,0.62)", backdropFilter: "blur(2px)", border: "1px solid #e2e8f0", borderRadius: 6 }}>
+                <p className="text-[11px] uppercase tracking-[0.1em] font-bold text-[#8a9bb0] mb-3 text-center">Case Dimensions</p>
+                {caseDims.some(d => d.value > 0) ? (
+                  <div className="flex justify-center">
+                    <RadarChart current={caseDims} prior={[]} size={320} />
+                  </div>
+                ) : (
+                  <p className="text-[13px] text-[#8a9bb0] text-center py-8">Submit a case to see your dimension breakdown.</p>
+                )}
               </div>
 
-              {/* Score progression */}
+              {/* Score progression — real data */}
               <div className="p-5 mb-6" style={{ background: "rgba(255,255,255,0.62)", backdropFilter: "blur(2px)", border: "1px solid #e2e8f0", borderRadius: 6 }}>
                 <div className="flex items-center justify-between mb-4">
                   <p className="text-[11px] uppercase tracking-[0.1em] font-bold text-[#8a9bb0]">
-                    Score Progression · Last 20 submissions
+                    Score Progression · {scoreProgression.length} submissions
                   </p>
                 </div>
-                <ScoreGraph data={SCORE_HISTORY} />
+                {scoreProgression.length > 0 ? (
+                  <LineChart data={scoreProgression} height={200} />
+                ) : (
+                  <p className="text-[13px] text-[#8a9bb0] text-center py-8">Submit your first case to see score progression.</p>
+                )}
               </div>
 
-              {/* Strengths & Focus */}
-              <InsightsPanel caseAxes={CASE_AXES} guessAxes={GUESSTIMATE_AXES} />
+              {/* Strengths & Focus — computed from real dimensions */}
+              {caseDims.some(d => d.value > 0) && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-4" style={{ background: "rgba(22,163,74,0.06)", borderRadius: 6, border: "1px solid rgba(22,163,74,0.15)" }}>
+                    <p className="text-[10px] uppercase tracking-[0.1em] font-bold" style={{ color: "#16A34A" }}>Your strengths</p>
+                    <ul className="mt-2 space-y-1">
+                      {[...caseDims].sort((a, b) => b.value - a.value).slice(0, 2).map(s => (
+                        <li key={s.axis} className="text-[12px] text-[#0a1628] flex items-center gap-2">
+                          <span className="font-bold tabular-nums" style={{ color: "#16A34A", fontFamily: "var(--font-mono)", fontSize: 11 }}>{s.value}</span>
+                          {s.axis}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="p-4" style={{ background: "rgba(232,73,15,0.06)", borderRadius: 6, border: "1px solid rgba(232,73,15,0.15)" }}>
+                    <p className="text-[10px] uppercase tracking-[0.1em] font-bold" style={{ color: "#E8490F" }}>Focus next</p>
+                    <ul className="mt-2 space-y-1">
+                      {[...caseDims].sort((a, b) => a.value - b.value).slice(0, 2).map(s => (
+                        <li key={s.axis} className="text-[12px] text-[#0a1628] flex items-center gap-2">
+                          <span className="font-bold tabular-nums" style={{ color: "#E8490F", fontFamily: "var(--font-mono)", fontSize: 11 }}>{s.value}</span>
+                          {s.axis}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
             </section>
 
             {/* MARKET INTELLIGENCE / NEWS FEED */}
@@ -320,7 +389,6 @@ function DarkSidebar({
   const items = [
     { label: "Today's Brief", to: "/dashboard" },
     { label: "Practice", to: "/practice" },
-    { label: "Analytics", to: "/analytics" },
     { label: "News Feed", to: "/news" },
     { label: "Competitions", to: "/events" },
     { label: "Rankings", to: "/leaderboard" },

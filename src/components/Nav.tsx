@@ -8,7 +8,6 @@ const PUBLIC_LINKS = [
   { label: "News", to: "/news" },
   { label: "Companies", to: "/events" }, // /events houses Companies + Competitions
   { label: "Leaderboard", to: "/leaderboard" },
-  { label: "Analytics", to: "/analytics" },
 ];
 
 const ADMIN_LINKS = [
