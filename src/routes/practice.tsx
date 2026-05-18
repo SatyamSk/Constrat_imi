@@ -201,8 +201,11 @@ function Practice() {
                   <button
                     key={c.id}
                     onClick={() => navigate({ to: "/case/$caseId", params: { caseId: c.id } })}
-                    className="text-left bg-white hover:bg-[#fafcfe] transition-colors p-6"
+                    className="text-left hover:bg-white/80 transition-colors p-6"
                     style={{
+                      background: "rgba(255,255,255,0.62)",
+                      backdropFilter: "blur(2px)",
+                      WebkitBackdropFilter: "blur(2px)",
                       borderRight: borderRight ? "1px solid #e2e8f0" : "none",
                       borderBottom: borderBottom ? "1px solid #e2e8f0" : "none",
                     }}

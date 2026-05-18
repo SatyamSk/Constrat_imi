@@ -169,7 +169,7 @@ function Timetable() {
               <button
                 key={s}
                 onClick={() => setSec(s)}
-                className={`px-4 py-1.5 rounded-md text-[15px] font-semibold transition-all ${sec === s ? "bg-white text-orange shadow-sm" : "text-text-muted hover:text-text-primary"}`}
+                className={`px-4 py-1.5 rounded-md text-[15px] font-semibold transition-all ${sec === s ? "text-orange shadow-sm" : "text-text-muted hover:text-text-primary"}`}
               >
                 Sec {s}
               </button>

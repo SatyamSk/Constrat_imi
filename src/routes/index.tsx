@@ -361,8 +361,11 @@ function Step({
 }) {
   return (
     <div
-      className="bg-white p-7"
+      className="p-7"
       style={{
+        background: "rgba(255,255,255,0.62)",
+        backdropFilter: "blur(2px)",
+        WebkitBackdropFilter: "blur(2px)",
         borderRight: last ? "none" : "1px solid #e2e8f0",
         borderBottom: "1px solid #e2e8f0",
       }}
@@ -398,8 +401,11 @@ function CompanyCard({
 }) {
   return (
     <div
-      className="bg-white p-6 transition-colors hover:bg-[#fafcfe]"
+      className="p-6 transition-colors hover:bg-white/80"
       style={{
+        background: "rgba(255,255,255,0.62)",
+        backdropFilter: "blur(2px)",
+        WebkitBackdropFilter: "blur(2px)",
         borderRight: borderRight ? "1px solid #e2e8f0" : "none",
         borderBottom: borderBottom ? "1px solid #e2e8f0" : "none",
       }}

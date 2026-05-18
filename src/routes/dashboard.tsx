@@ -478,7 +478,7 @@ function RightPanel({
 }) {
   return (
     <aside
-      className="hidden xl:flex flex-col w-[260px] shrink-0 bg-white grid-bg"
+      className="hidden xl:flex flex-col w-[260px] shrink-0 grid-bg"
       style={{ borderLeft: "1px solid #e2e8f0" }}
     >
       <div className="p-6 space-y-7">

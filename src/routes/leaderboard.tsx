@@ -204,7 +204,7 @@ function Leaderboard() {
               <button
                 key={t}
                 onClick={() => setTab(t)}
-                className={`px-4 py-1.5 rounded-md text-[15px] font-medium transition-all ${tab === t ? "bg-white text-orange shadow-sm" : "text-text-muted hover:text-text-primary"}`}
+                className={`px-4 py-1.5 rounded-md text-[15px] font-medium transition-all ${tab === t ? "text-orange shadow-sm" : "text-text-muted hover:text-text-primary"}`}
               >
                 {t === "college" ? "IMI Delhi" : "Global"}
               </button>

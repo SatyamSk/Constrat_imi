@@ -611,7 +611,7 @@ function FeaturedTile({
   const color = topicColor(item.topic);
   const hasCached = item.gd_analysis && hasGDContent(item.gd_analysis);
   return (
-    <article className="rounded-[16px] overflow-hidden border border-border bg-white shadow-sm">
+    <article className="rounded-[16px] overflow-hidden border border-border shadow-sm" style={{background: "rgba(255,255,255,0.62)", backdropFilter: "blur(2px)", WebkitBackdropFilter: "blur(2px)"}}>
       <div className="grid md:grid-cols-[1.2fr_1fr] gap-0">
         <NewsImage url={item.image_url} fallbackColor={color} topic={item.topic} className="md:h-full md:min-h-[280px] h-[200px]" />
         <div className="p-6 md:p-8 flex flex-col">
@@ -826,7 +826,7 @@ function GDDrawer({
               {analysis.stakeholders.map((s, i) => (
                 <div
                   key={i}
-                  className="rounded-lg border border-border bg-white p-3"
+                  className="rounded-lg border border-border p-3" style={{background: "rgba(255,255,255,0.62)", backdropFilter: "blur(2px)", WebkitBackdropFilter: "blur(2px)"}}
                 >
                   <p className="text-[12px] font-semibold text-text-primary">
                     {s.name}
@@ -861,7 +861,7 @@ function Frame({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-lg bg-white border border-border p-4">
+    <div className="rounded-lg border border-border p-4" style={{background: "rgba(255,255,255,0.62)", backdropFilter: "blur(2px)", WebkitBackdropFilter: "blur(2px)"}}>
       <p
         className="text-[10px] uppercase tracking-[0.1em] font-bold mb-1.5"
         style={{ color: accent }}
@@ -886,7 +886,7 @@ function SideBox({
 }) {
   if (items.length === 0) return null;
   return (
-    <div className="rounded-lg bg-white border border-border p-4">
+    <div className="rounded-lg border border-border p-4" style={{background: "rgba(255,255,255,0.62)", backdropFilter: "blur(2px)", WebkitBackdropFilter: "blur(2px)"}}>
       <p
         className="text-[10px] uppercase tracking-[0.1em] font-bold mb-2"
         style={{ color }}

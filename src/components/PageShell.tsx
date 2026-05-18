@@ -27,10 +27,13 @@ export function PageHeader({
 }) {
   return (
     <section
-      className="bg-white"
       style={{
         borderBottom: "1px solid #e2e8f0",
-        background: alt ? "#f7fafc" : "#ffffff",
+        background: alt
+          ? "rgba(247, 250, 252, 0.65)"
+          : "rgba(255, 255, 255, 0.55)",
+        backdropFilter: "blur(2px)",
+        WebkitBackdropFilter: "blur(2px)",
       }}
     >
       <div className="mx-auto max-w-[1280px] px-5 md:px-6 py-16 md:py-20">

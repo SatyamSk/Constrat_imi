@@ -90,7 +90,7 @@ function BecomePro() {
           </p>
 
           {/* Cycle toggle */}
-          <div className="mt-10 inline-flex items-center bg-white border border-border rounded-full p-1">
+          <div className="mt-10 inline-flex items-center border border-border rounded-full p-1" style={{background: "rgba(255,255,255,0.62)", backdropFilter: "blur(2px)", WebkitBackdropFilter: "blur(2px)"}}>
             {(["monthly", "yearly"] as Cycle[]).map((c) => (
               <button
                 key={c}
@@ -197,7 +197,7 @@ function BecomePro() {
           See the gap.
         </h2>
 
-        <div className="mt-12 rounded-[20px] border border-border bg-white overflow-hidden">
+        <div className="mt-12 rounded-[20px] border border-border overflow-hidden" style={{background: "rgba(255,255,255,0.62)", backdropFilter: "blur(2px)", WebkitBackdropFilter: "blur(2px)"}}>
           <table className="w-full">
             <thead>
               <tr className="border-b border-border bg-muted/30">
@@ -258,7 +258,7 @@ function BecomePro() {
 
       {/* PROOF NUMBERS */}
       <section className="mx-auto max-w-[1180px] px-5 md:px-6 py-12">
-        <div className="rounded-[20px] border border-border bg-white p-8 md:p-12 grid md:grid-cols-4 gap-6 text-center">
+        <div className="rounded-[20px] border border-border p-8 md:p-12 grid md:grid-cols-4 gap-6 text-center" style={{background: "rgba(255,255,255,0.62)", backdropFilter: "blur(2px)", WebkitBackdropFilter: "blur(2px)"}}>
           <Number value="12,400+" label="Cases analysed" />
           <Number value="3,800+" label="Active members" />
           <Number value="64%" label="Avg score gain in 30 days" />
@@ -426,7 +426,7 @@ function Number({ value, label }: { value: string; label: string }) {
 function Faq({ q, children }: { q: string; children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="border border-border rounded-[12px] bg-white overflow-hidden">
+    <div className="border border-border rounded-[12px] overflow-hidden" style={{background: "rgba(255,255,255,0.62)", backdropFilter: "blur(2px)", WebkitBackdropFilter: "blur(2px)"}}>
       <button
         onClick={() => setOpen(!open)}
         className="w-full p-5 flex items-center justify-between text-left hover:bg-muted/20 transition"

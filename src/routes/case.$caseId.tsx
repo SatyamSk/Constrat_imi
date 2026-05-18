@@ -524,8 +524,13 @@ function ResultPanel({
           ].map((s, i) => (
             <div
               key={s.label}
-              className="bg-white p-4 text-center"
-              style={{ borderRight: i < 3 ? "1px solid #e2e8f0" : "none" }}
+              className="p-4 text-center"
+              style={{
+                background: "rgba(255,255,255,0.62)",
+                backdropFilter: "blur(2px)",
+                WebkitBackdropFilter: "blur(2px)",
+                borderRight: i < 3 ? "1px solid #e2e8f0" : "none",
+              }}
             >
               <p
                 className="font-bold text-[#0a1628] tabular-nums"
